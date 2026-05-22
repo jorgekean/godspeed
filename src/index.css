@@ -1,0 +1,137 @@
+@import "tailwindcss";
+
+/* Define GRID's custom theme variables */
+@theme {
+  --color-primary-50: var(--primary-50);
+  --color-primary-100: var(--primary-100);
+  --color-primary-200: var(--primary-200);
+  --color-primary-300: var(--primary-300);
+  --color-primary-400: var(--primary-400);
+  --color-primary-500: var(--primary-500);
+  --color-primary-600: var(--primary-600);
+  --color-primary-700: var(--primary-700);
+  --color-primary-800: var(--primary-800);
+  --color-primary-900: var(--primary-900);
+  --color-primary-950: var(--primary-950);
+}
+
+/* Tailwind v4 dark mode strategy */
+@custom-variant dark (&:is(.dark *));
+
+/* 1. Base Theme (Modern Blue Light Mode) */
+:root {
+  /* Modern Cobalt Blue Palette */
+  --primary-50: #eff6ff;
+  --primary-100: #dbeafe;
+  --primary-200: #bfdbfe;
+  --primary-300: #93c5fd;
+  --primary-400: #60a5fa;
+  --primary-500: #3b82f6;
+  /* Core Brand Blue */
+  --primary-600: #2563eb;
+  --primary-700: #1d4ed8;
+  --primary-800: #1e40af;
+  --primary-900: #1e3a8a;
+  --primary-950: #172554;
+
+  /* Backgrounds & Text */
+  --bg-base: #f8fafc;
+  /* Slate 50 */
+  --bg-surface: #ffffff;
+  --text-base: #0f172a;
+  /* Slate 900 */
+  --text-muted: #64748b;
+  /* Slate 500 */
+}
+
+/* 2. Dark Mode Overrides */
+.dark {
+  --bg-base: #020617;
+  /* Deep Navy/Black */
+  --bg-surface: #0f172a;
+  /* Dark Slate */
+  --text-base: #f8fafc;
+  --text-muted: #94a3b8;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-base);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  font-family: 'Inter', system-ui, sans-serif;
+  /* Recommended for a system like GRID */
+}
+
+/* Utility for hover states in grid/table rows */
+@media (hover: hover) {
+  .hover-reveal {
+    @apply md:opacity-0 md:group-hover:opacity-100;
+  }
+}
+
+@media print {
+
+  /* 1. Reset Body & Scrolling */
+  html,
+  body {
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    background-color: white !important;
+  }
+
+  ::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  * {
+    scrollbar-width: none !important;
+  }
+
+  /* 2. Hide everything by default */
+  body * {
+    visibility: hidden;
+  }
+
+  /* 3. Un-hide ANY container with the .print-root class */
+  .print-root,
+  .print-root * {
+    visibility: visible;
+  }
+
+  /* 4. Move the print root to the absolute top-left to bypass hidden elements */
+  .print-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* 5. Define Standard A4 Paper Size */
+  @page {
+    size: A4 portrait;
+    margin: 0.5in;
+  }
+
+  /* 6. Card Container */
+  .a4-print-container {
+    position: relative;
+    width: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 7. Prevent awkward breaks */
+  table,
+  .signature-block,
+  tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}

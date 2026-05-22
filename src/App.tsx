@@ -1,0 +1,50 @@
+
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import './App.css'
+import { ConfirmProvider } from './contexts/ConfirmContext'
+import { ThemeProvider } from './contexts/ThemeContext'
+import { Toaster } from 'sonner'
+import { AppLayout } from './components/layout/AppLayout'
+import { NotFound } from './components/layout/NotFound'
+import OMRCheckerPage from './pages'
+
+function App() {
+
+  return (
+    <ThemeProvider defaultTheme="system">
+      {/* 2. Wrap the app with ConfirmProvider */}
+      <ConfirmProvider>
+        <BrowserRouter>
+          <Toaster position="top-center" richColors theme="system" />
+
+          <Routes>
+            {/* <Route path="/login" element={<Login />} /> */}
+            {/* <Route path="/print/sf9/:studentId" element={<PrintSF9 />} /> */}
+            <Route path="/godspeed/" element={<OMRCheckerPage />} />
+            {/* <Route path="/godspeed" element={<AppLayout />}> */}
+            {/* <Route index element={<Dashboard />} />
+              <Route path="terms" element={<AcademicTerms />} />
+              <Route path="subjects" element={<Subjects />} />
+              <Route path="students" element={<Students />} />
+              <Route path="students/:studentId" element={<StudentProfile />} />
+              <Route path="assessments" element={<Assessments />} />
+              <Route path="gradebook" element={<Gradebook />} />
+              <Route path="print/bulk-sf9" element={<BulkPrintSF9 />} /> */}
+
+            {/* <Route index element={<Dashboard />} />
+              <Route path="assets" element={<AssetRegistry />} />
+              <Route path="/assets/:id" element={<AssetDetails />} />
+              <Route path="departments" element={<Departments />} />
+              <Route path="employees" element={<Employees />} />
+              <Route path="assetcategories" element={<AssetCategories />} /> */}
+
+            {/* <Route path="*" element={<NotFound />} /> */}
+            {/* </Route> */}
+          </Routes>
+        </BrowserRouter>
+      </ConfirmProvider>
+    </ThemeProvider >
+  )
+}
+
+export default App
