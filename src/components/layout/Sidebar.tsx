@@ -15,7 +15,8 @@ import {
     Package,
     Sparkles,
     X,
-    Printer
+    Printer,
+    HelpCircle
 } from 'lucide-react';
 
 // 1. Explicitly define our props so TypeScript is happy
@@ -56,6 +57,12 @@ const navGroups = [
             { name: 'Performance', path: `${rootpath}/performance`, icon: BarChart3 },
             { name: 'Audit Logs', path: `${rootpath}/audit`, icon: ShieldCheck },
             { name: 'Settings', path: `${rootpath}/settings`, icon: Settings },
+        ]
+    },
+    {
+        title: 'Resources',
+        links: [
+            { name: 'Help & Guide', path: `${rootpath}/help`, icon: HelpCircle },
         ]
     }
 ];

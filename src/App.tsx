@@ -9,6 +9,7 @@ import { NotFound } from './components/layout/NotFound'
 import Dashboard from './pages/Dashboard'
 import CreateExam from './pages/CreateExamPage'
 import ScannerPage from './pages/ScannerPage'
+import Help from './pages/Help'
 
 function App() {
   return (
@@ -27,6 +28,9 @@ function App() {
 
             {/* The scanner view, utilizing dynamic routing to fetch the correct exam key */}
             <Route path="/scan/:examId" element={<ScannerPage />} />
+
+            {/* Help & Workflow guide */}
+            <Route path="/help" element={<Help />} />
 
             {/* Catch-all for 404s */}
             <Route path="*" element={<NotFound />} />
