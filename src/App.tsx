@@ -1,49 +1,39 @@
-
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import './App.css'
 import { ConfirmProvider } from './contexts/ConfirmContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { Toaster } from 'sonner'
-import { AppLayout } from './components/layout/AppLayout'
 import { NotFound } from './components/layout/NotFound'
-import OMRCheckerPage from './pages'
+
+// Import the new page components (adjust paths if necessary)
+import Dashboard from './pages/Dashboard'
+import CreateExam from './pages/CreateExamPage'
+import ScannerPage from './pages/ScannerPage'
 
 function App() {
-
   return (
     <ThemeProvider defaultTheme="system">
-      {/* 2. Wrap the app with ConfirmProvider */}
       <ConfirmProvider>
-        <BrowserRouter>
+        {/* Set the basename so React Router handles the Vite subpath automatically */}
+        <BrowserRouter basename="/godspeed">
           <Toaster position="top-center" richColors theme="system" />
 
           <Routes>
-            {/* <Route path="/login" element={<Login />} /> */}
-            {/* <Route path="/print/sf9/:studentId" element={<PrintSF9 />} /> */}
-            <Route path="/godspeed/" element={<OMRCheckerPage />} />
-            {/* <Route path="/godspeed" element={<AppLayout />}> */}
-            {/* <Route index element={<Dashboard />} />
-              <Route path="terms" element={<AcademicTerms />} />
-              <Route path="subjects" element={<Subjects />} />
-              <Route path="students" element={<Students />} />
-              <Route path="students/:studentId" element={<StudentProfile />} />
-              <Route path="assessments" element={<Assessments />} />
-              <Route path="gradebook" element={<Gradebook />} />
-              <Route path="print/bulk-sf9" element={<BulkPrintSF9 />} /> */}
+            {/* The main dashboard listing all exams */}
+            <Route path="/" element={<Dashboard />} />
 
-            {/* <Route index element={<Dashboard />} />
-              <Route path="assets" element={<AssetRegistry />} />
-              <Route path="/assets/:id" element={<AssetDetails />} />
-              <Route path="departments" element={<Departments />} />
-              <Route path="employees" element={<Employees />} />
-              <Route path="assetcategories" element={<AssetCategories />} /> */}
+            {/* The rapid key importer / exam creation screen */}
+            <Route path="/create" element={<CreateExam />} />
 
-            {/* <Route path="*" element={<NotFound />} /> */}
-            {/* </Route> */}
+            {/* The scanner view, utilizing dynamic routing to fetch the correct exam key */}
+            <Route path="/scan/:examId" element={<ScannerPage />} />
+
+            {/* Catch-all for 404s */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </ConfirmProvider>
-    </ThemeProvider >
+    </ThemeProvider>
   )
 }
 

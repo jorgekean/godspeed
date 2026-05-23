@@ -2,7 +2,11 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import Webcam from 'react-webcam';
 import { Camera, CheckCircle, AlertTriangle, RefreshCw, HelpCircle } from 'lucide-react';
 
-export function OMRScanner() {
+interface OMRScannerProps {
+    correctAnswers?: string[];
+}
+
+export function OMRScanner({ correctAnswers }: OMRScannerProps = {}) {
     const webcamRef = useRef<Webcam>(null);
     const workerRef = useRef<Worker | null>(null);
 
@@ -10,9 +14,6 @@ export function OMRScanner() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [scanResult, setScanResult] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
-
-    // NEW: The UI Toggle State
-    const [examType, setExamType] = useState<'20' | '50'>('20');
 
     const [reviewQueue, setReviewQueue] = useState<string[]>([]);
     const [pendingAnswers, setPendingAnswers] = useState<Record<string, string>>({});
@@ -35,7 +36,6 @@ export function OMRScanner() {
                 setIsProcessing(false);
             } else if (e.data.success) {
                 const extractedAnswers = e.data.answers;
-                alert(JSON.stringify(extractedAnswers))
                 const needsReview = Object.keys(extractedAnswers).filter(
                     q => extractedAnswers[q] === "REVIEW"
                 );
@@ -62,18 +62,29 @@ export function OMRScanner() {
     }, [isWorkerReady]);
 
     const finalizeGrading = (finalAnswers: Record<string, string>) => {
-        // Generating a dynamic dummy answer key for testing based on test size
-        const totalItems = examType === '20' ? 20 : 50;
-        const dummyAnswerKey: Record<string, string> = {};
-        const options = ['A', 'B', 'C', 'D'];
-        for (let i = 1; i <= totalItems; i++) {
-            dummyAnswerKey[i.toString()] = options[i % 4];
-        }
-
+        // Automatically determine the total items from the correctAnswers array (fallback to 20)
+        const totalItems = correctAnswers ? correctAnswers.length : 20;
         let score = 0;
-        Object.keys(finalAnswers).forEach(q => {
-            if (finalAnswers[q] === dummyAnswerKey[q]) score++;
-        });
+
+        if (correctAnswers && correctAnswers.length > 0) {
+            Object.keys(finalAnswers).forEach(q => {
+                const questionIndex = parseInt(q, 10) - 1;
+                // Ensure we only grade up to the length of the actual exam
+                if (questionIndex < totalItems && finalAnswers[q] === correctAnswers[questionIndex]) {
+                    score++;
+                }
+            });
+        } else {
+            const dummyAnswerKey: Record<string, string> = {};
+            const options = ['A', 'B', 'C', 'D'];
+            for (let i = 1; i <= totalItems; i++) {
+                dummyAnswerKey[i.toString()] = options[i % 4];
+            }
+
+            Object.keys(finalAnswers).forEach(q => {
+                if (finalAnswers[q] === dummyAnswerKey[q]) score++;
+            });
+        }
 
         setScanResult({
             studentId: "Auto-Detected ID",
@@ -114,10 +125,13 @@ export function OMRScanner() {
         if (ctx) {
             ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            // Pass the explicit UI toggle state to the worker!
-            workerRef.current?.postMessage({ imageData, examType }, [imageData.data.buffer]);
+
+            // Automatically determine physical paper size for the OpenCV worker
+            const physicalSheetType = (correctAnswers && correctAnswers.length > 20) ? '50' : '20';
+
+            workerRef.current?.postMessage({ imageData, examType: physicalSheetType }, [imageData.data.buffer]);
         }
-    }, [webcamRef, examType]);
+    }, [webcamRef, correctAnswers]);
 
     if (!isWorkerReady) {
         return <div className="p-10 text-center font-bold text-slate-500 flex flex-col items-center justify-center h-screen bg-black">
@@ -129,7 +143,7 @@ export function OMRScanner() {
     return (
         <div className="flex flex-col h-screen bg-black">
             <div className="p-4 bg-slate-900 text-white flex justify-between items-center z-10 shadow-md">
-                <h2 className="font-bold tracking-wide">GRID Auto-Scanner</h2>
+                <h2 className="font-bold tracking-wide">Godspeed Scanner</h2>
             </div>
 
             <div className="flex-1 relative overflow-hidden flex items-center justify-center">
@@ -207,24 +221,7 @@ export function OMRScanner() {
 
             {/* BOTTOM CONTROLS */}
             {!scanResult && reviewQueue.length === 0 && (
-                <div className="p-6 bg-slate-900 pb-safe z-10 flex flex-col items-center">
-
-                    {/* EXAM TYPE UI TOGGLE */}
-                    <div className="flex gap-2 mb-6 bg-slate-800 p-1 rounded-xl">
-                        <button
-                            onClick={() => setExamType('20')}
-                            className={`px-6 py-2 rounded-lg font-bold transition-all ${examType === '20' ? 'bg-blue-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
-                        >
-                            20 Items
-                        </button>
-                        <button
-                            onClick={() => setExamType('50')}
-                            className={`px-6 py-2 rounded-lg font-bold transition-all ${examType === '50' ? 'bg-blue-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
-                        >
-                            50 Items
-                        </button>
-                    </div>
-
+                <div className="p-6 bg-slate-900 pb-safe z-10 flex flex-col items-center justify-center">
                     <button
                         onClick={captureAndScan}
                         disabled={isProcessing}
