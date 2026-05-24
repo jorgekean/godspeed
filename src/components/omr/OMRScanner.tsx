@@ -18,6 +18,9 @@ export function OMRScanner({ correctAnswers }: OMRScannerProps = {}) {
     const [reviewQueue, setReviewQueue] = useState<string[]>([]);
     const [pendingAnswers, setPendingAnswers] = useState<Record<string, string>>({});
 
+    // State to toggle the details view
+    const [showDetails, setShowDetails] = useState(false);
+
     useEffect(() => {
         const baseUrl = import.meta.env.BASE_URL;
         const workerPath = `${baseUrl}omr.worker.js`;
@@ -149,17 +152,91 @@ export function OMRScanner({ correctAnswers }: OMRScannerProps = {}) {
             <div className="flex-1 relative overflow-hidden flex items-center justify-center">
 
                 {scanResult && reviewQueue.length === 0 ? (
-                    <div className="bg-white p-8 rounded-3xl text-center max-w-sm w-full mx-4 absolute z-50 shadow-2xl">
-                        <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-4" />
-                        <h3 className="text-5xl font-black text-slate-900 mb-2">{scanResult.score} <span className="text-2xl text-slate-400">/ {scanResult.total}</span></h3>
-                        <p className="text-slate-500 font-medium mb-8 bg-slate-100 py-2 rounded-lg">{scanResult.studentId}</p>
-                        <button
-                            onClick={() => setScanResult(null)}
-                            className="w-full py-4 bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold rounded-xl text-lg"
-                        >
-                            Scan Next Paper
-                        </button>
-                    </div>
+
+                    showDetails ? (
+                        <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-md z-40 p-6 overflow-y-auto pb-32 flex flex-col items-center">
+
+                            <div className="w-full max-w-md flex justify-between items-center mt-2 mb-6">
+                                <h3 className="text-white text-xl font-bold tracking-tight">Answer Details</h3>
+                                {/* --- NEW: Button group with Back and Next Scan --- */}
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setShowDetails(false)}
+                                        className="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-slate-700 transition-colors"
+                                    >
+                                        Back
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setScanResult(null);
+                                            setShowDetails(false);
+                                        }}
+                                        className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors"
+                                    >
+                                        Next Scan
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="w-full max-w-md grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                {Array.from({ length: scanResult.total }).map((_, i) => {
+                                    const qNum = (i + 1).toString();
+                                    const studentAns = scanResult.answers[qNum] || '-';
+
+                                    // Compute correct answer to display
+                                    let correctAns = '-';
+                                    if (correctAnswers && correctAnswers.length > 0) {
+                                        correctAns = correctAnswers[i] || '-';
+                                    } else {
+                                        const options = ['A', 'B', 'C', 'D'];
+                                        correctAns = options[(i + 1) % 4];
+                                    }
+
+                                    const isCorrect = studentAns === correctAns;
+
+                                    return (
+                                        <div key={qNum} className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center shadow-lg ${isCorrect ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
+                                            <span className="text-slate-400 text-[11px] font-bold mb-1 tracking-wider uppercase">Item {qNum}</span>
+                                            <div className="flex gap-2 items-center">
+                                                <span className={`text-2xl font-black ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>
+                                                    {studentAns === "BLANK" ? "—" : studentAns}
+                                                </span>
+                                                {!isCorrect && (
+                                                    <>
+                                                        <span className="text-slate-500 text-lg">→</span>
+                                                        <span className="text-green-400 text-2xl font-black">{correctAns}</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="bg-white p-8 rounded-3xl text-center max-w-sm w-full mx-4 absolute z-50 shadow-2xl">
+                            <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-4" />
+                            <h3 className="text-5xl font-black text-slate-900 mb-2">{scanResult.score} <span className="text-2xl text-slate-400">/ {scanResult.total}</span></h3>
+                            <p className="text-slate-500 font-medium mb-8 bg-slate-100 py-2 rounded-lg">{scanResult.studentId}</p>
+
+                            <button
+                                onClick={() => {
+                                    setScanResult(null);
+                                    setShowDetails(false); // Reset details state too
+                                }}
+                                className="w-full py-4 bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold rounded-xl text-lg mb-3"
+                            >
+                                Scan Next Paper
+                            </button>
+
+                            <button
+                                onClick={() => setShowDetails(true)}
+                                className="w-full py-3 bg-slate-100 hover:bg-slate-200 transition-colors text-slate-600 font-bold rounded-xl text-md"
+                            >
+                                Show Details
+                            </button>
+                        </div>
+                    )
                 ) :
 
                     reviewQueue.length > 0 ? (

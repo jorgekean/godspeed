@@ -11,10 +11,10 @@ export default defineConfig({
     basicSsl(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['godspeed.png', 'icons.svg', 'opencv.js', 'omr.worker.js'],
+      includeAssets: ['godspeedgrader-logo.png', 'icons.svg', 'opencv.js', 'omr.worker.js'],
       manifest: {
         name: 'Godspeed Grader',
-        short_name: 'Godspeed',
+        short_name: 'GodspeedGrader',
         description: 'Grade bubble sheet exams instantly with your phone camera',
         theme_color: '#0f172a',
         background_color: '#ffffff',
@@ -23,13 +23,13 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: '/godspeed.png',
+            src: '/godspeedgrader-logo.png',
             sizes: 'any',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: '/godspeed.png',
+            src: '/godspeedgrader-logo.png',
             sizes: 'any',
             type: 'image/png',
             purpose: 'maskable',
