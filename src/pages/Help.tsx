@@ -79,6 +79,7 @@ const Help = () => {
         { icon: '✅', text: 'Keep the sheet flat and straight in frame' },
         { icon: '✅', text: 'Use black bubbles (not light pencil marks)' },
         { icon: '✅', text: 'Make sure the entire sheet is visible' },
+        { icon: '❌', text: 'Avoid using photocopied sheets. Strictly use printed.' },
         { icon: '❌', text: 'Avoid scanning while moving' },
         { icon: '❌', text: 'Avoid very dim lighting' },
         { icon: '❌', text: 'Avoid light pencil marks' },
