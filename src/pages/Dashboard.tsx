@@ -28,7 +28,7 @@ export default function Dashboard() {
                         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
                             GodSpeed <span className="font-normal text-slate-400">Grader</span>
                         </h1>
-                        <p className="text-[13px] font-medium text-slate-500 mt-0.5">Select an exam to start grading.</p>
+                        <p className="text-[13px] font-medium text-slate-500 mt-0.5"> Awaken your camera's potential. Grade exams in a flash.</p>
                     </div>
                     <div className="w-12 h-12 bg-gradient-to-br from-violet-500 via-fuchsia-500 to-cyan-400 rounded-2xl flex items-center justify-center shadow-lg shadow-violet-500/30 shrink-0">
                         <Zap className="w-6 h-6 text-white fill-white/20" />

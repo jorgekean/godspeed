@@ -16,7 +16,7 @@ function App() {
     <ThemeProvider defaultTheme="system">
       <ConfirmProvider>
         {/* Set the basename so React Router handles the Vite subpath automatically */}
-        <BrowserRouter basename="/godspeed">
+        <BrowserRouter basename="">
           <Toaster position="top-center" richColors theme="system" />
 
           <Routes>

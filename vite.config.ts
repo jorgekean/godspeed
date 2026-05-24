@@ -19,17 +19,17 @@ export default defineConfig({
         theme_color: '#0f172a',
         background_color: '#ffffff',
         display: 'standalone',
-        scope: '/godspeed/',
-        start_url: '/godspeed/',
+        scope: '/',
+        start_url: '/',
         icons: [
           {
-            src: '/godspeed/godspeed.png',
+            src: '/godspeed.png',
             sizes: 'any',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: '/godspeed/godspeed.png',
+            src: '/godspeed.png',
             sizes: 'any',
             type: 'image/png',
             purpose: 'maskable',
@@ -38,7 +38,7 @@ export default defineConfig({
         categories: ['education', 'productivity'],
         screenshots: [
           {
-            src: '/godspeed/social-preview.png',
+            src: '/social-preview.png',
             sizes: '1280x720',
             type: 'image/png',
             form_factor: 'wide',
@@ -50,7 +50,7 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 15728640,
         runtimeCaching: [
           {
-            urlPattern: ({ url }) => url.pathname.startsWith('/godspeed/'),
+            urlPattern: ({ url }) => url.pathname.startsWith('/'),
             handler: 'CacheFirst',
             options: {
               cacheName: 'godspeed-cache',
@@ -74,7 +74,7 @@ export default defineConfig({
       },
     }),
   ],
-  base: '/godspeed/',
+  base: '/',
   server: {
     host: true,
     allowedHosts: true,
