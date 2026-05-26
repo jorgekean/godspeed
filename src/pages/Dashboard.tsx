@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../services/db';
-import { Plus, ChevronRight, FileText, Zap, Printer, X, HelpCircle } from 'lucide-react';
+import { Plus, ChevronRight, FileText, Zap, Printer, X, HelpCircle, Share2, Music2 } from 'lucide-react';
 import { OMRTemplateGenerator } from '../components/omr/OMRTemplate';
 
 export default function Dashboard() {
@@ -105,6 +105,46 @@ export default function Dashboard() {
                             <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-violet-500 transition-colors" />
                         </button>
                     ))}
+                </div>
+
+                {/* Social Links Footer */}
+                <div className="flex justify-center gap-4 mt-12 pt-8 border-t border-slate-200/50 dark:border-white/5">
+
+                    {/* Facebook Link */}
+                    <a
+                        href="https://www.facebook.com/profile.php?id=61590027737593"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-3 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all"
+                        title="Follow us on Facebook"
+                    >
+                        <svg
+                            className="w-6 h-6"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                        >
+                            <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
+                        </svg>
+                    </a>
+
+                    {/* TikTok Link */}
+                    <a
+                        href="https://www.tiktok.com/@godspeedgrader"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-3 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+                        title="Follow us on TikTok"
+                    >
+                        <svg
+                            className="w-6 h-6"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                        >
+                            <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2-1.74 2.89 2.89 0 0 1 2.89-2.89 2.88 2.88 0 0 1 1.54.45V8.1a6.32 6.32 0 0 0-1.54-.19 6.34 6.34 0 0 0 0 12.68 6.34 6.34 0 0 0 6.34-6.34V8.15a8.26 8.26 0 0 0 4.77 1.52V6.22a4.84 4.84 0 0 1-1.58.47z" />
+                        </svg>
+                    </a>
                 </div>
             </main>
         </div>
