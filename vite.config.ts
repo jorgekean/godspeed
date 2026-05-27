@@ -11,7 +11,7 @@ export default defineConfig({
     basicSsl(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['godspeedgrader-logo.png', 'icons.svg', 'opencv.js', 'omr.worker.js'],
+      includeAssets: ['app-logo.png', 'icons.svg', 'opencv.js', 'omr.worker.js'],
       manifest: {
         name: 'Godspeed Grader',
         short_name: 'GodspeedGrader',
@@ -23,13 +23,13 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: '/godspeedgrader-logo.png',
+            src: '/app-logo.png',
             sizes: 'any',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: '/godspeedgrader-logo.png',
+            src: '/app-logo.png',
             sizes: 'any',
             type: 'image/png',
             purpose: 'maskable',
