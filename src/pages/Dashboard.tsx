@@ -112,19 +112,27 @@ export default function Dashboard() {
 
                     {/* Facebook Link */}
                     <a
-                        href="https://www.facebook.com/profile.php?id=61590027737593"
+                        href="https://www.facebook.com/godspeedgrader"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-3 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all"
                         title="Follow us on Facebook"
                     >
-                        <svg
-                            className="w-6 h-6"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                        >
+                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
+                        </svg>
+                    </a>
+
+                    {/* Reddit Link */}
+                    <a
+                        href="https://www.reddit.com/r/GodspeedGrader/s/qbldJCdwXz"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-3 rounded-xl text-slate-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-all"
+                        title="Follow us on Reddit"
+                    >
+                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M22 11.516c0-1.229-.999-2.228-2.228-2.228-.654 0-1.242.28-1.658.726-1.611-1.056-3.79-1.714-6.195-1.782l1.281-3.993 3.42.726c.012 1.073.888 1.936 1.967 1.936 1.086 0 1.968-.882 1.968-1.968S19.673 3 18.587 3c-.767 0-1.433.435-1.761 1.071l-3.805-.808c-.144-.03-.292.042-.348.175l-1.433 4.466c-2.463.036-4.695.702-6.335 1.782-.416-.446-1.004-.726-1.658-.726-1.229 0-2.228.999-2.228 2.228 0 .817.439 1.536 1.104 1.921-.024.216-.036.436-.036.657 0 3.86 4.793 6.993 10.697 6.993 5.903 0 10.696-3.133 10.696-6.993 0-.221-.012-.441-.036-.657.665-.385 1.104-1.104 1.104-1.921zm-14.739 1.542c0-.853.693-1.546 1.546-1.546.853 0 1.546.693 1.546 1.546 0 .853-.693 1.546-1.546 1.546-.853 0-1.546-.693-1.546-1.546zm8.625 4.542c-1.189 1.189-3.232 1.258-4.148 1.258s-2.96-.069-4.148-1.258c-.183-.183-.183-.48 0-.663.183-.183.48-.183.663 0 1.001 1.001 2.585 1.018 3.485 1.018s2.485-.018 3.485-1.018c.183-.183.48-.183.663 0 .183.183.183.48 0 .663zm-1.079-2.996c-.853 0-1.546-.693-1.546-1.546 0-.853.693-1.546 1.546-1.546.853 0 1.546.693 1.546 1.546 0 .853-.693 1.546-1.546 1.546z" />
                         </svg>
                     </a>
 
@@ -136,15 +144,11 @@ export default function Dashboard() {
                         className="p-3 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
                         title="Follow us on TikTok"
                     >
-                        <svg
-                            className="w-6 h-6"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                        >
+                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2-1.74 2.89 2.89 0 0 1 2.89-2.89 2.88 2.88 0 0 1 1.54.45V8.1a6.32 6.32 0 0 0-1.54-.19 6.34 6.34 0 0 0 0 12.68 6.34 6.34 0 0 0 6.34-6.34V8.15a8.26 8.26 0 0 0 4.77 1.52V6.22a4.84 4.84 0 0 1-1.58.47z" />
                         </svg>
                     </a>
+
                 </div>
             </main>
         </div>
