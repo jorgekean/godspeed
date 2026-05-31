@@ -84,7 +84,7 @@ export default function SmartScannerPage() {
         await db.scanResults.add({
             id: crypto.randomUUID(),
             examId: exam.id,
-            // sectionId: selectedSectionId,
+            sectionId: selectedSectionId,
             studentId: studentId,
             score: currentScore,
             total: exam.itemCount,

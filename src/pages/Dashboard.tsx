@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../services/db';
-import { Plus, ChevronRight, FileText, Zap, Printer, X, HelpCircle, Share2, Music2, Edit3 } from 'lucide-react';
+import { Plus, ChevronRight, FileText, Zap, Printer, X, HelpCircle, Share2, Music2, Edit3, BarChart3 } from 'lucide-react';
 import { OMRTemplateGenerator } from '../components/omr/OMRTemplate';
 
 export default function Dashboard() {
@@ -117,6 +117,16 @@ export default function Dashboard() {
                                     title="Edit Exam"
                                 >
                                     <Edit3 className="w-5 h-5" />
+                                </button>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate(`/exams/${exam.id}/results`);
+                                    }}
+                                    className="p-2 text-slate-400 hover:text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-500/10 rounded-xl transition-all"
+                                    title="View Results"
+                                >
+                                    <BarChart3 className="w-5 h-5" />
                                 </button>
                                 <ChevronRight className="w-5 h-5 text-slate-300 dark:text-slate-600" />
                             </div>

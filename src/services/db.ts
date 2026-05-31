@@ -40,6 +40,7 @@ export interface ScanResult {
     id: string;
     examId: string;
     studentId: string;
+    sectionId: string;
     score: number;
     total: number;
     answers: Record<string, string>;
@@ -57,11 +58,11 @@ export class GodspeedDatabase extends Dexie {
         super('GodspeedGraderDBV2');
 
         // Schema versioning (Bumped to version 4 for the createdBy additions)
-        this.version(1).stores({
+        this.version(2).stores({
             sections: 'id, gradeLevel, sectionName, [gradeLevel+sectionName], createdAt, createdBy',
             students: 'id, sectionId, fullName, studentNo, createdBy',
             exams: 'id, gradeLevel, subject, createdAt, createdBy',
-            scanResults: 'id, examId, studentId, [examId+studentId], scannedAt, createdBy'
+            scanResults: 'id, examId, studentId, sectionId, [examId+studentId], scannedAt, createdBy'
         });
 
         // ==========================================
