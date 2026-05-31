@@ -5,6 +5,7 @@ import { db, DEMO_USER_ID } from '../services/db';
 import { Camera, X, CheckCircle2, Search, UserCheck, Zap, ArrowLeft, Loader2, Users, RefreshCcw, ListChecks } from 'lucide-react';
 import { toast } from 'sonner';
 import { OMRScanner } from '../components/omr/OMRScanner';
+import { useAuth } from '../contexts/AuthContext';
 
 type ScanMode = 'setup' | 'scanning' | 'tagging';
 
@@ -118,49 +119,71 @@ export default function SmartScannerPage() {
     }
 
     // ---------------------------------------------------------
-    // RENDER: SETUP MODE
+    // RENDER: SETUP MODE (Conditional Guest Logic)
     // ---------------------------------------------------------
+    const { currentUser } = useAuth();
     if (scanMode === 'setup') {
+        const isGuest = !currentUser; // Assumes you have currentUser from your AuthContext
+
         return (
             <div className="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950 p-4 md:p-8 relative">
                 <div className="flex items-center justify-between mb-8 max-w-xl mx-auto w-full">
-                    <button onClick={() => navigate('/exams')} className="p-2 -ml-2 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white rounded-full transition-colors">
+                    <button onClick={() => navigate('/dashboard')} className="p-2 -ml-2 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors">
                         <ArrowLeft className="w-6 h-6" />
                     </button>
-
-                    <button
-                        onClick={() => { setSelectedSectionId('anonymous'); setScanMode('scanning'); }}
-                        className="flex items-center gap-2 px-4 py-2 bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-500/30 font-bold rounded-full transition-colors text-sm shadow-sm"
-                    >
-                        <Zap className="w-4 h-4" /> Quick Scan
-                    </button>
+                    {/* The Quick Scan is now a central feature */}
                 </div>
 
                 <div className="flex-1 flex flex-col justify-center max-w-xl mx-auto w-full animate-in zoom-in-95 duration-300 pb-12">
                     <div className="text-center mb-10">
-                        <div className="w-16 h-16 bg-violet-100 dark:bg-violet-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm border border-violet-200 dark:border-violet-500/20">
+                        <div className="w-16 h-16 bg-violet-100 dark:bg-violet-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-violet-200 dark:border-violet-500/20">
                             <Camera className="w-8 h-8 text-violet-600 dark:text-violet-400" />
                         </div>
-                        <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-2">Select Section</h1>
-                        <p className="text-slate-500 font-medium">{exam.title} • {exam.itemCount} Items</p>
+                        <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-2">Scanner Setup</h1>
+                        <p className="text-slate-500 font-medium">{exam.title}</p>
                     </div>
 
-                    <div className="space-y-3">
-                        {sections.map(section => (
-                            <button
-                                key={section.id}
-                                onClick={() => { setSelectedSectionId(section.id); setScanMode('scanning'); }}
-                                className="w-full flex items-center p-5 rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-violet-400 dark:hover:border-violet-600 hover:shadow-md transition-all group active:scale-[0.98]"
-                            >
-                                <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 mr-4 bg-slate-100 dark:bg-slate-800 group-hover:bg-violet-100 dark:group-hover:bg-violet-500/20 transition-colors">
-                                    <Users className="w-6 h-6 text-slate-400 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors" />
-                                </div>
-                                <div className="text-left flex-1">
-                                    <h4 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-violet-700 dark:group-hover:text-violet-400 transition-colors">{section.sectionName}</h4>
-                                    <p className="text-sm font-medium text-slate-500">{section.gradeLevel}</p>
-                                </div>
-                            </button>
-                        ))}
+                    <div className="space-y-4">
+                        {/* Quick Scan: Always shown */}
+                        <button
+                            onClick={() => { setSelectedSectionId('anonymous'); setScanMode('scanning'); }}
+                            className="w-full flex items-center p-6 rounded-2xl border-2 border-amber-400 bg-amber-50 dark:bg-amber-500/10 hover:shadow-lg transition-all active:scale-[0.98]"
+                        >
+                            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 mr-4 bg-amber-100 dark:bg-amber-500/20">
+                                <Zap className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                            </div>
+                            <div className="text-left">
+                                <h4 className="text-lg font-bold text-amber-900 dark:text-amber-400">Quick Scan</h4>
+                                <p className="text-sm text-amber-800/70 dark:text-amber-400/70">Grade papers immediately without saving.</p>
+                            </div>
+                        </button>
+
+                        {/* Sections List: Only show if NOT a guest */}
+                        {!isGuest ? (
+                            <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+                                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider ml-1">Select Section</h3>
+                                {sections.map(section => (
+                                    <button
+                                        key={section.id}
+                                        onClick={() => { setSelectedSectionId(section.id); setScanMode('scanning'); }}
+                                        className="w-full flex items-center p-5 rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-violet-400 transition-all active:scale-[0.98]"
+                                    >
+                                        <Users className="w-6 h-6 text-slate-400 mr-4" />
+                                        <div className="text-left">
+                                            <h4 className="font-bold text-slate-900 dark:text-white">{section.sectionName}</h4>
+                                            <p className="text-xs text-slate-500">{section.gradeLevel}</p>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="mt-6 p-4 bg-slate-100 dark:bg-slate-800/50 rounded-xl text-center">
+                                <p className="text-sm text-slate-500 mb-2">Want to save grades to class rosters?</p>
+                                <button onClick={() => navigate('/account')} className="text-violet-600 dark:text-violet-400 font-bold hover:underline">
+                                    Create a free account
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
