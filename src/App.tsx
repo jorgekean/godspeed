@@ -19,6 +19,7 @@ import StudentsPage from './pages/StudentsPage'
 import LandingPage from './pages/LandingPage'
 import { AuthProvider } from './contexts/AuthContext'
 import AccountPage from './pages/AccountPage'
+import SmartScannerPage from './pages/SmartScannerPage'
 
 function App() {
   return (
@@ -56,7 +57,7 @@ function App() {
               <Route path="/edit/:examId" element={<EditExam />} />
 
               {/* The scanner view, utilizing dynamic routing to fetch the correct exam key */}
-              <Route path="/scan/:examId" element={<ScannerPage />} />
+              <Route path="/scan/:examId" element={<SmartScannerPage />} />
 
               {/* Catch-all for 404s */}
               <Route path="*" element={<NotFound />} />

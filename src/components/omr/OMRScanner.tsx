@@ -4,9 +4,11 @@ import { Camera, CheckCircle, AlertTriangle, RefreshCw, HelpCircle } from 'lucid
 
 interface OMRScannerProps {
     correctAnswers?: string[];
+    // --- NEW: Add the callback prop so the parent knows when grading is done ---
+    onScanComplete?: (score: number, rawAnswers: string[]) => void;
 }
 
-export function OMRScanner({ correctAnswers }: OMRScannerProps = {}) {
+export function OMRScanner({ correctAnswers, onScanComplete }: OMRScannerProps = {}) {
     const webcamRef = useRef<Webcam>(null);
     const workerRef = useRef<Worker | null>(null);
 
@@ -89,13 +91,26 @@ export function OMRScanner({ correctAnswers }: OMRScannerProps = {}) {
             });
         }
 
-        setScanResult({
-            studentId: "Auto-Detected ID",
-            score: score,
-            total: totalItems,
-            answers: finalAnswers
-        });
-        setIsProcessing(false);
+        // --- NEW: Convert answers Record to an Array for the parent component ---
+        const rawAnswersArray: string[] = [];
+        for (let i = 1; i <= totalItems; i++) {
+            rawAnswersArray.push(finalAnswers[i.toString()] || "BLANK");
+        }
+
+        // --- NEW: If parent provided onScanComplete, use it and bypass the local overlay ---
+        if (onScanComplete) {
+            onScanComplete(score, rawAnswersArray);
+            setIsProcessing(false);
+        } else {
+            // Fallback for isolated testing (shows the giant CheckCircle overlay)
+            setScanResult({
+                studentId: "Auto-Detected ID",
+                score: score,
+                total: totalItems,
+                answers: finalAnswers
+            });
+            setIsProcessing(false);
+        }
     };
 
     const handleReviewDecision = (decision: string) => {
@@ -158,7 +173,7 @@ export function OMRScanner({ correctAnswers }: OMRScannerProps = {}) {
 
                             <div className="w-full max-w-md flex justify-between items-center mt-2 mb-6">
                                 <h3 className="text-white text-xl font-bold tracking-tight">Answer Details</h3>
-                                {/* --- NEW: Button group with Back and Next Scan --- */}
+                                {/* --- Button group with Back and Next Scan --- */}
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => setShowDetails(false)}
