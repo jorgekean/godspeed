@@ -1,0 +1,214 @@
+import React, { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { UserCircle, ShieldCheck, LogOut, Star, Lock, Database, FileText, Loader2, Mail } from 'lucide-react';
+
+// FIREBASE IMPORTS
+import { auth } from '../services/firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+
+export default function AccountPage() {
+    const { currentUser, logout } = useAuth();
+    const navigate = useNavigate();
+
+    // Auth Form States (Only used if user is NOT logged in)
+    const [isLoginMode, setIsLoginMode] = useState(false); // Default to Sign Up
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [authError, setAuthError] = useState('');
+
+    const handleAuthSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setAuthError('');
+        setIsLoading(true);
+
+        try {
+            if (isLoginMode) {
+                await signInWithEmailAndPassword(auth, email, password);
+            } else {
+                await createUserWithEmailAndPassword(auth, email, password);
+            }
+            // Success! The AuthContext will automatically detect the user and re-render the page.
+        } catch (error: any) {
+            console.error("Auth error:", error);
+            if (error.code === 'auth/email-already-in-use') setAuthError('This email is already registered.');
+            else if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') setAuthError('Invalid email or password.');
+            else if (error.code === 'auth/weak-password') setAuthError('Password should be at least 6 characters.');
+            else setAuthError('Authentication failed. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleLogout = async () => {
+        await logout();
+        navigate('/'); // Kick to landing page on explicit logout
+    };
+
+    return (
+        <div className="min-h-full flex flex-col p-4 md:p-8 animate-in fade-in duration-300">
+            <header className="mb-8">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+                    {currentUser ? 'Account' : 'Unlock GodSpeed'}
+                </h1>
+                <p className="text-sm font-medium text-slate-500 mt-1">
+                    {currentUser ? 'Manage your profile and subscription tier.' : 'Create a free account to manage sections and students.'}
+                </p>
+            </header>
+
+            <div className="max-w-3xl space-y-6">
+
+                {/* ========================================== */}
+                {/* VIEW 1: USER IS NOT LOGGED IN (AUTH FORM) */}
+                {/* ========================================== */}
+                {!currentUser && (
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/50 dark:border-white/5 p-6 md:p-8 shadow-sm max-w-md mx-auto md:mx-0">
+                        <div className="text-center mb-8">
+                            <div className="w-16 h-16 bg-violet-100 dark:bg-violet-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Lock className="w-8 h-8 text-violet-600 dark:text-violet-400" />
+                            </div>
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                                {isLoginMode ? 'Welcome Back' : 'Create Free Account'}
+                            </h2>
+                            <p className="text-sm text-slate-500 mt-1">
+                                {isLoginMode ? 'Sign in to access your local gradebooks.' : 'Secure your data and unlock class management.'}
+                            </p>
+                        </div>
+
+                        {authError && (
+                            <div className="mb-6 p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 text-sm font-semibold rounded-xl text-center">
+                                {authError}
+                            </div>
+                        )}
+
+                        <form onSubmit={handleAuthSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 ml-1">Email Address</label>
+                                <div className="relative">
+                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                                    <input
+                                        type="email"
+                                        required
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        placeholder="teacher@school.edu.ph"
+                                        className="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all font-medium"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 ml-1">Password</label>
+                                <div className="relative">
+                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                                    <input
+                                        type="password"
+                                        required
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="••••••••"
+                                        className="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all font-medium"
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full py-4 mt-2 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl shadow-lg shadow-violet-500/25 active:scale-95 transition-all flex items-center justify-center gap-2"
+                            >
+                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isLoginMode ? 'Sign In' : 'Create Account')}
+                            </button>
+                        </form>
+
+                        <div className="mt-6 text-center">
+                            <p className="text-sm text-slate-500 font-medium">
+                                {isLoginMode ? "Don't have an account? " : "Already registered? "}
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsLoginMode(!isLoginMode);
+                                        setAuthError('');
+                                    }}
+                                    className="text-violet-600 dark:text-violet-400 font-bold hover:underline"
+                                >
+                                    {isLoginMode ? 'Sign Up Free' : 'Sign In'}
+                                </button>
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {/* ========================================== */}
+                {/* VIEW 2: USER IS LOGGED IN (DASHBOARD) */}
+                {/* ========================================== */}
+                {currentUser && (
+                    <>
+                        {/* PROFILE CARD */}
+                        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/50 dark:border-white/5 p-6 md:p-8 shadow-sm">
+                            <div className="flex flex-col md:flex-row md:items-center gap-6">
+                                <div className="w-20 h-20 bg-violet-100 dark:bg-violet-500/20 rounded-full flex items-center justify-center shrink-0">
+                                    <UserCircle className="w-12 h-12 text-violet-600 dark:text-violet-400" />
+                                </div>
+
+                                <div className="flex-1 text-center md:text-left">
+                                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
+                                        {currentUser.email}
+                                    </h2>
+                                    <p className="text-slate-500 font-medium flex items-center justify-center md:justify-start gap-2">
+                                        <ShieldCheck className="w-4 h-4 text-emerald-500" /> Free Account (Local Storage)
+                                    </p>
+                                </div>
+
+                                <button
+                                    onClick={handleLogout}
+                                    className="w-full md:w-auto px-5 py-3 text-sm font-bold text-red-600 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-xl transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <LogOut className="w-4 h-4" /> Sign Out
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* SUBSCRIPTION TIER CARD */}
+                        <div className="bg-slate-900 rounded-3xl border border-slate-800 p-6 md:p-8 shadow-xl text-white relative overflow-hidden">
+                            {/* Background glow */}
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 blur-[80px] rounded-full"></div>
+
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
+                                    <h3 className="text-lg font-bold">Premium Pro</h3>
+                                </div>
+                                <p className="text-slate-400 mb-6 max-w-md">
+                                    Get complete peace of mind. Sync your grades to the cloud and unlock DepEd Item Analysis exports.
+                                </p>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                                    <div className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700/50">
+                                        <Database className="w-5 h-5 text-cyan-400 mb-2" />
+                                        <h4 className="font-bold text-sm mb-1">Cloud Auto-Sync</h4>
+                                        <p className="text-xs text-slate-400">Never lose a gradebook if your cache clears.</p>
+                                    </div>
+                                    <div className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700/50">
+                                        <FileText className="w-5 h-5 text-fuchsia-400 mb-2" />
+                                        <h4 className="font-bold text-sm mb-1">Item Analysis</h4>
+                                        <p className="text-xs text-slate-400">Export precise competency reports to Excel.</p>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => alert("Premium upgrades are currently in waitlist mode!")}
+                                    className="w-full sm:w-auto px-8 py-3.5 bg-white text-slate-900 hover:bg-slate-100 font-bold rounded-xl active:scale-95 transition-all"
+                                >
+                                    Upgrade for ₱299/year
+                                </button>
+                            </div>
+                        </div>
+                    </>
+                )}
+
+            </div>
+        </div>
+    );
+}

@@ -10,7 +10,7 @@ export default function ScannerPage() {
     const navigate = useNavigate();
 
     // Fetch the specific exam by ID
-    const exam = useLiveQuery(() => db.exams.get(Number(examId)), [examId]);
+    const exam = useLiveQuery(() => db.exams.get(examId), [examId]);
 
     if (exam === undefined) {
         return (

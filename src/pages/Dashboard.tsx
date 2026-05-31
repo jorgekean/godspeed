@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../services/db';
-import { Plus, ChevronRight, FileText, Zap, Printer, X, HelpCircle, Share2, Music2 } from 'lucide-react';
+import { Plus, ChevronRight, FileText, Zap, Printer, X, HelpCircle, Share2, Music2, Edit3 } from 'lucide-react';
 import { OMRTemplateGenerator } from '../components/omr/OMRTemplate';
 
 export default function Dashboard() {
@@ -86,24 +86,41 @@ export default function Dashboard() {
                     )}
 
                     {exams?.map((exam) => (
-                        <button
+                        <div
                             key={exam.id}
-                            onClick={() => navigate(`/scan/${exam.id}`)}
-                            className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/50 dark:border-white/5 active:scale-95 transition-all group shadow-sm"
+                            className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/50 dark:border-white/5 shadow-sm group"
                         >
-                            <div className="flex items-center gap-4">
+                            {/* Left Side: Clickable area to start Scanning */}
+                            <button
+                                onClick={() => navigate(`/scan/${exam.id}`)}
+                                className="flex-1 flex items-center gap-4 text-left active:scale-95 transition-transform"
+                            >
                                 <div className="p-3 bg-violet-50 dark:bg-violet-500/10 rounded-xl">
                                     <FileText className="w-6 h-6 text-violet-600 dark:text-violet-400" />
                                 </div>
-                                <div className="text-left">
+                                <div>
                                     <h3 className="font-semibold text-slate-900 dark:text-white mb-0.5">{exam.title}</h3>
                                     <p className="text-[13px] text-slate-500 dark:text-slate-400">
-                                        {exam.itemCount} Items • {new Date(exam.createdAt).toLocaleDateString()}
+                                        {exam.gradeLevel} • {exam.subject} • {exam.itemCount} Items
                                     </p>
                                 </div>
+                            </button>
+
+                            {/* Right Side: Edit Button and Arrow */}
+                            <div className="flex items-center gap-2 ml-4">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation(); // Prevents the scan button underneath from triggering
+                                        navigate(`/edit/${exam.id}`);
+                                    }}
+                                    className="p-2 text-slate-400 hover:text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-500/10 rounded-xl transition-all"
+                                    title="Edit Exam"
+                                >
+                                    <Edit3 className="w-5 h-5" />
+                                </button>
+                                <ChevronRight className="w-5 h-5 text-slate-300 dark:text-slate-600" />
                             </div>
-                            <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-violet-500 transition-colors" />
-                        </button>
+                        </div>
                     ))}
                 </div>
 
