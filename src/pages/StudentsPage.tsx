@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, DEMO_USER_ID } from '../services/db';
+import { db } from '../services/db';
 import { Plus, Users, Edit3, Trash2, X, ClipboardPaste, AlertTriangle, FolderKanban, Search, UserPlus } from 'lucide-react';
-
-// const DEMO_USER_ID = "local-demo-user-12345";
+import { useAuth } from '../contexts/AuthContext';
 
 export default function StudentsPage() {
+    const { currentUser } = useAuth();
+
     // ==========================================
     // 1. DATA FETCHING & FILTERING
     // ==========================================
@@ -80,7 +81,7 @@ export default function StudentsPage() {
                 sectionId: formSectionId,
                 fullName: fullName.trim(),
                 studentNo: studentNo.trim(),
-                createdBy: DEMO_USER_ID
+                createdBy: currentUser?.email!
             });
         }
         setIsSingleModalOpen(false);
@@ -112,7 +113,7 @@ export default function StudentsPage() {
             sectionId: bulkSectionId,
             fullName: student.fullName,
             studentNo: student.studentNo,
-            createdBy: DEMO_USER_ID
+            createdBy: currentUser?.email!
         }));
 
         await db.students.bulkAdd(newStudents);

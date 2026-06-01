@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, DEMO_USER_ID } from '../services/db';
+import { db } from '../services/db';
 import { Plus, FolderKanban, Edit3, Trash2, X, Users } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 
 const GRADE_LEVELS = ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12"];
 
 export default function SectionsPage() {
+    const { currentUser } = useAuth();
+
     // 1. Reactive Data Fetching
     // Sort by grade level, then by section name for a clean list
     const sections = useLiveQuery(() =>
@@ -56,7 +59,7 @@ export default function SectionsPage() {
                 gradeLevel,
                 sectionName: sectionName.trim(),
                 createdAt: Date.now(),
-                createdBy: DEMO_USER_ID
+                createdBy: currentUser?.email!
             });
         }
         handleCloseModal();

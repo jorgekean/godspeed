@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
-import { db, DEMO_USER_ID } from '../services/db';
-// Temporarily declare DEMO_USER_ID here if it's not exported from db.ts
-
+import { db } from '../services/db';
 import { RapidKeyEditor } from '../components/omr/RapidKeyEditor';
+import { useAuth } from '../contexts/AuthContext';
 
 // Standardized lists for dropdowns to keep data clean
 const GRADE_LEVELS = ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12"];
@@ -12,6 +11,7 @@ const SUBJECTS = ["Math", "Science", "English", "Filipino", "Araling Panlipunan"
 
 export default function CreateExam() {
     const navigate = useNavigate();
+    const { currentUser } = useAuth();
 
     // States
     const [title, setTitle] = useState('');
@@ -30,13 +30,13 @@ export default function CreateExam() {
             title: title.trim(),
             gradeLevel: gradeLevel,
             subject: subject,
-            createdBy: DEMO_USER_ID,
+            createdBy: currentUser?.email!, // Use actual user ID if available
             itemCount: cleanAnswerKey.length,
             answerKey: cleanAnswerKey,
             createdAt: Date.now()
         });
 
-        navigate('/');
+        navigate('/dashboard');
     };
 
     // Ready only if ALL fields are filled
@@ -46,7 +46,7 @@ export default function CreateExam() {
         <div className="min-h-screen flex flex-col bg-slate-100 dark:bg-slate-950 font-sans">
             <header className="sticky top-0 z-40 bg-slate-100/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-white/5 pt-safe-top">
                 <div className="w-full max-w-5xl mx-auto flex items-center justify-between px-4 py-4">
-                    <button onClick={() => navigate('/')} className="p-2 -ml-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors rounded-full">
+                    <button onClick={() => navigate('/dashboard')} className="p-2 -ml-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors rounded-full">
                         <ArrowLeft className="w-6 h-6" />
                     </button>
                     <h1 className="text-lg font-bold text-slate-900 dark:text-white">Create Exam</h1>

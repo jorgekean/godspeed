@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, DEMO_USER_ID } from '../services/db';
+import { db } from '../services/db';
 import { Camera, X, CheckCircle2, Search, UserCheck, Zap, ArrowLeft, Loader2, Users, RefreshCcw, ListChecks } from 'lucide-react';
 import { toast } from 'sonner';
 import { OMRScanner } from '../components/omr/OMRScanner';
@@ -12,6 +12,7 @@ type ScanMode = 'setup' | 'scanning' | 'tagging';
 export default function SmartScannerPage() {
     const { examId } = useParams();
     const navigate = useNavigate();
+    const { currentUser } = useAuth();
 
     // ---------------------------------------------------------
     // 1. STATE & DATA FETCHING
@@ -90,7 +91,7 @@ export default function SmartScannerPage() {
             total: exam.itemCount,
             answers: currentRawAnswers.reduce((acc, ans, i) => ({ ...acc, [i]: ans }), {}),
             scannedAt: Date.now(),
-            createdBy: DEMO_USER_ID
+            createdBy: currentUser?.email!
         });
 
         setScannedStudentIds(prev => new Set(prev).add(studentId));
@@ -121,7 +122,6 @@ export default function SmartScannerPage() {
     // ---------------------------------------------------------
     // RENDER: SETUP MODE (Conditional Guest Logic)
     // ---------------------------------------------------------
-    const { currentUser } = useAuth();
     if (scanMode === 'setup') {
         const isGuest = !currentUser; // Assumes you have currentUser from your AuthContext
 

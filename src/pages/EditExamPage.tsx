@@ -45,7 +45,7 @@ export default function EditExam() {
             // We intentionally don't update createdAt or createdBy
         });
 
-        navigate('/');
+        navigate('/dashboard');
     };
 
     if (exam === undefined) {
@@ -60,7 +60,7 @@ export default function EditExam() {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-white">
                 <p>Exam not found.</p>
-                <button onClick={() => navigate('/')} className="mt-4 text-violet-400 underline">Go Home</button>
+                <button onClick={() => navigate('/dashboard')} className="mt-4 text-violet-400 underline">Go Home</button>
             </div>
         );
     }
