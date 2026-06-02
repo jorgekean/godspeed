@@ -11,7 +11,10 @@ export interface Section {
     gradeLevel: string;  // e.g., "Grade 9"
     sectionName: string; // e.g., "Rizal"
     createdAt: number;
-    createdBy: string;   // <-- NEW: For cloud sync filtering
+    createdBy: string;
+    updatedAt: number;    // NEW: For sync
+    isSynced: boolean;    // NEW: For sync
+    isDeleted: boolean;   // NEW: For sync
 }
 
 // 2. The Student 
@@ -20,7 +23,10 @@ export interface Student {
     sectionId: string;
     fullName: string;
     studentNo?: string;
-    createdBy: string;   // <-- NEW
+    createdBy: string;
+    updatedAt: number;    // NEW: For sync
+    isSynced: boolean;    // NEW: For sync
+    isDeleted: boolean;   // NEW: For sync
 }
 
 // 3. The Exam (Now scalable across multiple sections!)
@@ -32,7 +38,10 @@ export interface Exam {
     itemCount: number;
     answerKey: string;
     createdAt: number;
-    createdBy: string;   // <-- NEW
+    createdBy: string;
+    updatedAt: number;    // NEW: For sync
+    isSynced: boolean;    // NEW: For sync
+    isDeleted: boolean;   // NEW: For sync
 }
 
 // 4. The Grades
@@ -45,7 +54,10 @@ export interface ScanResult {
     total: number;
     answers: Record<string, string>;
     scannedAt: number;
-    createdBy: string;   // <-- NEW
+    createdBy: string;
+    updatedAt: number;    // NEW: For sync
+    isSynced: boolean;    // NEW: For sync
+    isDeleted: boolean;   // NEW: For sync
 }
 
 export class GodspeedDatabase extends Dexie {
@@ -57,12 +69,35 @@ export class GodspeedDatabase extends Dexie {
     constructor() {
         super('GodspeedGraderDBV2');
 
-        // Schema versioning (Bumped to version 4 for the createdBy additions)
-        this.version(2).stores({
-            sections: 'id, gradeLevel, sectionName, [gradeLevel+sectionName], createdAt, createdBy',
-            students: 'id, sectionId, fullName, studentNo, createdBy',
-            exams: 'id, gradeLevel, subject, createdAt, createdBy',
-            scanResults: 'id, examId, studentId, sectionId, [examId+studentId], scannedAt, createdBy'
+        // Schema versioning
+        this.version(3).stores({
+            sections: 'id, gradeLevel, sectionName, [gradeLevel+sectionName], createdAt, createdBy, isSynced, updatedAt',
+            students: 'id, sectionId, fullName, studentNo, createdBy, isSynced, updatedAt',
+            exams: 'id, gradeLevel, subject, createdAt, createdBy, isSynced, updatedAt',
+            scanResults: 'id, examId, studentId, sectionId, [examId+studentId], scannedAt, createdBy, isSynced, updatedAt'
+        });
+
+        // Add hooks for sync fields
+        const addSyncHooks = (table: Table<any>) => {
+            table.hook('creating', (_, obj) => {
+                obj.updatedAt = Date.now();
+                // obj.isSynced = false;
+                obj.isDeleted = obj.isDeleted ?? false;
+            });
+            table.hook('updating', (mods) => {
+                return {
+                    ...mods,
+                    updatedAt: Date.now(),
+                    // isSynced: false 
+                };
+            });
+        };
+
+        this.on('ready', () => {
+            addSyncHooks(this.sections);
+            addSyncHooks(this.students);
+            addSyncHooks(this.exams);
+            addSyncHooks(this.scanResults);
         });
 
         // ==========================================
@@ -79,9 +114,9 @@ export class GodspeedDatabase extends Dexie {
 
             // Insert Sections
             await this.sections.bulkAdd([
-                { id: rizalId, gradeLevel: "Grade 9", sectionName: "Rizal", createdAt: now, createdBy: DEMO_USER_ID },
-                { id: bonifacioId, gradeLevel: "Grade 9", sectionName: "Bonifacio", createdAt: now, createdBy: DEMO_USER_ID },
-                { id: mabiniId, gradeLevel: "Grade 10", sectionName: "Mabini", createdAt: now, createdBy: DEMO_USER_ID }
+                { id: rizalId, gradeLevel: "Grade 9", sectionName: "Rizal", createdAt: now, createdBy: DEMO_USER_ID, updatedAt: now, isSynced: true, isDeleted: false },
+                { id: bonifacioId, gradeLevel: "Grade 9", sectionName: "Bonifacio", createdAt: now, createdBy: DEMO_USER_ID, updatedAt: now, isSynced: true, isDeleted: false },
+                { id: mabiniId, gradeLevel: "Grade 10", sectionName: "Mabini", createdAt: now, createdBy: DEMO_USER_ID, updatedAt: now, isSynced: true, isDeleted: false }
             ]);
 
             // ==========================================
@@ -96,7 +131,10 @@ export class GodspeedDatabase extends Dexie {
                     sectionId: rizalId,
                     fullName: `${lastNames[index]}, ${firstNames[index]}`,
                     studentNo: `2026-${(index + 1).toString().padStart(4, '0')}`, // Generates 2026-0001 to 2026-0030
-                    createdBy: DEMO_USER_ID
+                    createdBy: DEMO_USER_ID,
+                    updatedAt: now,
+                    isSynced: true,
+                    isDeleted: false
                 };
             });
 
@@ -105,12 +143,12 @@ export class GodspeedDatabase extends Dexie {
                 ...rizalStudents,
 
                 // Grade 9 - Bonifacio Students
-                { id: crypto.randomUUID(), sectionId: bonifacioId, fullName: "Magbanua, Teresa", studentNo: "2026-0031", createdBy: DEMO_USER_ID },
-                { id: crypto.randomUUID(), sectionId: bonifacioId, fullName: "Silang, Gabriela", studentNo: "2026-0032", createdBy: DEMO_USER_ID },
+                { id: crypto.randomUUID(), sectionId: bonifacioId, fullName: "Magbanua, Teresa", studentNo: "2026-0031", createdBy: DEMO_USER_ID, updatedAt: now, isSynced: true, isDeleted: false },
+                { id: crypto.randomUUID(), sectionId: bonifacioId, fullName: "Silang, Gabriela", studentNo: "2026-0032", createdBy: DEMO_USER_ID, updatedAt: now, isSynced: true, isDeleted: false },
 
                 // Grade 10 - Mabini Students
-                { id: crypto.randomUUID(), sectionId: mabiniId, fullName: "Luna, Antonio", studentNo: "2026-0033", createdBy: DEMO_USER_ID },
-                { id: crypto.randomUUID(), sectionId: mabiniId, fullName: "Jacinto, Emilio", studentNo: "2026-0034", createdBy: DEMO_USER_ID }
+                { id: crypto.randomUUID(), sectionId: mabiniId, fullName: "Luna, Antonio", studentNo: "2026-0033", createdBy: DEMO_USER_ID, updatedAt: now, isSynced: true, isDeleted: false },
+                { id: crypto.randomUUID(), sectionId: mabiniId, fullName: "Jacinto, Emilio", studentNo: "2026-0034", createdBy: DEMO_USER_ID, updatedAt: now, isSynced: true, isDeleted: false }
             ]);
 
             // Insert Exams
@@ -123,7 +161,10 @@ export class GodspeedDatabase extends Dexie {
                     itemCount: 20,
                     answerKey: "ABCDABCDABCDABCDABCD",
                     createdAt: now,
-                    createdBy: DEMO_USER_ID
+                    createdBy: DEMO_USER_ID,
+                    updatedAt: now,
+                    isSynced: true,
+                    isDeleted: false
                 },
                 {
                     id: crypto.randomUUID(),
@@ -133,7 +174,10 @@ export class GodspeedDatabase extends Dexie {
                     itemCount: 10,
                     answerKey: "AABBCCDDAA",
                     createdAt: now - 86400000, // Yesterday
-                    createdBy: DEMO_USER_ID
+                    createdBy: DEMO_USER_ID,
+                    updatedAt: now - 86400000,
+                    isSynced: true,
+                    isDeleted: false
                 },
                 {
                     id: crypto.randomUUID(),
@@ -143,7 +187,10 @@ export class GodspeedDatabase extends Dexie {
                     itemCount: 50,
                     answerKey: "AAAAAAAAAABBBBBBBBBBCCCCCCCCCDDDDDDDDDAAAAAAAAAAAA",
                     createdAt: now,
-                    createdBy: DEMO_USER_ID
+                    createdBy: DEMO_USER_ID,
+                    updatedAt: now,
+                    isSynced: true,
+                    isDeleted: false
                 }
             ]);
         });

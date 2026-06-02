@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../services/db';
+import { db, DEMO_USER_ID } from '../services/db';
 import { Plus, FolderKanban, Edit3, Trash2, X, Users } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -59,7 +59,10 @@ export default function SectionsPage() {
                 gradeLevel,
                 sectionName: sectionName.trim(),
                 createdAt: Date.now(),
-                createdBy: currentUser?.email!
+                createdBy: currentUser?.email!,
+                updatedAt: Date.now(),
+                isSynced: false,
+                isDeleted: false
             });
         }
         handleCloseModal();

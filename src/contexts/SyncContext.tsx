@@ -1,0 +1,102 @@
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import { syncService } from '../services/syncEngine';
+// 1. Swap Firebase for your custom Auth Context
+import { useAuth } from '../contexts/AuthContext';
+
+type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline';
+
+interface SyncContextType {
+    status: SyncStatus;
+    lastSyncTimestamp: number;
+    triggerSync: () => Promise<void>;
+    error: string | null;
+}
+
+const SyncContext = createContext<SyncContextType | undefined>(undefined);
+
+export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { currentUser, token } = useAuth(); // Use your custom auth state
+    const [status, setStatus] = useState<SyncStatus>('idle');
+    const [lastSyncTimestamp, setLastSyncTimestamp] = useState<number>(syncService.getLastSyncTimestamp());
+    const [error, setError] = useState<string | null>(null);
+
+    // 2. Use a ref to track sync progress without triggering re-renders
+    const isSyncingRef = useRef(false);
+
+    const triggerSync = useCallback(async () => {
+        if (!navigator.onLine) {
+            setStatus('offline');
+            return;
+        }
+
+        // 2. Prevent syncing if there is no token/user logged in
+        if (!token || isSyncingRef.current) return;
+
+        isSyncingRef.current = true;
+        setStatus('syncing');
+        setError(null);
+
+        try {
+            // 3. Pass the token to your sync service
+            await syncService.syncData(token);
+
+            const newTimestamp = syncService.getLastSyncTimestamp();
+            setLastSyncTimestamp(newTimestamp);
+            setStatus('idle');
+        } catch (err: any) {
+            console.error('Sync error:', err);
+            setError(err.message || 'Sync failed');
+            setStatus('error');
+        } finally {
+            isSyncingRef.current = false;
+        }
+    }, [token]);
+
+    // Handle online/offline status
+    useEffect(() => {
+        const handleOnline = () => setStatus('idle');
+        const handleOffline = () => setStatus('offline');
+
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+
+        if (!navigator.onLine) setStatus('offline');
+
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, []);
+
+    // Auto-sync on auth or every 5 minutes
+    useEffect(() => {
+        // 4. Trigger an initial sync if the user logs in
+        if (currentUser) {
+            triggerSync();
+        }
+
+        const interval = setInterval(() => {
+            if (currentUser) {
+                triggerSync();
+            }
+        }, 5 * 60 * 1000);
+
+        return () => {
+            clearInterval(interval);
+        };
+    }, [currentUser, triggerSync]); // Safely depends on currentUser now
+
+    return (
+        <SyncContext.Provider value={{ status, lastSyncTimestamp, triggerSync, error }}>
+            {children}
+        </SyncContext.Provider>
+    );
+};
+
+export const useSync = () => {
+    const context = useContext(SyncContext);
+    if (context === undefined) {
+        throw new Error('useSync must be used within a SyncProvider');
+    }
+    return context;
+};

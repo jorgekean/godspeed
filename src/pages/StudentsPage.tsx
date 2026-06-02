@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../services/db';
+import { db, DEMO_USER_ID } from '../services/db';
 import { Plus, Users, Edit3, Trash2, X, ClipboardPaste, AlertTriangle, FolderKanban, Search, UserPlus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -81,7 +81,10 @@ export default function StudentsPage() {
                 sectionId: formSectionId,
                 fullName: fullName.trim(),
                 studentNo: studentNo.trim(),
-                createdBy: currentUser?.email!
+                createdBy: currentUser?.email!,
+                updatedAt: Date.now(),
+                isSynced: false,
+                isDeleted: false
             });
         }
         setIsSingleModalOpen(false);
@@ -113,7 +116,10 @@ export default function StudentsPage() {
             sectionId: bulkSectionId,
             fullName: student.fullName,
             studentNo: student.studentNo,
-            createdBy: currentUser?.email!
+            createdBy: currentUser?.email!,
+            updatedAt: Date.now(),
+            isSynced: false,
+            isDeleted: false
         }));
 
         await db.students.bulkAdd(newStudents);

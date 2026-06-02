@@ -3,12 +3,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { UserCircle, ShieldCheck, LogOut, Star, Lock, Database, FileText, Loader2, Mail } from 'lucide-react';
 
-// FIREBASE IMPORTS
-import { auth } from '../services/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-
 export default function AccountPage() {
-    const { currentUser, logout } = useAuth();
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+
+    // 1. Destructure login from our custom context
+    const { currentUser, login, logout } = useAuth();
     const navigate = useNavigate();
 
     // Auth Form States (Only used if user is NOT logged in)
@@ -24,26 +23,56 @@ export default function AccountPage() {
         setIsLoading(true);
 
         try {
-            if (isLoginMode) {
-                await signInWithEmailAndPassword(auth, email, password);
-            } else {
-                await createUserWithEmailAndPassword(auth, email, password);
+            // 2. Point to our new Fastify endpoints
+            const endpoint = isLoginMode ? '/auth/login' : '/auth/register';
+
+            const response = await fetch(API_BASE_URL + endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password, role: 'user' })
+            });
+
+            const data = await response.json();
+
+            // Handle backend errors (e.g., "Email already registered", "Invalid email or password")
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || 'Authentication failed');
             }
-            // Success! The AuthContext will automatically detect the user and re-render the page.
+
+            if (isLoginMode) {
+                // 3. Successful Login: Pass token and user to Context
+                login(data.token, data.user);
+            } else {
+                // 4. Successful Registration: Auto-login to generate the JWT token
+                const loginResponse = await fetch(API_BASE_URL + '/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const loginData = await loginResponse.json();
+
+                if (loginResponse.ok && loginData.success) {
+                    login(loginData.token, loginData.user);
+                } else {
+                    // Fallback in case auto-login fails for some reason
+                    setIsLoginMode(true);
+                    setAuthError('Account created successfully! Please sign in.');
+                }
+            }
         } catch (error: any) {
             console.error("Auth error:", error);
-            if (error.code === 'auth/email-already-in-use') setAuthError('This email is already registered.');
-            else if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') setAuthError('Invalid email or password.');
-            else if (error.code === 'auth/weak-password') setAuthError('Password should be at least 6 characters.');
-            else setAuthError('Authentication failed. Please try again.');
+            // Display the specific message returned from our Fastify backend
+            setAuthError(error.message || 'An unexpected error occurred. Please try again.');
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleLogout = async () => {
-        await logout();
-        navigate('/'); // Kick to landing page on explicit logout
+    const handleLogout = () => {
+        // Our custom logout is synchronous now, no need to await
+        logout();
+        navigate('/');
     };
 
     return (
@@ -157,7 +186,7 @@ export default function AccountPage() {
                                         {currentUser.email}
                                     </h2>
                                     <p className="text-slate-500 font-medium flex items-center justify-center md:justify-start gap-2">
-                                        <ShieldCheck className="w-4 h-4 text-emerald-500" /> Free Account (Local Storage)
+                                        <ShieldCheck className="w-4 h-4 text-emerald-500" /> Free Account
                                     </p>
                                 </div>
 

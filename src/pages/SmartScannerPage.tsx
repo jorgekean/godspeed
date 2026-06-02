@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../services/db';
+import { db, DEMO_USER_ID } from '../services/db';
 import { Camera, X, CheckCircle2, Search, UserCheck, Zap, ArrowLeft, Loader2, Users, RefreshCcw, ListChecks } from 'lucide-react';
 import { toast } from 'sonner';
 import { OMRScanner } from '../components/omr/OMRScanner';
@@ -91,7 +91,10 @@ export default function SmartScannerPage() {
             total: exam.itemCount,
             answers: currentRawAnswers.reduce((acc, ans, i) => ({ ...acc, [i]: ans }), {}),
             scannedAt: Date.now(),
-            createdBy: currentUser?.email!
+            createdBy: currentUser?.email!,
+            updatedAt: Date.now(),
+            isSynced: false,
+            isDeleted: false
         });
 
         setScannedStudentIds(prev => new Set(prev).add(studentId));

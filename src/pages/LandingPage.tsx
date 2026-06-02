@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Zap, Camera, Printer, ShieldCheck, ArrowRight, BarChart3, CheckCircle, Check, Star, X, Lock, Loader2 } from 'lucide-react';
 
-// FIREBASE IMPORTS
-import { auth } from '../services/firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+// 1. Import your custom AuthContext instead of Firebase
+import { useAuth } from '../contexts/AuthContext';
 
 export default function LandingPage() {
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+
     const navigate = useNavigate();
+    // 2. Destructure the login method
+    const { login } = useAuth();
 
     // Auth Modal States
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -25,12 +28,43 @@ export default function LandingPage() {
         setIsLoading(true);
 
         try {
+            // 3. Point to our new Fastify endpoints
+            const endpoint = isLoginMode ? '/auth/login' : '/auth/register';
+
+            const response = await fetch(API_BASE_URL + endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password, role: 'user' })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || 'Authentication failed');
+            }
+
             if (isLoginMode) {
-                // Sign In
-                await signInWithEmailAndPassword(auth, email, password);
+                // Sign In: Update context state
+                login(data.token, data.user);
             } else {
-                // Sign Up
-                await createUserWithEmailAndPassword(auth, email, password);
+                // Sign Up: Auto-login to fetch the JWT token
+                const loginResponse = await fetch(API_BASE_URL + '/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const loginData = await loginResponse.json();
+
+                if (loginResponse.ok && loginData.success) {
+                    login(loginData.token, loginData.user);
+                } else {
+                    // Fallback if auto-login fails
+                    setIsLoginMode(true);
+                    setAuthError('Account created successfully! Please sign in.');
+                    setIsLoading(false);
+                    return; // Stop execution so we don't navigate yet
+                }
             }
 
             // Success! Close modal and go to dashboard
@@ -39,11 +73,8 @@ export default function LandingPage() {
 
         } catch (error: any) {
             console.error("Auth error:", error);
-            // Make Firebase errors more readable for the user
-            if (error.code === 'auth/email-already-in-use') setAuthError('This email is already registered.');
-            else if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') setAuthError('Invalid email or password.');
-            else if (error.code === 'auth/weak-password') setAuthError('Password should be at least 6 characters.');
-            else setAuthError('Authentication failed. Please try again.');
+            // Display the specific error message from the backend
+            setAuthError(error.message || 'An unexpected error occurred. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -81,7 +112,7 @@ export default function LandingPage() {
                 </div>
             </nav>
 
-            {/* HERO SECTION (Unchanged) */}
+            {/* HERO SECTION */}
             <section className="relative pt-20 pb-32 px-6 max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-16">
                 <div className="flex-1 text-center lg:text-left z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
                     <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-slate-900 leading-[1.1] mb-6">

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
-import { db } from '../services/db';
+import { db, DEMO_USER_ID } from '../services/db';
 import { RapidKeyEditor } from '../components/omr/RapidKeyEditor';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -30,10 +30,13 @@ export default function CreateExam() {
             title: title.trim(),
             gradeLevel: gradeLevel,
             subject: subject,
-            createdBy: currentUser?.email!, // Use actual user ID if available
+            createdBy: currentUser?.email || DEMO_USER_ID, // Use actual user ID if available
             itemCount: cleanAnswerKey.length,
             answerKey: cleanAnswerKey,
-            createdAt: Date.now()
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            isSynced: false,
+            isDeleted: false
         });
 
         navigate('/dashboard');
