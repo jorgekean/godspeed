@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { db, type Section, type Student, type Exam, type ScanResult, type Period } from './db';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://godspeedgrader-api.com/api';
 
 export interface SyncBatch {
     sections: Section[];
