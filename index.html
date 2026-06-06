@@ -4,44 +4,70 @@
 <head>
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="/app-logo.png?v=4" />
+  <link rel="canonical" href="https://godspeedgrader.com/" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Godspeed Grader</title>
+
+  <title>Godspeed Grader | Offline Mobile OMR Scanner</title>
+
   <meta name="description"
-    content="The automated SF9, SF10 and E-Class Record dashboard built specifically for DepEd school teachers." />
+    content="Godspeed Grader is an offline-first OMR scanner for teachers. Grade bubble sheet exams instantly using your phone’s camera. 100% private, no cloud required." />
+  <meta name="keywords"
+    content="OMR scanner, bubble sheet grader, offline exam grader, mobile grading app, teacher tools, automated exam checking, privacy-first scanner, Nabix" />
   <meta name="author" content="Jorge Kean / Nabix" />
 
-  <!-- 2. PWA & MOBILE NATIVE FEEL -->
-  <!-- Changes the browser address bar color to match your app's primary color (e.g., Tailwind blue-600) -->
+  <!-- PWA & MOBILE NATIVE FEEL -->
   <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
-
-  <!-- Tells iOS devices to treat this as a standalone native app if saved to the homescreen -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="GRID" />
+  <meta name="apple-mobile-web-app-title" content="Godspeed" />
 
-  <!-- 3. SOCIAL MEDIA PREVIEWS (Open Graph) -->
-  <!-- When a teacher pastes your link in Messenger or Viber, this builds the preview card -->
-  <meta property="og:title" content="Godspeed Grader" />
-  <meta property="og:description" content="Instantly grade exams with Godspeed Grader." />
+  <!-- OPEN GRAPH (Facebook, Messenger, Viber, WhatsApp) -->
+  <meta property="og:title" content="Godspeed Grader | Offline OMR Scanner" />
+  <meta property="og:description"
+    content="Grade exams instantly with your phone. Accurate, fast, and completely offline." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://godspeedgrader.com/" />
   <meta property="og:image" content="https://godspeedgrader.com/social-preview.png" />
-  <!-- Create a nice 1200x630px promo image -->
   <meta property="og:site_name" content="Godspeed Grader" />
 
-  <!-- 4. CACHE CONTROL FOR OFFLINE-FIRST -->
-  <!-- Ensures the browser always checks for your latest React build, preventing teachers from getting stuck on an old version -->
+  <!-- TWITTER / X -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Godspeed Grader" />
+  <meta name="twitter:description"
+    content="The offline-first OMR solution for teachers. Grade bubble sheets securely with your phone." />
+  <meta name="twitter:image" content="https://godspeedgrader.com/social-preview.png" />
+
+  <!-- STRUCTURED DATA -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Godspeed Grader",
+    "url": "https://godspeedgrader.com/",
+    "description": "An offline-first OMR tool that uses mobile cameras to grade bubble sheet exams instantly with complete data privacy.",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "All",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "PHP"
+    }
+  }
+  </script>
+
+  <!-- CACHE CONTROL -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <script type="module" crossorigin src="/assets/index-B2p2-I1L.js"></script>
+  <script type="module" crossorigin src="/assets/index-ycZOpDp6.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-Dz8Ces71.css">
 <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
 
 <body>
   <div id="root"></div>
-  <script async src="https://docs.opencv.org/4.8.0/opencv.js" type="text/javascript"></script>
+  <!-- Remember to host opencv.js locally for true offline functionality -->
+  <script async src="opencv.js" type="text/javascript"></script>
 </body>
 
 </html>
