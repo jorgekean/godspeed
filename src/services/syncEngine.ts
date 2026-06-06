@@ -1,6 +1,5 @@
 import axios from 'axios';
-import { db, type Section, type Student, type Exam, type ScanResult } from './db';
-// REMOVED: import { auth } from './firebase';
+import { db, type Section, type Student, type Exam, type ScanResult, type Period } from './db';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -9,6 +8,7 @@ export interface SyncBatch {
     students: Student[];
     exams: Exam[];
     scanResults: ScanResult[];
+    periods: Period[];
 }
 
 export interface SyncResponse {
@@ -16,6 +16,7 @@ export interface SyncResponse {
     students: Student[];
     exams: Exam[];
     scanResults: ScanResult[];
+    periods: Period[];
     serverTimestamp: number;
 }
 
@@ -31,7 +32,6 @@ export const syncService = {
         localStorage.setItem(LAST_SYNC_KEY, timestamp.toString());
     },
 
-    // 1. Pass token directly into pushChanges
     async pushChanges(token: string): Promise<void> {
         const headers = { Authorization: `Bearer ${token}` };
 
@@ -40,12 +40,14 @@ export const syncService = {
         const unsyncedStudents = await db.students.filter(s => s.isSynced === false).toArray();
         const unsyncedExams = await db.exams.filter(e => e.isSynced === false).toArray();
         const unsyncedScanResults = await db.scanResults.filter(sr => sr.isSynced === false).toArray();
+        const unsyncedPeriods = await db.periods.filter(p => p.isSynced === false).toArray();
 
         if (
             unsyncedSections.length === 0 &&
             unsyncedStudents.length === 0 &&
             unsyncedExams.length === 0 &&
-            unsyncedScanResults.length === 0
+            unsyncedScanResults.length === 0 &&
+            unsyncedPeriods.length === 0
         ) {
             return;
         }
@@ -54,10 +56,10 @@ export const syncService = {
             sections: unsyncedSections,
             students: unsyncedStudents,
             exams: unsyncedExams,
-            scanResults: unsyncedScanResults
+            scanResults: unsyncedScanResults,
+            periods: unsyncedPeriods
         };
 
-        // Attach headers to axios request
         await axios.post(`${API_BASE_URL}/sync`, batch, { headers });
 
         // Mark as synced locally
@@ -65,68 +67,54 @@ export const syncService = {
             sections: unsyncedSections.map(s => s.id),
             students: unsyncedStudents.map(s => s.id),
             exams: unsyncedExams.map(e => e.id),
-            scanResults: unsyncedScanResults.map(sr => sr.id)
+            scanResults: unsyncedScanResults.map(sr => sr.id),
+            periods: unsyncedPeriods.map(p => p.id)
         };
 
-        await db.transaction('rw', db.sections, db.students, db.exams, db.scanResults, async () => {
-
-            // Explicitly update each record by ID. 
-            // This bypasses any .modify() bugs with GUIDs/Booleans.            
+        await db.transaction('rw', [db.sections, db.students, db.exams, db.scanResults, db.periods], async () => {
             for (const id of ids.sections) {
-                const updated = await db.sections.update(id, { isSynced: true });
-                if (!updated) console.warn(`Failed to update section: ${id}`);
+                await db.sections.update(id, { isSynced: true });
             }
 
             for (const id of ids.students) {
-                const updated = await db.students.update(id, { isSynced: true });
-                if (!updated) console.warn(`Failed to update student: ${id}`);
+                await db.students.update(id, { isSynced: true });
             }
 
             for (const id of ids.exams) {
-                const updated = await db.exams.update(id, { isSynced: true });
-                console.log(updated);
-                if (!updated) console.warn(`Failed to update exam: ${id}`);
+                await db.exams.update(id, { isSynced: true });
             }
 
             for (const id of ids.scanResults) {
-                const updated = await db.scanResults.update(id, { isSynced: true });
-                if (!updated) console.warn(`Failed to update scanResult: ${id}`);
+                await db.scanResults.update(id, { isSynced: true });
             }
 
-            console.log(`[Sync Push] Successfully marked records as synced.`);
+            for (const id of ids.periods) {
+                await db.periods.update(id, { isSynced: true });
+            }
         });
     },
 
-    // 2. Pass token directly into pullChanges
     async pullChanges(token: string): Promise<number> {
         const headers = { Authorization: `Bearer ${token}` };
         const since = this.getLastSyncTimestamp();
 
         const response = await axios.get(`${API_BASE_URL}/sync?since=${since}`, { headers });
-
-        // 1. TEMPORARY DEBUG: Look at this in your console to see the exact shape!
-        console.log("Raw Server Response:", response.data);
-
-        // 2. Safely extract data. 
-        // If Fastify wraps data in `{ success: true, data: { ... } }`, use response.data.data
-        // Otherwise, fallback to response.data
         const payload = response.data.data || response.data;
 
-        // 3. Guarantee these are arrays using fallback values
-        const sections = payload.sections || [];
-        const students = payload.students || [];
-        const exams = payload.exams || [];
-        const scanResults = payload.scanResults || [];
-        const serverTimestamp = payload.serverTimestamp || Date.now();
+        const sections: Section[] = payload.sections || [];
+        const students: Student[] = payload.students || [];
+        const exams: Exam[] = payload.exams || [];
+        const scanResults: ScanResult[] = payload.scanResults || [];
+        const periods: Period[] = payload.periods || [];
+        const serverTimestamp: number = payload.serverTimestamp || Date.now();
 
-        await db.transaction('rw', db.sections, db.students, db.exams, db.scanResults, async () => {
-            // 4. Make the merge function bulletproof
+        await db.transaction('rw', [db.sections, db.students, db.exams, db.scanResults, db.periods], async () => {
             const merge = async (table: any, items: any[]) => {
-                // SAFETY CHECK: If items is still somehow not an array, exit early
                 if (!items || !Array.isArray(items)) return;
 
                 for (const item of items) {
                     const local = await table.get(item.id);
+                    // Only update if it doesn't exist locally or if it's already synced (to avoid overwriting unsynced local changes)
                     if (!local || local.isSynced) {
                         await table.put({ ...item, isSynced: true });
                     }
@@ -137,12 +125,12 @@ export const syncService = {
             await merge(db.students, students);
             await merge(db.exams, exams);
             await merge(db.scanResults, scanResults);
+            await merge(db.periods, periods);
         });
 
         return serverTimestamp;
     },
 
-    // 3. syncData now requires the token, and passes it down
     async syncData(token: string): Promise<void> {
         try {
             await this.pushChanges(token);

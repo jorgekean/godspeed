@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
 import { db, DEMO_USER_ID } from '../services/db';
 import { RapidKeyEditor } from '../components/omr/RapidKeyEditor';
 import { useAuth } from '../contexts/AuthContext';
+import { useLiveQuery } from 'dexie-react-hooks';
 
 // Standardized lists for dropdowns to keep data clean
 const GRADE_LEVELS = ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12"];
@@ -12,12 +13,46 @@ const SUBJECTS = ["Math", "Science", "English", "Filipino", "Araling Panlipunan"
 export default function CreateExam() {
     const navigate = useNavigate();
     const { currentUser } = useAuth();
+    
+    const periods = useLiveQuery(() => db.periods.filter(p => !p.isDeleted).sortBy('startDate'));
 
     // States
     const [title, setTitle] = useState('');
-    const [gradeLevel, setGradeLevel] = useState(''); // NEW
-    const [subject, setSubject] = useState('');       // NEW
+    const [gradeLevel, setGradeLevel] = useState(''); 
+    const [subject, setSubject] = useState('');       
+    const [periodId, setPeriodId] = useState('');
     const [answerKey, setAnswerKey] = useState('');
+
+    // Helper: Robust selection logic (shared with Dashboard)
+    const bestPeriodId = useMemo(() => {
+        if (!periods || periods.length === 0) return '';
+        const now = Date.now();
+
+        // 1. Try to find the ongoing one
+        const ongoing = periods.find(p => now >= p.startDate && now <= p.endDate);
+        if (ongoing) return ongoing.id;
+
+        // 2. Try to find the NEXT closest upcoming period
+        const upcoming = [...periods]
+            .filter(p => p.startDate > now)
+            .sort((a, b) => a.startDate - b.startDate);
+        if (upcoming.length > 0) return upcoming[0].id;
+
+        // 3. Fallback to the most RECENT past period
+        const past = [...periods]
+            .filter(p => p.endDate < now)
+            .sort((a, b) => b.endDate - a.endDate);
+        if (past.length > 0) return past[0].id;
+
+        return periods[0].id;
+    }, [periods]);
+
+    // Default to best period based on date logic
+    useEffect(() => {
+        if (periods && periods.length > 0 && !periodId) {
+            setPeriodId(bestPeriodId);
+        }
+    }, [periods, bestPeriodId, periodId]);
 
     const handleSave = async () => {
         if (!isReady) return;
@@ -28,9 +63,10 @@ export default function CreateExam() {
         await db.exams.add({
             id: crypto.randomUUID(),
             title: title.trim(),
+            periodId: periodId,
             gradeLevel: gradeLevel,
             subject: subject,
-            createdBy: currentUser?.email || DEMO_USER_ID, // Use actual user ID if available
+            createdBy: currentUser?.email || DEMO_USER_ID, 
             itemCount: cleanAnswerKey.length,
             answerKey: cleanAnswerKey,
             createdAt: Date.now(),
@@ -43,7 +79,7 @@ export default function CreateExam() {
     };
 
     // Ready only if ALL fields are filled
-    const isReady = title.trim().length > 0 && gradeLevel !== '' && subject !== '' && answerKey.length > 0;
+    const isReady = title.trim().length > 0 && gradeLevel !== '' && subject !== '' && periodId !== '' && answerKey.length > 0;
 
     return (
         <div className="min-h-screen flex flex-col bg-slate-100 dark:bg-slate-950 font-sans">
@@ -72,7 +108,7 @@ export default function CreateExam() {
                         />
                     </div>
 
-                    {/* NEW: Grid for Grade Level and Subject Dropdowns */}
+                    {/* Grid for Grade Level and Subject Dropdowns */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Grade Level</label>
@@ -101,6 +137,30 @@ export default function CreateExam() {
                                 ))}
                             </select>
                         </div>
+                    </div>
+
+                    {/* Period Selection */}
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Grading Period</label>
+                        <select
+                            value={periodId}
+                            onChange={(e) => setPeriodId(e.target.value)}
+                            className="w-full bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all shadow-sm appearance-none"
+                        >
+                            <option value="" disabled>Select Period</option>
+                            {periods?.map(period => {
+                                const now = Date.now();
+                                const isCurrent = now >= period.startDate && now <= period.endDate;
+                                return (
+                                    <option key={period.id} value={period.id}>
+                                        {period.name} {isCurrent ? '(Ongoing)' : ''}
+                                    </option>
+                                );
+                            })}
+                        </select>
+                        {periods?.length === 0 && (
+                            <p className="text-[10px] text-red-500 font-bold ml-1 uppercase">No periods found. Please create one in Manage &gt; Periods.</p>
+                        )}
                     </div>
                 </div>
 

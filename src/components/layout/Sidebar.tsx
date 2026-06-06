@@ -16,8 +16,12 @@ import {
     Sparkles,
     X,
     Printer,
-    HelpCircle
+    HelpCircle,
+    RefreshCw,
+    AlertCircle,
+    WifiOff
 } from 'lucide-react';
+import { useSync } from '../../contexts/SyncContext';
 
 // 1. Explicitly define our props so TypeScript is happy
 interface SidebarProps {
@@ -68,6 +72,41 @@ const navGroups = [
 ];
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
+    const { status, triggerSync, lastSyncTimestamp } = useSync();
+
+    const getSyncStatusContent = () => {
+        switch (status) {
+            case 'syncing':
+                return {
+                    icon: <RefreshCw className="w-5 h-5 mx-auto mb-2 text-primary-500 animate-spin" />,
+                    text: 'Syncing data...',
+                    subtext: 'Please wait'
+                };
+            case 'error':
+                return {
+                    icon: <AlertCircle className="w-5 h-5 mx-auto mb-2 text-red-500" />,
+                    text: 'Sync Error',
+                    subtext: 'Click to retry'
+                };
+            case 'offline':
+                return {
+                    icon: <WifiOff className="w-5 h-5 mx-auto mb-2 text-gray-400" />,
+                    text: 'Offline',
+                    subtext: 'Check connection'
+                };
+            default:
+                return {
+                    icon: <Sparkles className="w-5 h-5 mx-auto mb-2 text-primary-500" />,
+                    text: 'GRID is up to date',
+                    subtext: lastSyncTimestamp > 0
+                        ? `Last sync: ${new Date(lastSyncTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                        : 'Never synced'
+                };
+        }
+    };
+
+    const syncContent = getSyncStatusContent();
+
     return (
         <aside className={`
       fixed inset-y-4 left-4 z-50 w-64 bg-[var(--bg-surface)] rounded-2xl shadow-sm ring-1 ring-gray-200/50 dark:ring-gray-800 flex flex-col transform transition-transform duration-300 ease-in-out
@@ -127,10 +166,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </nav>
 
             {/* Upgrade / Status Card */}
-            <div className="p-4 m-4 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-800/20 ring-1 ring-gray-200/50 dark:ring-gray-700/50 text-center">
-                <Sparkles className="w-5 h-5 mx-auto mb-2 text-primary-500" />
-                <p className="text-xs font-medium text-gray-600 dark:text-gray-300">GRID is up to date</p>
-                <p className="text-[10px] text-gray-400 mt-1">Version 1.0.0</p>
+            <div
+                onClick={() => status !== 'syncing' && triggerSync()}
+                className={`p-4 m-4 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-800/20 ring-1 ring-gray-200/50 dark:ring-gray-700/50 text-center cursor-pointer hover:ring-primary-500/30 transition-all group ${status === 'syncing' ? 'opacity-80 cursor-wait' : ''}`}
+            >
+                <div className="group-hover:scale-110 transition-transform duration-200">
+                    {syncContent.icon}
+                </div>
+                <p className="text-xs font-medium text-gray-600 dark:text-gray-300">{syncContent.text}</p>
+                <p className="text-[10px] text-gray-400 mt-1">{syncContent.subtext}</p>
             </div>
         </aside>
     );

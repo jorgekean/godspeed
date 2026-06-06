@@ -10,7 +10,7 @@ export default function StudentsPage() {
     // ==========================================
     // 1. DATA FETCHING & FILTERING
     // ==========================================
-    const sections = useLiveQuery(() => db.sections.orderBy('gradeLevel').toArray());
+    const sections = useLiveQuery(() => db.sections.filter(s => !s.isDeleted).sortBy('gradeLevel'));
 
     const [selectedFilterSection, setSelectedFilterSection] = useState<string>('');
     const [searchQuery, setSearchQuery] = useState(''); // NEW: Search state
@@ -134,7 +134,7 @@ export default function StudentsPage() {
     // ==========================================
     const handleDelete = async (id: string, name: string) => {
         if (window.confirm(`Are you sure you want to remove ${name}?`)) {
-            await db.students.delete(id);
+            await db.students.update(id, { isDeleted: true });
         }
     };
 
@@ -151,12 +151,8 @@ export default function StudentsPage() {
     return (
         <div className="min-h-full flex flex-col p-4 md:p-8 animate-in fade-in duration-300">
 
-            {/* Header & Controls */}
-            <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Students</h1>
-                    <p className="text-sm font-medium text-slate-500 mt-1">Manage your class rosters.</p>
-                </div>
+            {/* Action Row */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4 mb-6">
                 <div className="flex gap-2">
                     <button
                         onClick={() => {
@@ -176,7 +172,7 @@ export default function StudentsPage() {
                         <span className="text-sm">Add</span>
                     </button>
                 </div>
-            </header>
+            </div>
 
             {/* Filter & Search Bar Row */}
             <div className="flex flex-col sm:flex-row gap-3 mb-6">

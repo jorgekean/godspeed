@@ -71,7 +71,7 @@ export default function SectionsPage() {
     const handleDelete = async (id: string, name: string) => {
         // Simple confirmation before deleting
         if (window.confirm(`Are you sure you want to delete the section "${name}"? This will not delete the students, but they will lose their section assignment.`)) {
-            await db.sections.delete(id);
+            await db.sections.update(id, { isDeleted: true });
         }
     };
 
@@ -80,16 +80,8 @@ export default function SectionsPage() {
     return (
         <div className="min-h-full flex flex-col p-4 md:p-8 animate-in fade-in duration-300">
 
-            {/* Header */}
-            <header className="flex items-center justify-between mb-8">
-                <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-                        Sections
-                    </h1>
-                    <p className="text-sm font-medium text-slate-500 mt-1">
-                        Manage your classes and advisory groups.
-                    </p>
-                </div>
+            {/* Action Row */}
+            <div className="flex justify-end mb-6">
                 <button
                     onClick={() => handleOpenModal()}
                     className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-xl font-medium shadow-lg shadow-violet-500/20 active:scale-95 transition-all"
@@ -97,7 +89,7 @@ export default function SectionsPage() {
                     <Plus className="w-5 h-5" />
                     <span className="hidden sm:inline">Add Section</span>
                 </button>
-            </header>
+            </div>
 
             {/* Empty State */}
             {sections?.length === 0 && (

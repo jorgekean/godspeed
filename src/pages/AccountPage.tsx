@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useSync } from '../contexts/SyncContext';
 import { useNavigate } from 'react-router-dom';
-import { UserCircle, ShieldCheck, LogOut, Star, Lock, Database, FileText, Loader2, Mail } from 'lucide-react';
+import { UserCircle, ShieldCheck, LogOut, Star, Lock, Database, FileText, Loader2, Mail, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function AccountPage() {
     const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
     // 1. Destructure login from our custom context
     const { currentUser, login, logout } = useAuth();
+    const { status, triggerSync, lastSyncTimestamp, error: syncError } = useSync();
     const navigate = useNavigate();
 
     // Auth Form States (Only used if user is NOT logged in)
+// ... (rest of the file remains same until the return section)
     const [isLoginMode, setIsLoginMode] = useState(false); // Default to Sign Up
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -30,13 +33,19 @@ export default function AccountPage() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password, role: 'user' })
+            }).catch(() => {
+                throw new Error('Could not connect to the server. Please check your internet connection and try again.');
             });
 
-            const data = await response.json();
+            const data = await response.json().catch(() => ({}));
 
             // Handle backend errors (e.g., "Email already registered", "Invalid email or password")
             if (!response.ok || !data.success) {
-                throw new Error(data.message || 'Authentication failed');
+                // If it looks like a Prisma/DB error, hide the technical details
+                if (data.message?.includes('prisma') || data.message?.includes('database') || data.message?.includes('connect')) {
+                    throw new Error('Our database is currently unavailable. Please try again in a few minutes.');
+                }
+                throw new Error(data.message || 'Authentication failed. Please check your credentials.');
             }
 
             if (isLoginMode) {
@@ -77,15 +86,6 @@ export default function AccountPage() {
 
     return (
         <div className="min-h-full flex flex-col p-4 md:p-8 animate-in fade-in duration-300">
-            <header className="mb-8">
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-                    {currentUser ? 'Account' : 'Unlock GodSpeed'}
-                </h1>
-                <p className="text-sm font-medium text-slate-500 mt-1">
-                    {currentUser ? 'Manage your profile and subscription tier.' : 'Create a free account to manage sections and students.'}
-                </p>
-            </header>
-
             <div className="max-w-3xl space-y-6">
 
                 {/* ========================================== */}
@@ -197,6 +197,59 @@ export default function AccountPage() {
                                     <LogOut className="w-4 h-4" /> Sign Out
                                 </button>
                             </div>
+                        </div>
+
+                        {/* CLOUD SYNC CARD */}
+                        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/50 dark:border-white/5 p-6 md:p-8 shadow-sm">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                <div className="flex items-start gap-4">
+                                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-500/10 rounded-2xl flex items-center justify-center shrink-0">
+                                        <Database className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Cloud Data Sync</h3>
+                                        <p className="text-sm text-slate-500 font-medium max-w-sm">
+                                            Pull latest data from the cloud or push your local changes manually.
+                                        </p>
+                                        <div className="flex items-center gap-3 mt-3">
+                                            <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                                <RefreshCw className={`w-3.5 h-3.5 ${status === 'syncing' ? 'animate-spin' : ''}`} />
+                                                {status === 'syncing' ? 'Syncing...' : (lastSyncTimestamp > 0 ? `Last: ${new Date(lastSyncTimestamp).toLocaleString()}` : 'Never synced')}
+                                            </span>
+                                            {status === 'idle' && (
+                                                <span className="flex items-center gap-1 text-xs font-bold text-emerald-500 uppercase tracking-wider">
+                                                    <CheckCircle2 className="w-3.5 h-3.5" /> Ready
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col gap-2">
+                                    <button
+                                        onClick={() => triggerSync()}
+                                        disabled={status === 'syncing' || !navigator.onLine}
+                                        className="w-full md:w-auto px-6 py-3.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 font-bold rounded-xl active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {status === 'syncing' ? (
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                        ) : (
+                                            <RefreshCw className="w-5 h-5" />
+                                        )}
+                                        Sync Now
+                                    </button>
+                                    {!navigator.onLine && (
+                                        <p className="text-[10px] text-center text-red-500 font-bold uppercase tracking-tighter">Check Internet Connection</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {syncError && (
+                                <div className="mt-4 p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 text-xs font-bold rounded-xl flex items-center gap-2">
+                                    <AlertCircle className="w-4 h-4" />
+                                    {syncError}
+                                </div>
+                            )}
                         </div>
 
                         {/* SUBSCRIPTION TIER CARD */}

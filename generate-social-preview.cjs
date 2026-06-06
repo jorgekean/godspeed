@@ -47,7 +47,7 @@ ctx.font = 'bold 96px Arial, sans-serif';
 ctx.fillStyle = '#ffffff';
 ctx.textAlign = 'left';
 ctx.textBaseline = 'top';
-ctx.fillText('GodSpeed', 60, 80);
+ctx.fillText('Godspeed', 60, 80);
 
 // Subtitle
 ctx.font = 'bold 96px Arial, sans-serif';

@@ -5,7 +5,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../services/db';
 import { RapidKeyEditor } from '../components/omr/RapidKeyEditor';
 
-const GRADE_LEVELS = ["Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12", "College"];
+const GRADE_LEVELS = ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12"];
 const SUBJECTS = ["Math", "Science", "English", "Filipino", "Araling Panlipunan", "MAPEH", "TLE", "Values Education", "Other"];
 
 export default function EditExam() {
@@ -14,11 +14,13 @@ export default function EditExam() {
 
     // Fetch the existing exam
     const exam = useLiveQuery(() => db.exams.get(examId as string), [examId]);
+    const periods = useLiveQuery(() => db.periods.filter(p => !p.isDeleted).sortBy('startDate'));
 
     // States
     const [title, setTitle] = useState('');
     const [gradeLevel, setGradeLevel] = useState('');
     const [subject, setSubject] = useState('');
+    const [periodId, setPeriodId] = useState('');
     const [answerKey, setAnswerKey] = useState('');
 
     // Populate the form when the exam data loads
@@ -27,6 +29,7 @@ export default function EditExam() {
             setTitle(exam.title);
             setGradeLevel(exam.gradeLevel);
             setSubject(exam.subject);
+            setPeriodId(exam.periodId || '');
             setAnswerKey(exam.answerKey);
         }
     }, [exam]);
@@ -40,9 +43,9 @@ export default function EditExam() {
             title: title.trim(),
             gradeLevel: gradeLevel,
             subject: subject,
+            periodId: periodId,
             itemCount: cleanAnswerKey.length,
             answerKey: cleanAnswerKey,
-            // We intentionally don't update createdAt or createdBy
         });
 
         navigate('/dashboard');
@@ -65,13 +68,13 @@ export default function EditExam() {
         );
     }
 
-    const isReady = title.trim().length > 0 && gradeLevel !== '' && subject !== '' && answerKey.length > 0;
+    const isReady = title.trim().length > 0 && gradeLevel !== '' && subject !== '' && periodId !== '' && answerKey.length > 0;
 
     return (
         <div className="min-h-screen flex flex-col bg-slate-100 dark:bg-slate-950 font-sans">
             <header className="sticky top-0 z-40 bg-slate-100/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-white/5 pt-safe-top">
                 <div className="w-full max-w-5xl mx-auto flex items-center justify-between px-4 py-4">
-                    <button onClick={() => navigate('/')} className="p-2 -ml-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors rounded-full">
+                    <button onClick={() => navigate('/dashboard')} className="p-2 -ml-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors rounded-full">
                         <ArrowLeft className="w-6 h-6" />
                     </button>
                     <h1 className="text-lg font-bold text-slate-900 dark:text-white">Edit Exam</h1>
@@ -119,6 +122,27 @@ export default function EditExam() {
                                 ))}
                             </select>
                         </div>
+                    </div>
+
+                    {/* Period Selection */}
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Grading Period</label>
+                        <select
+                            value={periodId}
+                            onChange={(e) => setPeriodId(e.target.value)}
+                            className="w-full bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all shadow-sm appearance-none"
+                        >
+                            <option value="" disabled>Select Period</option>
+                            {periods?.map(period => {
+                                const now = Date.now();
+                                const isCurrent = now >= period.startDate && now <= period.endDate;
+                                return (
+                                    <option key={period.id} value={period.id}>
+                                        {period.name} {isCurrent ? '(Ongoing)' : ''}
+                                    </option>
+                                );
+                            })}
+                        </select>
                     </div>
                 </div>
 

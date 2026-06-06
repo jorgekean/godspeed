@@ -9,6 +9,7 @@ interface SyncContextType {
     status: SyncStatus;
     lastSyncTimestamp: number;
     triggerSync: () => Promise<void>;
+    triggerPush: () => Promise<void>;
     error: string | null;
 }
 
@@ -45,8 +46,34 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setStatus('idle');
         } catch (err: any) {
             console.error('Sync error:', err);
-            setError(err.message || 'Sync failed');
+
+            let message = 'Sync failed. Please try again.';
+            const errorStr = err.message?.toLowerCase() || '';
+
+            if (errorStr.includes('prisma') || errorStr.includes('database') || errorStr.includes('500')) {
+                message = 'Our cloud database is currently undergoing maintenance. Please try again later.';
+            } else if (errorStr.includes('network') || errorStr.includes('connect')) {
+                message = 'Connection lost. Please check your internet and try again.';
+            } else if (err.response?.status === 401) {
+                message = 'Session expired. Please sign out and sign in again.';
+            }
+
+            setError(message);
             setStatus('error');
+        } finally {
+            isSyncingRef.current = false;
+        }
+    }, [token]);
+
+    const triggerPush = useCallback(async () => {
+        if (!navigator.onLine || !token || isSyncingRef.current) return;
+
+        isSyncingRef.current = true;
+        try {
+            console.log("Triggering PUSH sync...");
+            await syncService.pushChanges(token);
+        } catch (err: any) {
+            console.error('Push error:', err);
         } finally {
             isSyncingRef.current = false;
         }
@@ -68,26 +95,27 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
     }, []);
 
-    // Auto-sync on auth or every 5 minutes
+    // Auto-sync on auth or every 5 minutes (PUSH ONLY)
     useEffect(() => {
-        // 4. Trigger an initial sync if the user logs in
+        // 4. Trigger an initial sync (PUSH & PULL) if the user logs in
         if (currentUser) {
             triggerSync();
         }
 
         const interval = setInterval(() => {
             if (currentUser) {
-                triggerSync();
+                // Periodic sync is now PUSH ONLY to save costs
+                triggerPush();
             }
-        }, 5 * 60 * 1000);
+        }, 5000);//5 * 60 * 1000
 
         return () => {
             clearInterval(interval);
         };
-    }, [currentUser, triggerSync]); // Safely depends on currentUser now
+    }, [currentUser, triggerSync, triggerPush]); // Safely depends on currentUser now
 
     return (
-        <SyncContext.Provider value={{ status, lastSyncTimestamp, triggerSync, error }}>
+        <SyncContext.Provider value={{ status, lastSyncTimestamp, triggerSync, triggerPush, error }}>
             {children}
         </SyncContext.Provider>
     );
