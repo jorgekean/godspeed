@@ -280,10 +280,11 @@ export default function AccountPage() {
                                 </div>
 
                                 <button
-                                    onClick={() => alert("Premium upgrades are currently in waitlist mode!")}
-                                    className="w-full sm:w-auto px-8 py-3.5 bg-white text-slate-900 hover:bg-slate-100 font-bold rounded-xl active:scale-95 transition-all"
+                                    onClick={() => alert("Good news! All premium features are currently UNLOCKED and FREE for all registered accounts for a limited time. No subscription is needed right now!")}
+                                    className="w-full sm:w-auto px-8 py-3.5 bg-white text-slate-900 hover:bg-slate-100 font-bold rounded-xl active:scale-95 transition-all flex items-center justify-center gap-2"
                                 >
-                                    Upgrade for ₱399/year
+                                    <span className="line-through decoration-rose-500 opacity-50">₱399/year</span>
+                                    <span className="text-emerald-600">FREE NOW</span>
                                 </button>
                             </div>
                         </div>

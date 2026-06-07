@@ -215,12 +215,12 @@ export default function LandingPage() {
                                 </h3>
                                 <p className="text-slate-400 text-sm">Peace of mind & deep analytics.</p>
                                 <div className="mt-4 flex flex-col">
-                                    <div className="flex items-end gap-1">
-                                        <span className="text-4xl font-black text-white">₱399</span>
-                                        <span className="text-slate-500 mb-1 font-medium">/year</span>
+                                    <div className="flex items-end gap-2">
+                                        <span className="text-4xl font-black text-white line-through decoration-rose-500 opacity-50">₱399</span>
+                                        <span className="text-3xl font-black text-emerald-400">FREE</span>
                                     </div>
-                                    <div className="mt-1 inline-block bg-cyan-950/50 border border-cyan-800/50 rounded-md px-2 py-1 w-fit">
-                                        <span className="text-cyan-400 text-xs font-bold tracking-wide">EQUALS ₱28 / MONTH</span>
+                                    <div className="mt-1 inline-block bg-emerald-950/50 border border-emerald-800/50 rounded-md px-2 py-1 w-fit">
+                                        <span className="text-emerald-400 text-[10px] font-bold tracking-widest uppercase">Limited Time Offer</span>
                                     </div>
                                 </div>
                             </div>
@@ -231,7 +231,7 @@ export default function LandingPage() {
                                 <li className="flex items-center gap-3 text-slate-300 font-medium"><Check className="w-5 h-5 text-cyan-400 shrink-0" /> Sync across Phone & Laptop</li>
                             </ul>
                             <button onClick={() => openModal('signup')} className="w-full py-3.5 bg-white hover:bg-slate-200 text-slate-900 font-bold rounded-xl transition-colors">
-                                Subscribe to Pro
+                                Claim Free Premium
                             </button>
                         </div>
                     </div>
