@@ -216,11 +216,11 @@ export default function LandingPage() {
                                 <p className="text-slate-400 text-sm">Peace of mind & deep analytics.</p>
                                 <div className="mt-4 flex flex-col">
                                     <div className="flex items-end gap-1">
-                                        <span className="text-4xl font-black text-white">₱299</span>
+                                        <span className="text-4xl font-black text-white">₱399</span>
                                         <span className="text-slate-500 mb-1 font-medium">/year</span>
                                     </div>
                                     <div className="mt-1 inline-block bg-cyan-950/50 border border-cyan-800/50 rounded-md px-2 py-1 w-fit">
-                                        <span className="text-cyan-400 text-xs font-bold tracking-wide">EQUALS ₱25 / MONTH</span>
+                                        <span className="text-cyan-400 text-xs font-bold tracking-wide">EQUALS ₱28 / MONTH</span>
                                     </div>
                                 </div>
                             </div>

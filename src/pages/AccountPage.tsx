@@ -13,7 +13,7 @@ export default function AccountPage() {
     const navigate = useNavigate();
 
     // Auth Form States (Only used if user is NOT logged in)
-// ... (rest of the file remains same until the return section)
+    // ... (rest of the file remains same until the return section)
     const [isLoginMode, setIsLoginMode] = useState(false); // Default to Sign Up
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -283,7 +283,7 @@ export default function AccountPage() {
                                     onClick={() => alert("Premium upgrades are currently in waitlist mode!")}
                                     className="w-full sm:w-auto px-8 py-3.5 bg-white text-slate-900 hover:bg-slate-100 font-bold rounded-xl active:scale-95 transition-all"
                                 >
-                                    Upgrade for ₱299/year
+                                    Upgrade for ₱399/year
                                 </button>
                             </div>
                         </div>

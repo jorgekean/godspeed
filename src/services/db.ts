@@ -101,8 +101,8 @@ export class GodspeedDatabase extends Dexie {
                 obj.isSynced = obj.isSynced ?? false;
                 obj.isDeleted = obj.isDeleted ?? false;
             });
-            table.hook('updating', (mods) => {
-                const updatedMods = { ...mods, updatedAt: Date.now() };
+            table.hook('updating', (mods: any) => {
+                const updatedMods: any = { ...mods, updatedAt: Date.now() };
                 
                 // Only mark as unsynced if the update is not explicitly marking it as synced (e.g. during a pull/push)
                 if (mods.isSynced !== true) {
