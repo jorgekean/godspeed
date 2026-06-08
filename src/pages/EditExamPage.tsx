@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../services/db';
+import { db, DEMO_USER_ID } from '../services/db';
 import { RapidKeyEditor } from '../components/omr/RapidKeyEditor';
+import { useAuth } from '../contexts/AuthContext';
 
 const GRADE_LEVELS = ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12"];
 const SUBJECTS = ["Math", "Science", "English", "Filipino", "Araling Panlipunan", "MAPEH", "TLE", "Values Education", "Other"];
@@ -11,10 +12,17 @@ const SUBJECTS = ["Math", "Science", "English", "Filipino", "Araling Panlipunan"
 export default function EditExam() {
     const navigate = useNavigate();
     const { examId } = useParams();
+    const { currentUser } = useAuth();
 
     // Fetch the existing exam
-    const exam = useLiveQuery(() => db.exams.get(examId as string), [examId]);
-    const periods = useLiveQuery(() => db.periods.filter(p => !p.isDeleted).sortBy('startDate'));
+    const userEmail = currentUser?.email || DEMO_USER_ID;
+    const exam = useLiveQuery(async () => {
+        const e = await db.exams.get(examId as string);
+        if (e && e.createdBy === userEmail) return e;
+        return null;
+    }, [examId, userEmail]);
+    
+    const periods = useLiveQuery(() => db.periods.filter(p => !p.isDeleted && p.createdBy === userEmail).sortBy('startDate'), [userEmail]);
 
     // States
     const [title, setTitle] = useState('');

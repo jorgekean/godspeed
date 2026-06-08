@@ -10,10 +10,9 @@ const GRADE_LEVELS = ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Gr
 export default function SectionsPage() {
     const { currentUser } = useAuth();
 
-    // 1. Reactive Data Fetching
-    // Sort by grade level, then by section name for a clean list
+    const userEmail = currentUser?.email || DEMO_USER_ID;
     const sections = useLiveQuery(() =>
-        db.sections.orderBy('gradeLevel').toArray()
+        db.sections.filter(s => s.createdBy === userEmail && !s.isDeleted).toArray(), [userEmail]
     );
 
     // 2. Modal & Form State
@@ -59,7 +58,7 @@ export default function SectionsPage() {
                 gradeLevel,
                 sectionName: sectionName.trim(),
                 createdAt: Date.now(),
-                createdBy: currentUser?.email!,
+                createdBy: userEmail,
                 updatedAt: Date.now(),
                 isSynced: false,
                 isDeleted: false

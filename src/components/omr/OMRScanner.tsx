@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import Webcam from 'react-webcam';
 import { Camera, CheckCircle, AlertTriangle, RefreshCw, HelpCircle } from 'lucide-react';
 
@@ -29,7 +29,7 @@ export function OMRScanner({ correctAnswers, onScanComplete }: OMRScannerProps =
 
         workerRef.current = new Worker(workerPath);
 
-        workerRef.current.onerror = (err: ErrorEvent) => {
+        workerRef.current.onerror = (_err: ErrorEvent) => {
             setError("Worker failed to load.");
         };
 

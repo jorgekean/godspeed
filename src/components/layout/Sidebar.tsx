@@ -1,17 +1,14 @@
-import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
     LayoutDashboard,
     CalendarDays,
     BookOpen,
     GraduationCap,
-    Users,
     Table2,
     ClipboardList,
     BarChart3,
     ShieldCheck,
     Settings,
-    UserCircle,
     Package,
     Sparkles,
     X,

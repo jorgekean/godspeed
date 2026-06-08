@@ -1,0 +1,32 @@
+{
+  "folders": [
+    {
+      "name": "Frontend (Godspeed Grader)",
+      "path": "."
+    },
+    {
+      "name": "Backend (API)",
+      "path": "../godspeedgrader-api"
+    }
+  ],
+  "settings": {
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "eslint.workingDirectories": [
+      ".",
+      "../godspeed-api"
+    ],
+    "files.exclude": {
+      "**/.git": true,
+      "**/.DS_Store": true,
+      "**/node_modules": true,
+      "**/dist": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "dbaeumer.vscode-eslint",
+      "esbenp.prettier-vscode",
+      "ms-vscode.vscode-typescript-next"
+    ]
+  }
+}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { Users, FolderKanban, LayoutDashboard, LogOut, UserCircle, Lock, User, RefreshCw, AlertCircle, Zap, CalendarDays, Settings2, ChevronUp } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -122,7 +122,7 @@ export default function AppLayout() {
                                     }`
                                 }
                             >
-                                {({ isActive }) => (
+                                {() => (
                                     <>
                                         <div className="relative">
                                             <item.icon className="w-5 h-5" />

@@ -1,18 +1,76 @@
-import React, { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../services/db';
-import { ArrowLeft, BarChart3, TrendingUp, UserCheck, Users } from 'lucide-react';
+import { db, DEMO_USER_ID } from '../services/db';
+import { ArrowLeft, BarChart3, TrendingUp, UserCheck, FileDown, Loader2 } from 'lucide-react';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import { ItemAnalysisPDF, type ItemAnalysisData } from '../components/omr/ItemAnalysisPDF';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function ExamResultsPage() {
     const { examId } = useParams();
     const navigate = useNavigate();
+    const { currentUser } = useAuth();
     const [filterSectionId, setFilterSectionId] = useState<string>('all');
 
-    const exam = useLiveQuery(() => db.exams.get(examId as string), [examId]);
-    const sections = useLiveQuery(() => db.sections.toArray());
-    const results = useLiveQuery(() => db.scanResults.where('examId').equals(examId as string).toArray(), [examId]);
-    const students = useLiveQuery(() => db.students.toArray());
+    const userEmail = currentUser?.email || DEMO_USER_ID;
+
+    const exam = useLiveQuery(async () => {
+        const e = await db.exams.get(examId as string);
+        if (e && e.createdBy === userEmail) return e;
+        return null;
+    }, [examId, userEmail]);
+
+    const sections = useLiveQuery(() => db.sections.filter(s => s.createdBy === userEmail && !s.isDeleted).toArray(), [userEmail]);
+    const results = useLiveQuery(() => db.scanResults.where('examId').equals(examId as string).filter(r => r.createdBy === userEmail).toArray(), [examId, userEmail]);
+    const students = useLiveQuery(() => db.students.filter(s => s.createdBy === userEmail && !s.isDeleted).toArray(), [userEmail]);
+
+    const analysisData = useMemo(() => {
+        if (!exam || !results || results.length === 0) return [];
+
+        const currentResults = filterSectionId === 'all'
+            ? results
+            : results.filter(r => r.sectionId === filterSectionId);
+
+        if (currentResults.length === 0) return [];
+
+        const totalStudents = currentResults.length;
+        const itemCount = exam.itemCount;
+        const answerKey = exam.answerKey;
+
+        const analysis: ItemAnalysisData[] = [];
+        for (let i = 0; i < itemCount; i++) {
+            const itemNumber = i + 1;
+            const correctAnswer = answerKey[i] as string;
+
+            let correctCount = 0;
+            const distractors: Record<string, number> = { A: 0, B: 0, C: 0, D: 0 };
+
+            currentResults.forEach(res => {
+                const studentAnswer = res.answers[itemNumber.toString()];
+                if (studentAnswer === correctAnswer) {
+                    correctCount++;
+                }
+                if (studentAnswer && studentAnswer in distractors) {
+                    distractors[studentAnswer]++;
+                }
+            });
+
+            analysis.push({
+                itemNumber,
+                correctAnswer,
+                competency: `Item ${itemNumber}`, // Placeholder
+                percentPassed: Math.round((correctCount / totalStudents) * 100),
+                distractors: {
+                    A: Math.round((distractors.A / totalStudents) * 100),
+                    B: Math.round((distractors.B / totalStudents) * 100),
+                    C: Math.round((distractors.C / totalStudents) * 100),
+                    D: Math.round((distractors.D / totalStudents) * 100),
+                }
+            });
+        }
+        return analysis;
+    }, [exam, results, filterSectionId]);
 
     if (!exam || !results) return null;
 
@@ -25,15 +83,50 @@ export default function ExamResultsPage() {
         ? (filteredResults.reduce((acc, r) => acc + r.score, 0) / totalScanned).toFixed(1)
         : 0;
 
+    const currentSectionName = filterSectionId === 'all' 
+        ? 'All Sections' 
+        : sections?.find(s => s.id === filterSectionId)?.sectionName || 'Selected Section';
+
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 transition-colors">
             <div className="max-w-4xl mx-auto">
-                <button
-                    onClick={() => navigate('/dashboard')}
-                    className="mb-6 flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-bold transition-colors"
-                >
-                    <ArrowLeft className="w-5 h-5" /> Back to Exams
-                </button>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                    <button
+                        onClick={() => navigate('/dashboard')}
+                        className="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-bold transition-colors"
+                    >
+                        <ArrowLeft className="w-5 h-5" /> Back to Exams
+                    </button>
+
+                    {totalScanned > 0 && (
+                        <PDFDownloadLink
+                            document={
+                                <ItemAnalysisPDF
+                                    title={exam.title}
+                                    sectionName={currentSectionName}
+                                    totalStudents={totalScanned}
+                                    averageScore={averageScore.toString()}
+                                    data={analysisData}
+                                />
+                            }
+                            fileName={`Item_Analysis_${exam.title.replace(/\s+/g, '_')}_${currentSectionName}.pdf`}
+                        >
+                            {({ loading }) => (
+                                <button
+                                    disabled={loading}
+                                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/20 active:scale-95 transition-all disabled:opacity-50"
+                                >
+                                    {loading ? (
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                    ) : (
+                                        <FileDown className="w-5 h-5" />
+                                    )}
+                                    {loading ? 'Preparing Report...' : 'Download Item Analysis'}
+                                </button>
+                            )}
+                        </PDFDownloadLink>
+                    )}
+                </div>
 
                 <div className="mb-8">
                     <h1 className="text-3xl font-black text-slate-900 dark:text-white">{exam.title}</h1>

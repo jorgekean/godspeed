@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, type Period } from '../services/db';
+import { db, type Period, DEMO_USER_ID } from '../services/db';
 import { Plus, ChevronRight, FileText, X, HelpCircle, Printer, Edit3, BarChart3, ChevronDown } from 'lucide-react';
 import { OMRTemplateGenerator } from '../components/omr/OMRTemplate';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Dashboard() {
     const navigate = useNavigate();
+    const { currentUser } = useAuth();
     
     // 1. Fetch Periods
-    const periods = useLiveQuery(() => db.periods.filter(p => !p.isDeleted).sortBy('startDate'));
+    const userEmail = currentUser?.email || DEMO_USER_ID;
+    const periods = useLiveQuery(() => db.periods.filter(p => !p.isDeleted && p.createdBy === userEmail).sortBy('startDate'), [userEmail]);
     
     // 2. State for Filter
     const [selectedPeriod, setSelectedPeriod] = useState<string>('all');
@@ -49,11 +52,11 @@ export default function Dashboard() {
     const exams = useLiveQuery(
         () => {
             if (selectedPeriod !== 'all') {
-                return db.exams.where('periodId').equals(selectedPeriod).filter(e => !e.isDeleted).reverse().toArray();
+                return db.exams.where('periodId').equals(selectedPeriod).filter(e => !e.isDeleted && e.createdBy === userEmail).reverse().toArray();
             }
-            return db.exams.filter(e => !e.isDeleted).reverse().sortBy('createdAt');
+            return db.exams.filter(e => !e.isDeleted && e.createdBy === userEmail).reverse().toArray();
         },
-        [selectedPeriod]
+        [selectedPeriod, userEmail]
     );
 
     // 6. Lazy load from localStorage
