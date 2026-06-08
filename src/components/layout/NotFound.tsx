@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Construction, ArrowLeft, LayoutDashboard } from 'lucide-react';
 

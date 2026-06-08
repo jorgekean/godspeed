@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { subjectService } from '../services/subjectService';
-import type { Subject } from '../services/db';
+import { db, type Subject } from '../services/db';
 
 export function useSubjects() {
     const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -9,7 +8,7 @@ export function useSubjects() {
     const fetchSubjects = useCallback(async () => {
         setIsLoading(true);
         try {
-            const data = await subjectService.getAll();
+            const data = await db.subjects.toArray();
             setSubjects(data);
         } catch (error) {
             console.error("Failed to fetch subjects", error);
@@ -26,9 +25,9 @@ export function useSubjects() {
         subjects,
         isLoading,
         refresh: fetchSubjects,
-        getById: subjectService.getById,
-        create: subjectService.create,
-        update: subjectService.update,
-        remove: subjectService.delete
+        getById: async (id: string) => db.subjects.get(id),
+        create: async (data: any) => db.subjects.add(data),
+        update: async (id: string, data: any) => db.subjects.update(id, data),
+        remove: async (id: string) => db.subjects.delete(id)
     };
 }

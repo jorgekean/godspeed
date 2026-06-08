@@ -49,6 +49,8 @@ export interface Exam {
     gradeLevel: string;  // e.g., "Grade 9" (Matches Section.gradeLevel)
     subject: string;     // e.g., "Science"
     title: string;       // e.g., "Midterm Exam"
+    category?: 'WW' | 'PT' | 'QA'; // NEW: For K-12 grading
+    maxScore?: number;    // NEW: Overrides itemCount if set
     itemCount: number;
     answerKey: string;
     createdAt: number;
@@ -57,6 +59,26 @@ export interface Exam {
     isSynced: boolean;    // NEW: For sync
     isDeleted: boolean;   // NEW: For sync
 }
+
+// 6. The Subject Registry (NEW)
+export interface Subject {
+    id: string;
+    code: string;
+    title: string;
+    gradeLevel: number;
+    wwWeight: number;
+    ptWeight: number;
+    qaWeight: number;
+    createdBy: string;
+    updatedAt: number;
+    isSynced: boolean;
+    isDeleted: boolean;
+}
+
+// ALIASES FOR BACKWARD COMPATIBILITY
+export type Assessment = Exam;
+export type Grade = ScanResult;
+export type AcademicTerm = Period;
 
 // 4. The Grades
 export interface ScanResult {
@@ -81,17 +103,24 @@ export class GodspeedDatabase extends Dexie {
     periods!: Table<Period>;
     exams!: Table<Exam>;
     scanResults!: Table<ScanResult>;
+    subjects!: Table<Subject>;
+
+    // Legacy Aliases
+    get assessments() { return this.exams; }
+    get grades() { return this.scanResults; }
+    get terms() { return this.periods; }
 
     constructor() {
         super('GodspeedGraderDBV2');
 
         // Schema versioning
-        this.version(7).stores({
+        this.version(8).stores({
             sections: 'id, gradeLevel, sectionName, [gradeLevel+sectionName], createdAt, createdBy, isSynced, updatedAt',
             students: 'id, sectionId, fullName, studentNo, createdBy, isSynced, updatedAt',
             periods: 'id, name, createdBy, isSynced, updatedAt, createdAt, startDate',
             exams: 'id, periodId, gradeLevel, subject, createdAt, createdBy, isSynced, updatedAt',
-            scanResults: 'id, examId, studentId, sectionId, periodId, [examId+studentId], scannedAt, createdBy, isSynced, updatedAt'
+            scanResults: 'id, examId, studentId, sectionId, periodId, [examId+studentId], scannedAt, createdBy, isSynced, updatedAt',
+            subjects: 'id, code, title, gradeLevel, createdBy, isSynced, updatedAt'
         });
 
         // Add hooks for sync fields

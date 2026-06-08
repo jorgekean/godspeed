@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { db, type Subject, type Assessment, type Grade } from '../services/db';
+import { db } from '../services/db';
 
 export function useStudentPerformance(studentId: string, termId: string) {
     const [performances, setPerformances] = useState<any[]>([]);
@@ -13,29 +13,39 @@ export function useStudentPerformance(studentId: string, termId: string) {
             const student = await db.students.get(studentId);
             if (!student) return;
 
+            const section = await db.sections.get(student.sectionId);
+            if (!section) return;
+
             // Get all subjects for the student's grade level
-            const allSubjects = await db.subjects.where({ gradeLevel: student.gradeLevel }).toArray();
+            // section.gradeLevel is a string like "Grade 9", while Subject.gradeLevel is a number. 
+            // We need to extract the number or update the comparison.
+            const gradeLevelNum = parseInt(section.gradeLevel.replace(/\D/g, ''));
+            const allSubjects = await db.subjects.where({ gradeLevel: gradeLevelNum }).toArray();
 
             const results = await Promise.all(allSubjects.map(async (subject) => {
-                // Fetch assessments for THIS subject and THIS term
-                const assessments = await db.assessments
-                    .where({ subjectId: subject.id, termId })
+                // Fetch exams for THIS subject and THIS period
+                // Note: Exam.subject is currently a string (title), we might need to match by title or add subjectId to Exam.
+                // For now, let's assume subject.title matches Exam.subject.
+                const exams = await db.exams
+                    .where({ subject: subject.title, periodId: termId })
                     .toArray();
 
-                const assessmentIds = assessments.map(a => a.id);
-                const grades = await db.grades
-                    .where('assessmentId')
-                    .anyOf(assessmentIds)
-                    .and(g => g.studentId === studentId)
+                const examIds = exams.map(e => e.id);
+                const scanResults = await db.scanResults
+                    .where('examId')
+                    .anyOf(examIds)
+                    .and(r => r.studentId === studentId)
                     .toArray();
 
                 // Use our Math Logic
+                // Note: Exam currently doesn't have 'category' or 'maxScore'. 
+                // We'll stub these or use defaults for now to satisfy types.
                 const getCatScore = (cat: 'WW' | 'PT' | 'QA', weight: number) => {
-                    const catAsm = assessments.filter(a => a.category === cat);
-                    const totalMax = catAsm.reduce((sum, a) => sum + a.maxScore, 0);
-                    const totalRaw = grades
-                        .filter(g => catAsm.find(a => a.id === g.assessmentId))
-                        .reduce((sum, g) => sum + g.score, 0);
+                    const catExams = exams.filter((e: any) => e.category === cat);
+                    const totalMax = catExams.reduce((sum, e: any) => sum + (e.maxScore || e.itemCount), 0);
+                    const totalRaw = scanResults
+                        .filter(r => catExams.find(e => e.id === r.examId))
+                        .reduce((sum, r) => sum + r.score, 0);
 
                     return totalMax > 0 ? (totalRaw / totalMax) * weight * 100 : 0;
                 };

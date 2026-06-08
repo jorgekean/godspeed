@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { studentService } from '../services/studentService';
-import type { Student } from '../services/db';
+import { db, type Student } from '../services/db';
 
 export function useStudents() {
     const [students, setStudents] = useState<Student[]>([]);
@@ -9,7 +8,7 @@ export function useStudents() {
     const fetchStudents = useCallback(async () => {
         setIsLoading(true);
         try {
-            const data = await studentService.getAll();
+            const data = await db.students.toArray();
             setStudents(data);
         } catch (error) {
             console.error("Failed to fetch student roster", error);
@@ -26,7 +25,7 @@ export function useStudents() {
         students,
         isLoading,
         refresh: fetchStudents,
-        getById: studentService.getById,
-        update: studentService.update
+        getById: async (id: string) => db.students.get(id),
+        update: async (id: string, data: any) => db.students.update(id, data)
     };
 }

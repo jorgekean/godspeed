@@ -11,7 +11,6 @@ import AppLayout from './components/layout/AppLayout' // <-- Import the new layo
 // Import the page components
 import Dashboard from './pages/Dashboard'
 import CreateExam from './pages/CreateExamPage'
-import ScannerPage from './pages/ScannerPage'
 import Help from './pages/Help'
 import EditExam from './pages/EditExamPage'
 import SectionsPage from './pages/SectionPage'

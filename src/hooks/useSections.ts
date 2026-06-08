@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { sectionService } from '../services/sectionService';
-import type { Section } from '../services/db';
+import { db, type Section } from '../services/db';
 
 export function useSections() {
     const [sections, setSections] = useState<Section[]>([]);
@@ -9,7 +8,7 @@ export function useSections() {
     const fetchSections = useCallback(async () => {
         setIsLoading(true);
         try {
-            const data = await sectionService.getAll();
+            const data = await db.sections.toArray();
             setSections(data);
         } catch (error) {
             console.error("Failed to fetch Sections", error);
@@ -27,9 +26,9 @@ export function useSections() {
         isLoading,
         refresh: fetchSections,
         // Exposing service methods
-        create: sectionService.create,
-        update: sectionService.update,
-        remove: sectionService.delete,
-        getById: sectionService.getById
+        create: async (data: any) => db.sections.add(data),
+        update: async (id: string, data: any) => db.sections.update(id, data),
+        remove: async (id: string) => db.sections.delete(id),
+        getById: async (id: string) => db.sections.get(id)
     };
 }

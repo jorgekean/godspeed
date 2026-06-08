@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { termService } from '../services/termService';
-import type { AcademicTerm } from '../services/db';
+import { db, type AcademicTerm } from '../services/db';
 
 export function useTerms() {
     const [terms, setTerms] = useState<AcademicTerm[]>([]);
@@ -9,7 +8,7 @@ export function useTerms() {
     const fetchTerms = useCallback(async () => {
         setIsLoading(true);
         try {
-            const data = await termService.getAll();
+            const data = await db.terms.toArray();
             setTerms(data);
         } catch (error) {
             console.error("Failed to fetch academic terms", error);
@@ -27,9 +26,9 @@ export function useTerms() {
         isLoading,
         refresh: fetchTerms,
         // Exposing service methods
-        create: termService.create,
-        update: termService.update,
-        remove: termService.delete,
-        getById: termService.getById
+        create: async (data: any) => db.terms.add(data),
+        update: async (id: string, data: any) => db.terms.update(id, data),
+        remove: async (id: string) => db.terms.delete(id),
+        getById: async (id: string) => db.terms.get(id)
     };
 }

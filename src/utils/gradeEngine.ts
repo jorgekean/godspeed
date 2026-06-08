@@ -85,12 +85,12 @@ export function calculateStudentGrade(
 
         // STEP 2: Add up all maximum possible scores for this category
         // Example: Quiz 1 (10pts) + Quiz 2 (15pts) = 25pts total possible
-        const totalMax = catAssessments.reduce((sum, a) => sum + a.maxScore, 0);
+        const totalMax = catAssessments.reduce((sum, a) => sum + (a.maxScore || a.itemCount), 0);
 
         // STEP 3: Add up all the student's actual scores for this category
         // Example: Student got 8/10 on Quiz 1, 12/15 on Quiz 2 = 20pts earned
         const totalRaw = grades
-            .filter(g => g.studentId === studentId && catAssessmentIds.includes(g.assessmentId))
+            .filter(g => g.studentId === studentId && catAssessmentIds.includes(g.examId))
             .reduce((sum, g) => sum + g.score, 0);
 
         // STEP 4: Calculate percentage (what % of points did they get?)
