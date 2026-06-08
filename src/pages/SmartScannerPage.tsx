@@ -27,8 +27,17 @@ export default function SmartScannerPage() {
     // NEW: Toggle to show the item analysis grid
     const [showDetails, setShowDetails] = useState(false);
 
-    const exam = useLiveQuery(() => db.exams.get(examId as string), [examId]);
-    const sections = useLiveQuery(() => db.sections.toArray());
+    const exam = useLiveQuery(async () => {
+        const userEmail = currentUser?.email || DEMO_USER_ID;
+        const e = await db.exams.get(examId as string);
+        if (e && e.createdBy === userEmail) return e;
+        return null;
+    }, [examId, currentUser]);
+
+    const sections = useLiveQuery(() => {
+        const userEmail = currentUser?.email || DEMO_USER_ID;
+        return db.sections.filter(s => s.createdBy === userEmail && !s.isDeleted).toArray();
+    }, [currentUser]);
     const students = useLiveQuery(
         () => selectedSectionId && selectedSectionId !== 'anonymous' ? db.students.where('sectionId').equals(selectedSectionId).toArray() : [],
         [selectedSectionId]
@@ -89,9 +98,9 @@ export default function SmartScannerPage() {
             studentId: studentId,
             score: currentScore,
             total: exam.itemCount,
-            answers: currentRawAnswers.reduce((acc, ans, i) => ({ ...acc, [i]: ans }), {}),
+            answers: currentRawAnswers.reduce((acc, ans, i) => ({ ...acc, [i + 1]: ans }), {}),
             scannedAt: Date.now(),
-            createdBy: currentUser?.email!,
+            createdBy: currentUser?.email || DEMO_USER_ID,
             updatedAt: Date.now(),
             isSynced: false,
             isDeleted: false

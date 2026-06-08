@@ -1,20 +1,29 @@
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../services/db';
+import { db, DEMO_USER_ID } from '../services/db';
 import { ArrowLeft, BarChart3, TrendingUp, UserCheck, FileDown, Loader2 } from 'lucide-react';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { ItemAnalysisPDF, type ItemAnalysisData } from '../components/omr/ItemAnalysisPDF';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function ExamResultsPage() {
     const { examId } = useParams();
     const navigate = useNavigate();
+    const { currentUser } = useAuth();
     const [filterSectionId, setFilterSectionId] = useState<string>('all');
 
-    const exam = useLiveQuery(() => db.exams.get(examId as string), [examId]);
-    const sections = useLiveQuery(() => db.sections.toArray());
-    const results = useLiveQuery(() => db.scanResults.where('examId').equals(examId as string).toArray(), [examId]);
-    const students = useLiveQuery(() => db.students.toArray());
+    const userEmail = currentUser?.email || DEMO_USER_ID;
+
+    const exam = useLiveQuery(async () => {
+        const e = await db.exams.get(examId as string);
+        if (e && e.createdBy === userEmail) return e;
+        return null;
+    }, [examId, userEmail]);
+
+    const sections = useLiveQuery(() => db.sections.filter(s => s.createdBy === userEmail && !s.isDeleted).toArray(), [userEmail]);
+    const results = useLiveQuery(() => db.scanResults.where('examId').equals(examId as string).filter(r => r.createdBy === userEmail).toArray(), [examId, userEmail]);
+    const students = useLiveQuery(() => db.students.filter(s => s.createdBy === userEmail && !s.isDeleted).toArray(), [userEmail]);
 
     const analysisData = useMemo(() => {
         if (!exam || !results || results.length === 0) return [];

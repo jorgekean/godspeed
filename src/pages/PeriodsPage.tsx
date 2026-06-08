@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../services/db';
+import { db, DEMO_USER_ID } from '../services/db';
 import { Plus, CalendarDays, Edit3, Trash2, X, CheckCircle2, Clock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -8,7 +8,8 @@ export default function PeriodsPage() {
     const { currentUser } = useAuth();
 
     // 1. Reactive Data Fetching
-    const periods = useLiveQuery(() => db.periods.filter(p => !p.isDeleted).sortBy('startDate'));
+    const userEmail = currentUser?.email || DEMO_USER_ID;
+    const periods = useLiveQuery(() => db.periods.filter(p => !p.isDeleted && p.createdBy === userEmail).sortBy('startDate'), [userEmail]);
 
     // 2. Modal & Form State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -63,7 +64,7 @@ export default function PeriodsPage() {
                 startDate: startTimestamp,
                 endDate: endTimestamp,
                 createdAt: Date.now(),
-                createdBy: currentUser?.email!,
+                createdBy: userEmail,
                 updatedAt: Date.now(),
                 isSynced: false,
                 isDeleted: false

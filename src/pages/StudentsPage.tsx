@@ -10,7 +10,8 @@ export default function StudentsPage() {
     // ==========================================
     // 1. DATA FETCHING & FILTERING
     // ==========================================
-    const sections = useLiveQuery(() => db.sections.filter(s => !s.isDeleted).sortBy('gradeLevel'));
+    const userEmail = currentUser?.email || DEMO_USER_ID;
+    const sections = useLiveQuery(() => db.sections.filter(s => !s.isDeleted && s.createdBy === userEmail).sortBy('gradeLevel'), [userEmail]);
 
     const [selectedFilterSection, setSelectedFilterSection] = useState<string>('');
     const [searchQuery, setSearchQuery] = useState(''); // NEW: Search state
@@ -25,9 +26,9 @@ export default function StudentsPage() {
     const students = useLiveQuery(
         () => {
             if (!selectedFilterSection) return [];
-            return db.students.where('sectionId').equals(selectedFilterSection).toArray();
+            return db.students.where('sectionId').equals(selectedFilterSection).filter(s => s.createdBy === userEmail && !s.isDeleted).toArray();
         },
-        [selectedFilterSection]
+        [selectedFilterSection, userEmail]
     );
 
     // NEW: Instant client-side search filtering
@@ -81,7 +82,7 @@ export default function StudentsPage() {
                 sectionId: formSectionId,
                 fullName: fullName.trim(),
                 studentNo: studentNo.trim(),
-                createdBy: currentUser?.email!,
+                createdBy: userEmail,
                 updatedAt: Date.now(),
                 isSynced: false,
                 isDeleted: false
@@ -116,7 +117,7 @@ export default function StudentsPage() {
             sectionId: bulkSectionId,
             fullName: student.fullName,
             studentNo: student.studentNo,
-            createdBy: currentUser?.email!,
+            createdBy: userEmail,
             updatedAt: Date.now(),
             isSynced: false,
             isDeleted: false

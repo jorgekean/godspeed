@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { db } from '../services/db';
+import { db, DEMO_USER_ID } from '../services/db';
+import { useAuth } from '../contexts/AuthContext';
 
 export function useStudentPerformance(studentId: string, termId: string) {
+    const { currentUser } = useAuth();
     const [performances, setPerformances] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -10,36 +12,35 @@ export function useStudentPerformance(studentId: string, termId: string) {
         setIsLoading(true);
 
         try {
+            const userEmail = currentUser?.email || DEMO_USER_ID;
             const student = await db.students.get(studentId);
-            if (!student) return;
+            if (!student || student.createdBy !== userEmail) return;
 
             const section = await db.sections.get(student.sectionId);
-            if (!section) return;
+            if (!section || section.createdBy !== userEmail) return;
 
             // Get all subjects for the student's grade level
-            // section.gradeLevel is a string like "Grade 9", while Subject.gradeLevel is a number. 
-            // We need to extract the number or update the comparison.
             const gradeLevelNum = parseInt(section.gradeLevel.replace(/\D/g, ''));
-            const allSubjects = await db.subjects.where({ gradeLevel: gradeLevelNum }).toArray();
+            const allSubjects = await db.subjects
+                .where({ gradeLevel: gradeLevelNum })
+                .filter(s => s.createdBy === userEmail)
+                .toArray();
 
             const results = await Promise.all(allSubjects.map(async (subject) => {
                 // Fetch exams for THIS subject and THIS period
-                // Note: Exam.subject is currently a string (title), we might need to match by title or add subjectId to Exam.
-                // For now, let's assume subject.title matches Exam.subject.
                 const exams = await db.exams
                     .where({ subject: subject.title, periodId: termId })
+                    .filter(e => e.createdBy === userEmail)
                     .toArray();
 
                 const examIds = exams.map(e => e.id);
                 const scanResults = await db.scanResults
                     .where('examId')
                     .anyOf(examIds)
-                    .and(r => r.studentId === studentId)
+                    .filter(r => r.studentId === studentId && r.createdBy === userEmail)
                     .toArray();
 
                 // Use our Math Logic
-                // Note: Exam currently doesn't have 'category' or 'maxScore'. 
-                // We'll stub these or use defaults for now to satisfy types.
                 const getCatScore = (cat: 'WW' | 'PT' | 'QA', weight: number) => {
                     const catExams = exams.filter((e: any) => e.category === cat);
                     const totalMax = catExams.reduce((sum, e: any) => sum + (e.maxScore || e.itemCount), 0);
@@ -66,7 +67,7 @@ export function useStudentPerformance(studentId: string, termId: string) {
         } finally {
             setIsLoading(false);
         }
-    }, [studentId, termId]);
+    }, [studentId, termId, currentUser]);
 
     useEffect(() => { calculateAllSubjects(); }, [calculateAllSubjects]);
 

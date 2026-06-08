@@ -32,15 +32,15 @@ export const syncService = {
         localStorage.setItem(LAST_SYNC_KEY, timestamp.toString());
     },
 
-    async pushChanges(token: string): Promise<void> {
+    async pushChanges(token: string, userEmail: string): Promise<void> {
         const headers = { Authorization: `Bearer ${token}` };
 
-        // Phase 1: Push Unsynced Changes
-        const unsyncedSections = await db.sections.filter(s => s.isSynced === false).toArray();
-        const unsyncedStudents = await db.students.filter(s => s.isSynced === false).toArray();
-        const unsyncedExams = await db.exams.filter(e => e.isSynced === false).toArray();
-        const unsyncedScanResults = await db.scanResults.filter(sr => sr.isSynced === false).toArray();
-        const unsyncedPeriods = await db.periods.filter(p => p.isSynced === false).toArray();
+        // Phase 1: Push Unsynced Changes (Only for the current user)
+        const unsyncedSections = await db.sections.filter(s => s.isSynced === false && s.createdBy === userEmail).toArray();
+        const unsyncedStudents = await db.students.filter(s => s.isSynced === false && s.createdBy === userEmail).toArray();
+        const unsyncedExams = await db.exams.filter(e => e.isSynced === false && e.createdBy === userEmail).toArray();
+        const unsyncedScanResults = await db.scanResults.filter(sr => sr.isSynced === false && sr.createdBy === userEmail).toArray();
+        const unsyncedPeriods = await db.periods.filter(p => p.isSynced === false && p.createdBy === userEmail).toArray();
 
         if (
             unsyncedSections.length === 0 &&
@@ -101,11 +101,27 @@ export const syncService = {
         const response = await axios.get(`${API_BASE_URL}/sync?since=${since}`, { headers });
         const payload = response.data.data || response.data;
 
-        const sections: Section[] = payload.sections || [];
-        const students: Student[] = payload.students || [];
-        const exams: Exam[] = payload.exams || [];
-        const scanResults: ScanResult[] = payload.scanResults || [];
-        const periods: Period[] = payload.periods || [];
+        // Helper to convert ISO strings to timestamps for local DB consistency
+        const normalize = (items: any[]) => {
+            return items.map(item => {
+                const normalized = { ...item };
+                const dateFields = ['createdAt', 'updatedAt', 'startDate', 'endDate', 'scannedAt'];
+                
+                dateFields.forEach(field => {
+                    if (normalized[field] && typeof normalized[field] === 'string') {
+                        normalized[field] = new Date(normalized[field]).getTime();
+                    }
+                });
+                
+                return normalized;
+            });
+        };
+
+        const sections: Section[] = normalize(payload.sections || []);
+        const students: Student[] = normalize(payload.students || []);
+        const exams: Exam[] = normalize(payload.exams || []);
+        const scanResults: ScanResult[] = normalize(payload.scanResults || []);
+        const periods: Period[] = normalize(payload.periods || []);
         const serverTimestamp: number = payload.serverTimestamp || Date.now();
 
         await db.transaction('rw', [db.sections, db.students, db.exams, db.scanResults, db.periods], async () => {
@@ -131,9 +147,9 @@ export const syncService = {
         return serverTimestamp;
     },
 
-    async syncData(token: string): Promise<void> {
+    async syncData(token: string, userEmail: string): Promise<void> {
         try {
-            await this.pushChanges(token);
+            await this.pushChanges(token, userEmail);
             const serverTimestamp = await this.pullChanges(token);
             this.setLastSyncTimestamp(serverTimestamp);
         } catch (error) {

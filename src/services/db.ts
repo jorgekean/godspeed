@@ -1,9 +1,9 @@
 import Dexie, { type Table } from 'dexie';
 
 // ------------------------------------------------------------------------
-// DUMMY USER ID FOR DEMO RECORDS (Replace with actual Auth ID later)
+// DUMMY USER ID FOR DEMO RECORDS (Empty string represents anonymous)
 // ------------------------------------------------------------------------
-export const DEMO_USER_ID = "local-demo-user-12345";
+export const DEMO_USER_ID = "";
 
 // 1. The Group 
 export interface Section {

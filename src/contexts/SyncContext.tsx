@@ -31,15 +31,15 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         // 2. Prevent syncing if there is no token/user logged in
-        if (!token || isSyncingRef.current) return;
+        if (!token || !currentUser || isSyncingRef.current) return;
 
         isSyncingRef.current = true;
         setStatus('syncing');
         setError(null);
 
         try {
-            // 3. Pass the token to your sync service
-            await syncService.syncData(token);
+            // 3. Pass the token and email to your sync service
+            await syncService.syncData(token, currentUser.email);
 
             const newTimestamp = syncService.getLastSyncTimestamp();
             setLastSyncTimestamp(newTimestamp);
@@ -66,12 +66,12 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [token]);
 
     const triggerPush = useCallback(async () => {
-        if (!navigator.onLine || !token || isSyncingRef.current) return;
+        if (!navigator.onLine || !token || !currentUser || isSyncingRef.current) return;
 
         isSyncingRef.current = true;
         try {
             console.log("Triggering PUSH sync...");
-            await syncService.pushChanges(token);
+            await syncService.pushChanges(token, currentUser.email);
         } catch (err: any) {
             console.error('Push error:', err);
         } finally {

@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { db, type Student, type Assessment, type Grade } from '../services/db';
+import { db, type Student, type Assessment, type Grade, DEMO_USER_ID } from '../services/db';
+import { useAuth } from '../contexts/AuthContext';
 
 export function useGradebook(subjectId: string, sectionId: string, termId: string) {
+    const { currentUser } = useAuth();
     const [students, setStudents] = useState<Student[]>([]);
     const [assessments, setAssessments] = useState<Assessment[]>([]);
     const [grades, setGrades] = useState<Grade[]>([]);
@@ -12,13 +14,16 @@ export function useGradebook(subjectId: string, sectionId: string, termId: strin
         setIsLoading(true);
 
         try {
+            const userEmail = currentUser?.email || DEMO_USER_ID;
+
             // 1. Fetch Students in the Section
-            const studentData = await db.students.where({ sectionId }).toArray();
+            const studentData = await db.students.where({ sectionId }).filter(s => s.createdBy === userEmail).toArray();
 
             // 2. Fetch Assessments for this Subject/Term
             // Note: Exam has 'subject' and 'periodId'. 
             const assessmentData = await db.exams
                 .where({ subject: subjectId, periodId: termId })
+                .filter(e => e.createdBy === userEmail)
                 .toArray();
 
             console.log("Fetched Assessments:", assessmentData);
@@ -27,6 +32,7 @@ export function useGradebook(subjectId: string, sectionId: string, termId: strin
             const gradeData = await db.scanResults
                 .where('examId')
                 .anyOf(assessmentIds)
+                .filter(g => g.createdBy === userEmail)
                 .toArray();
 
             setStudents(studentData);
@@ -35,14 +41,13 @@ export function useGradebook(subjectId: string, sectionId: string, termId: strin
         } finally {
             setIsLoading(false);
         }
-    }, [subjectId, sectionId, termId]);
+    }, [subjectId, sectionId, termId, currentUser]);
 
     useEffect(() => { loadData(); }, [loadData]);
 
     const updateGrade = async (studentId: string, assessmentId: string, score: number) => {
         const id = `${studentId}-${assessmentId}`; // Consistent ID for bulkPut
         // ScanResult (Grade) needs more fields like sectionId, createdBy etc. 
-        // We'll stub these for now.
         const student = students.find(s => s.id === studentId);
         await db.scanResults.put({ 
             id, 
@@ -53,7 +58,7 @@ export function useGradebook(subjectId: string, sectionId: string, termId: strin
             answers: {},
             scannedAt: Date.now(),
             sectionId: student?.sectionId || sectionId,
-            createdBy: student?.createdBy || 'system',
+            createdBy: currentUser?.email || DEMO_USER_ID,
             updatedAt: Date.now(),
             isSynced: false,
             isDeleted: false
