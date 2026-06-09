@@ -81,7 +81,7 @@ export default function AccountPage() {
     const handleLogout = () => {
         // Our custom logout is synchronous now, no need to await
         logout();
-        navigate('/');
+        navigate('/landing');
     };
 
     return (
