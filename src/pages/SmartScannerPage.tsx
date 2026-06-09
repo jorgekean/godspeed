@@ -140,7 +140,7 @@ export default function SmartScannerPage() {
         return (
             <div className="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950 p-4 md:p-8 relative">
                 <div className="flex items-center justify-between mb-8 max-w-xl mx-auto w-full">
-                    <button onClick={() => navigate('/dashboard')} className="p-2 -ml-2 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors">
+                    <button onClick={() => navigate('/')} className="p-2 -ml-2 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors">
                         <ArrowLeft className="w-6 h-6" />
                     </button>
                     {/* The Quick Scan is now a central feature */}

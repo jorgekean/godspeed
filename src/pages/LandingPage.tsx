@@ -10,7 +10,14 @@ export default function LandingPage() {
 
     const navigate = useNavigate();
     // 2. Destructure the login method
-    const { login } = useAuth();
+    const { login, currentUser } = useAuth();
+
+    // Redirect if already logged in
+    React.useEffect(() => {
+        if (currentUser) {
+            navigate('/', { replace: true });
+        }
+    }, [currentUser, navigate]);
 
     // Auth Modal States
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -69,7 +76,7 @@ export default function LandingPage() {
 
             // Success! Close modal and go to dashboard
             setIsAuthModalOpen(false);
-            navigate('/dashboard');
+            navigate('/');
 
         } catch (error: any) {
             console.error("Auth error:", error);
@@ -101,9 +108,9 @@ export default function LandingPage() {
                         <span className="font-bold tracking-tight text-lg">GodSpeed <span className="font-normal text-slate-500">Grader</span></span>
                     </div>
                     <div className="flex items-center gap-4">
-                        <button onClick={() => openModal('login')} className="hidden sm:block text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">Sign In</button>
+                        <button onClick={() => openModal('login')} className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">Sign In</button>
                         <button
-                            onClick={() => navigate('/dashboard')}
+                            onClick={() => navigate('/')}
                             className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-full transition-colors"
                         >
                             Open App (Guest)
@@ -179,7 +186,7 @@ export default function LandingPage() {
                                 <li className="flex items-center gap-3 text-slate-600 font-medium"><Check className="w-5 h-5 text-violet-500 shrink-0" /> Local device storage</li>
                                 <li className="flex items-center gap-3 text-slate-600 font-medium"><Check className="w-5 h-5 text-violet-500 shrink-0" /> No account required</li>
                             </ul>
-                            <button onClick={() => navigate('/dashboard')} className="w-full py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold rounded-xl transition-colors">
+                            <button onClick={() => navigate('/')} className="w-full py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold rounded-xl transition-colors">
                                 Try it out (Guest)
                             </button>
                         </div>

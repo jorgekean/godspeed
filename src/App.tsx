@@ -35,14 +35,14 @@ function App() {
 
               <Routes>
 
-                <Route path="/" element={<LandingPage />} />
+                <Route path="/landing" element={<LandingPage />} />
 
                 {/* ========================================== */}
                 {/* 1. CORE LAYOUT ROUTES (With Bottom Nav / Sidebar) */}
                 {/* ========================================== */}
                 <Route element={<AppLayout />}>
                   {/* The main dashboard listing all exams */}
-                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/" element={<Dashboard />} />
                   <Route path="/sections" element={<SectionsPage />} />
                   <Route path="/students" element={<StudentsPage />} />
                   <Route path="/periods" element={<PeriodsPage />} />

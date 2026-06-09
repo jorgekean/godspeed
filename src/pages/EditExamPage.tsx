@@ -56,7 +56,7 @@ export default function EditExam() {
             answerKey: cleanAnswerKey,
         });
 
-        navigate('/dashboard');
+        navigate('/');
     };
 
     if (exam === undefined) {
@@ -71,7 +71,7 @@ export default function EditExam() {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-white">
                 <p>Exam not found.</p>
-                <button onClick={() => navigate('/dashboard')} className="mt-4 text-violet-400 underline">Go Home</button>
+                <button onClick={() => navigate('/')} className="mt-4 text-violet-400 underline">Go Home</button>
             </div>
         );
     }
@@ -82,7 +82,7 @@ export default function EditExam() {
         <div className="min-h-screen flex flex-col bg-slate-100 dark:bg-slate-950 font-sans">
             <header className="sticky top-0 z-40 bg-slate-100/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-white/5 pt-safe-top">
                 <div className="w-full max-w-5xl mx-auto flex items-center justify-between px-4 py-4">
-                    <button onClick={() => navigate('/dashboard')} className="p-2 -ml-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors rounded-full">
+                    <button onClick={() => navigate('/')} className="p-2 -ml-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors rounded-full">
                         <ArrowLeft className="w-6 h-6" />
                     </button>
                     <h1 className="text-lg font-bold text-slate-900 dark:text-white">Edit Exam</h1>

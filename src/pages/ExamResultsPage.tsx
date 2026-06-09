@@ -92,7 +92,7 @@ export default function ExamResultsPage() {
             <div className="max-w-4xl mx-auto">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <button
-                        onClick={() => navigate('/dashboard')}
+                        onClick={() => navigate('/')}
                         className="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-bold transition-colors"
                     >
                         <ArrowLeft className="w-5 h-5" /> Back to Exams

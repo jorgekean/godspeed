@@ -75,7 +75,7 @@ export default function CreateExam() {
             isDeleted: false
         });
 
-        navigate('/dashboard');
+        navigate('/');
     };
 
     // Ready only if ALL fields are filled
@@ -85,7 +85,7 @@ export default function CreateExam() {
         <div className="min-h-screen flex flex-col bg-slate-100 dark:bg-slate-950 font-sans">
             <header className="sticky top-0 z-40 bg-slate-100/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-white/5 pt-safe-top">
                 <div className="w-full max-w-5xl mx-auto flex items-center justify-between px-4 py-4">
-                    <button onClick={() => navigate('/dashboard')} className="p-2 -ml-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors rounded-full">
+                    <button onClick={() => navigate('/')} className="p-2 -ml-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors rounded-full">
                         <ArrowLeft className="w-6 h-6" />
                     </button>
                     <h1 className="text-lg font-bold text-slate-900 dark:text-white">Create Exam</h1>

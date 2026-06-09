@@ -15,7 +15,7 @@ export default function AppLayout() {
     const [isManageMenuOpen, setIsManageMenuOpen] = useState(false);
 
     const getPageTitle = (path: string) => {
-        if (path === '/dashboard' || path === '/') return 'Dashboard';
+        if (path === '/') return 'Dashboard';
         if (path.startsWith('/sections')) return 'Sections';
         if (path.startsWith('/students')) return 'Students';
         if (path.startsWith('/periods')) return 'Periods';
@@ -27,7 +27,7 @@ export default function AppLayout() {
     };
 
     const getPageSub = (path: string) => {
-        if (path === '/dashboard' || path === '/') return `Welcome back, ${currentUser?.email || 'Guest'}`;
+        if (path === '/') return `Welcome back, ${currentUser?.email || 'Guest'}`;
         if (path.startsWith('/sections')) return 'Manage your classes and advisory groups.';
         if (path.startsWith('/students')) return 'Manage your student rosters.';
         if (path.startsWith('/periods')) return 'Manage your grading periods.';
@@ -39,7 +39,7 @@ export default function AppLayout() {
     const pageSub = getPageSub(location.pathname);
 
     const navItems = [
-        { path: '/dashboard', label: 'Overview', icon: LayoutDashboard, requiresAuth: false },
+        { path: '/', label: 'Overview', icon: LayoutDashboard, requiresAuth: false },
         { path: '/sections', label: 'Sections', icon: FolderKanban, requiresAuth: true },
         { path: '/students', label: 'Students', icon: Users, requiresAuth: true },
         { path: '/periods', label: 'Periods', icon: CalendarDays, requiresAuth: true },
@@ -47,7 +47,7 @@ export default function AppLayout() {
     ];
 
     const mobileMainItems = [
-        { path: '/dashboard', label: 'Home', icon: LayoutDashboard, requiresAuth: false },
+        { path: '/', label: 'Home', icon: LayoutDashboard, requiresAuth: false },
         { path: '/manage', label: 'Manage', icon: Settings2, requiresAuth: true, isAction: true },
         { path: '/account', label: 'Account', icon: User, requiresAuth: false },
     ];
@@ -60,7 +60,7 @@ export default function AppLayout() {
 
     const handleLogout = async () => {
         await logout();
-        navigate('/');
+        navigate('/landing');
     };
 
     const showAuthToast = () => {
