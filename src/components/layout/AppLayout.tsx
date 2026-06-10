@@ -60,7 +60,7 @@ export default function AppLayout() {
 
     const handleLogout = async () => {
         await logout();
-        navigate('/landing');
+        navigate('/landing?mode=login');
     };
 
     const showAuthToast = () => {

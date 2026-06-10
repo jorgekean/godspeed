@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Zap, Camera, Printer, ShieldCheck, ArrowRight, BarChart3, CheckCircle, Check, Star, X, Lock, Loader2 } from 'lucide-react';
 
 // 1. Import your custom AuthContext instead of Firebase
@@ -9,8 +9,13 @@ export default function LandingPage() {
     const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     // 2. Destructure the login method
     const { login, currentUser } = useAuth();
+
+    // Auth Modal States
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const [isLoginMode, setIsLoginMode] = useState(false); // Toggle between Signup / Login
 
     // Redirect if already logged in
     React.useEffect(() => {
@@ -19,9 +24,17 @@ export default function LandingPage() {
         }
     }, [currentUser, navigate]);
 
-    // Auth Modal States
-    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-    const [isLoginMode, setIsLoginMode] = useState(false); // Toggle between Signup / Login
+    // Handle initial login/signup mode from query params
+    React.useEffect(() => {
+        const mode = searchParams.get('mode');
+        if (mode === 'login') {
+            setIsLoginMode(true);
+            setIsAuthModalOpen(true);
+        } else if (mode === 'signup') {
+            setIsLoginMode(false);
+            setIsAuthModalOpen(true);
+        }
+    }, [searchParams]);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
