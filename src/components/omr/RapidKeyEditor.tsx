@@ -65,10 +65,13 @@ export const RapidKeyEditor: React.FC<RapidKeyEditorProps> = ({
                         <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Scanned Preview</p>
                         <p className="text-[11px] font-bold text-slate-500">{answerKey.length} Total Items</p>
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="grid grid-cols-5 sm:grid-cols-10 gap-2 mt-3">
                         {answerKey.split('').map((char, idx) => (
-                            <div key={idx} className="w-6 h-6 rounded-full bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300 text-[10px] font-bold flex items-center justify-center border border-violet-200 dark:border-violet-500/30">
-                                {char}
+                            <div key={idx} className="flex flex-col items-center justify-center p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50 shadow-sm">
+                                <span className="text-[9px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Item {idx + 1}</span>
+                                <div className="w-7 h-7 rounded-full bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300 text-[12px] font-black flex items-center justify-center border border-violet-200 dark:border-violet-500/30">
+                                    {char}
+                                </div>
                             </div>
                         ))}
                     </div>
