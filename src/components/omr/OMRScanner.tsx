@@ -264,7 +264,7 @@ export function OMRScanner({ correctAnswers, onScanComplete, enabled = true }: O
     }
 
     return (
-        <div className="flex flex-col h-screen bg-black">
+        <div className="flex flex-col h-full bg-black">
             <div className="p-4 bg-slate-900 text-white flex justify-between items-center z-10 shadow-md">
                 <h2 className="font-bold tracking-wide text-sm">Godspeed Scanner</h2>
                 <button 
@@ -344,8 +344,8 @@ export function OMRScanner({ correctAnswers, onScanComplete, enabled = true }: O
                         (
                             <>
                                 <Webcam audio={false} ref={webcamRef} screenshotFormat="image/jpeg" videoConstraints={{ facingMode: "environment" }} className="absolute inset-0 w-full h-full object-cover" />
-                                <div className="absolute inset-0 pointer-events-none flex items-center justify-center p-8">
-                                    <div className="w-full max-w-md aspect-[1/1.4] border-4 border-dashed border-blue-400 rounded-2xl relative shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]">
+                                <div className="absolute inset-0 pointer-events-none flex items-center justify-center p-6">
+                                    <div className="w-full max-w-xs sm:max-w-sm aspect-[1/1.4] border-4 border-dashed border-blue-400 rounded-2xl relative shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]">
                                         {isAutoMode && scanBuffer.length > 0 && (
                                             <div className="absolute inset-0 bg-blue-500/10 flex flex-col items-center justify-center rounded-xl animate-pulse">
                                                 <div className="bg-white px-4 py-2 rounded-full flex items-center gap-2 shadow-xl border-2 border-blue-500">
