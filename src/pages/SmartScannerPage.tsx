@@ -279,7 +279,7 @@ export default function SmartScannerPage() {
             </header>
 
             <main className="flex-1 w-full max-w-5xl mx-auto px-4 md:px-8 py-4 flex flex-col gap-4 relative">
-                <div className={`relative w-full flex flex-col h-[520px] sm:h-[600px] bg-black rounded-[28px] sm:rounded-[32px] overflow-hidden shadow-2xl shadow-black/40 dark:shadow-violet-900/10 border-4 md:border-[6px] border-slate-200 dark:border-slate-900 transition-opacity duration-300 ${scanMode === 'tagging' ? 'opacity-40 blur-sm pointer-events-none' : 'opacity-100'}`}>
+                <div className={`relative w-full flex flex-col h-[75vh] min-h-[500px] max-h-[720px] bg-black rounded-[28px] sm:rounded-[32px] overflow-hidden shadow-2xl shadow-black/40 dark:shadow-violet-900/10 border-4 md:border-[6px] border-slate-200 dark:border-slate-900 transition-opacity duration-300 ${scanMode === 'tagging' ? 'opacity-40 blur-sm pointer-events-none' : 'opacity-100'}`}>
                     <OMRScanner
                         correctAnswers={exam.answerKey.split('')}
                         onScanComplete={handleScanSuccess}

@@ -28,7 +28,7 @@ export function OMRScanner({ correctAnswers, onScanComplete, enabled = true }: O
     const [scanBuffer, setScanBuffer] = useState<any[]>([]);
     const [lastError, setLastError] = useState<string | null>(null);
     const [showHelpPrompt, setShowHelpPrompt] = useState(false);
-    const [lastSuccess, setLastSuccess] = useState<{ studentNo: string, score: number, total: number } | null>(null);
+    const [lastSuccess, setLastSuccess] = useState<{ studentNo: string, score: number, total: number, answers?: Record<string, string> } | null>(null);
     const [scanSessionId, setScanSessionId] = useState(0); 
     const autoScanTimeoutRef = useRef<any>(null); // Use 'any' to avoid NodeJS.Timeout reference errors in browser
 
@@ -78,7 +78,7 @@ export function OMRScanner({ correctAnswers, onScanComplete, enabled = true }: O
             rawAnswersArray.push(finalAnswers[i.toString()] || "BLANK");
         }
         
-        setLastSuccess({ studentNo: studentNo || '?', score: score, total: totalItems });
+        setLastSuccess({ studentNo: studentNo || '?', score: score, total: totalItems, answers: finalAnswers });
         playSuccessBeep();
         setIsPaused(true);
         setIsProcessing(false);
@@ -280,53 +280,13 @@ export function OMRScanner({ correctAnswers, onScanComplete, enabled = true }: O
 
             <div className="flex-1 relative overflow-hidden flex items-center justify-center">
                 {scanResult && reviewQueue.length === 0 ? (
-                    showDetails ? (
-                        <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-md z-40 p-6 overflow-y-auto pb-32 flex flex-col items-center">
-                            <div className="w-full max-w-md flex justify-between items-center mt-2 mb-6">
-                                <h3 className="text-white text-xl font-bold tracking-tight">Answer Details</h3>
-                                <div className="flex gap-2">
-                                    <button onClick={() => setShowDetails(false)} className="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-slate-700 transition-colors">Back</button>
-                                    <button onClick={() => { setScanResult(null); setShowDetails(false); resetAutoScan(); }} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors">Next Scan</button>
-                                </div>
-                            </div>
-                            <div className="w-full max-w-md grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                {Array.from({ length: scanResult.total }).map((_, i) => {
-                                    const qNum = (i + 1).toString();
-                                    const studentAns = scanResult.answers[qNum] || '-';
-                                    let correctAns = '-';
-                                    if (correctAnswers && correctAnswers.length > 0) {
-                                        correctAns = correctAnswers[i] || '-';
-                                    } else {
-                                        const options = ['A', 'B', 'C', 'D'];
-                                        correctAns = options[(i + 1) % 4];
-                                    }
-                                    const isCorrect = studentAns === correctAns;
-                                    return (
-                                        <div key={qNum} className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center shadow-lg ${isCorrect ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
-                                            <span className="text-slate-400 text-[11px] font-bold mb-1 tracking-wider uppercase">Item {qNum}</span>
-                                            <div className="flex gap-2 items-center">
-                                                <span className={`text-2xl font-black ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>{studentAns === "BLANK" ? "—" : studentAns}</span>
-                                                {!isCorrect && (
-                                                    <>
-                                                        <span className="text-slate-500 text-lg">→</span>
-                                                        <span className="text-green-400 text-2xl font-black">{correctAns}</span>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="bg-white p-8 rounded-3xl text-center max-w-sm w-full mx-4 absolute z-50 shadow-2xl">
-                            <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-4" />
-                            <h3 className="text-5xl font-black text-slate-900 mb-2">{scanResult.score} <span className="text-2xl text-slate-400">/ {scanResult.total}</span></h3>
-                            <p className="text-slate-500 font-medium mb-8 bg-slate-100 py-2 rounded-lg">{scanResult.studentId}</p>
-                            <button onClick={() => { setScanResult(null); setShowDetails(false); resetAutoScan(); }} className="w-full py-4 bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold rounded-xl text-lg mb-3">Scan Next Paper</button>
-                            <button onClick={() => setShowDetails(true)} className="w-full py-3 bg-slate-100 hover:bg-slate-200 transition-colors text-slate-600 font-bold rounded-xl text-md">Show Details</button>
-                        </div>
-                    )
+                    // Legacy fallback view (mostly unused now)
+                    <div className="bg-white p-8 rounded-3xl text-center max-w-sm w-full mx-4 absolute z-50 shadow-2xl">
+                        <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-4" />
+                        <h3 className="text-5xl font-black text-slate-900 mb-2">{scanResult.score} <span className="text-2xl text-slate-400">/ {scanResult.total}</span></h3>
+                        <p className="text-slate-500 font-medium mb-8 bg-slate-100 py-2 rounded-lg">{scanResult.studentId}</p>
+                        <button onClick={() => { setScanResult(null); resetAutoScan(); }} className="w-full py-4 bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold rounded-xl text-lg mb-3">Scan Next Paper</button>
+                    </div>
                 ) :
                     reviewQueue.length > 0 ? (
                         <div className="bg-amber-50 p-6 rounded-3xl text-center max-w-sm w-full mx-4 absolute z-50 shadow-2xl border-4 border-amber-200">
@@ -335,7 +295,7 @@ export function OMRScanner({ correctAnswers, onScanComplete, enabled = true }: O
                             <p className="text-slate-600 mb-6">Check the physical paper. What did the student intend for <span className="font-black text-xl text-indigo-600 block mt-2">Question {reviewQueue[0]}?</span></p>
                             <div className="grid grid-cols-2 gap-3 mb-4">
                                 {['A', 'B', 'C', 'D'].map(letter => (
-                                    <button key={letter} onClick={() => handleReviewDecision(letter)} className="py-4 bg-white border-2 border-slate-200 rounded-xl font-bold text-xl hover:border-indigo-500 hover:text-indigo-600 active:bg-indigo-50 transition-all shadow-sm">{letter}</button>
+                                    <button key={letter} onClick={() => handleReviewDecision(letter)} className="py-4 bg-white text-slate-900 border-2 border-slate-200 rounded-xl font-bold text-2xl hover:border-indigo-500 hover:text-indigo-600 active:bg-indigo-50 transition-all shadow-sm">{letter}</button>
                                 ))}
                             </div>
                             <button onClick={() => handleReviewDecision("BLANK")} className="w-full py-4 bg-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-300 transition-colors">Mark as Blank / Invalid</button>
@@ -346,7 +306,7 @@ export function OMRScanner({ correctAnswers, onScanComplete, enabled = true }: O
                                 <Webcam audio={false} ref={webcamRef} screenshotFormat="image/jpeg" videoConstraints={{ facingMode: "environment" }} className="absolute inset-0 w-full h-full object-cover" />
                                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center p-6">
                                     <div className="w-full max-w-xs sm:max-w-sm aspect-[1/1.4] border-4 border-dashed border-blue-400 rounded-2xl relative shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]">
-                                        {isAutoMode && scanBuffer.length > 0 && (
+                                        {isAutoMode && scanBuffer.length > 0 && !lastSuccess && (
                                             <div className="absolute inset-0 bg-blue-500/10 flex flex-col items-center justify-center rounded-xl animate-pulse">
                                                 <div className="bg-white px-4 py-2 rounded-full flex items-center gap-2 shadow-xl border-2 border-blue-500">
                                                     <RefreshCw className="w-4 h-4 animate-spin text-blue-600" />
@@ -354,7 +314,7 @@ export function OMRScanner({ correctAnswers, onScanComplete, enabled = true }: O
                                                 </div>
                                             </div>
                                         )}
-                                        {lastSuccess && (
+                                        {lastSuccess && !showDetails && (
                                             <div className="absolute inset-0 z-30 flex flex-col items-center justify-center p-4 pointer-events-auto bg-black/40 backdrop-blur-[2px]">
                                                 <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xs overflow-hidden border-2 border-green-500 animate-in zoom-in-95 duration-300">
                                                     <div className="bg-green-500 p-4 flex flex-col items-center">
@@ -366,13 +326,59 @@ export function OMRScanner({ correctAnswers, onScanComplete, enabled = true }: O
                                                         <div className="text-4xl font-black text-slate-900 mb-6">{lastSuccess.score} <span className="text-lg text-slate-400">/ {lastSuccess.total}</span></div>
                                                         <div className="flex flex-col gap-2">
                                                             <button onClick={resetAutoScan} className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-md active:scale-95">Next Paper →</button>
-                                                            <button onClick={handleRescan} className="w-full py-2.5 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors">Rescan</button>
+                                                            <div className="flex gap-2">
+                                                                <button onClick={() => setShowDetails(true)} className="flex-1 py-2.5 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors">Details</button>
+                                                                <button onClick={handleRescan} className="flex-1 py-2.5 bg-red-50 text-red-600 font-bold rounded-xl hover:bg-red-100 transition-colors">Rescan</button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         )}
+                                        
+                                        {/* DETAILS OVERLAY */}
+                                        {lastSuccess && showDetails && (
+                                            <div className="absolute inset-0 z-40 bg-slate-950/95 backdrop-blur-md p-4 overflow-y-auto pointer-events-auto flex flex-col items-center rounded-2xl animate-in fade-in duration-200">
+                                                <div className="w-full flex justify-between items-center mt-2 mb-4 sticky top-0 bg-slate-950/90 py-2 z-10">
+                                                    <h3 className="text-white font-bold tracking-tight">Answers</h3>
+                                                    <div className="flex gap-2">
+                                                        <button onClick={() => setShowDetails(false)} className="bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-700 transition-colors">Back</button>
+                                                    </div>
+                                                </div>
+                                                <div className="w-full grid grid-cols-2 gap-2 pb-12">
+                                                    {Array.from({ length: lastSuccess.total }).map((_, i) => {
+                                                        const qNum = (i + 1).toString();
+                                                        // Fallback to BLANK if we don't have the answers in lastSuccess (we don't right now, need to fix finalizeGrading to pass them)
+                                                        const studentAns = lastSuccess.answers ? lastSuccess.answers[qNum] : '-';
+                                                        let correctAns = '-';
+                                                        if (correctAnswers && correctAnswers.length > 0) {
+                                                            correctAns = correctAnswers[i] || '-';
+                                                        } else {
+                                                            const options = ['A', 'B', 'C', 'D'];
+                                                            correctAns = options[(i + 1) % 4];
+                                                        }
+                                                        const isCorrect = studentAns === correctAns;
+                                                        return (
+                                                            <div key={qNum} className={`p-2 rounded-xl border flex flex-col items-center justify-center ${isCorrect ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
+                                                                <span className="text-slate-400 text-[9px] font-bold mb-0.5 uppercase">Q{qNum}</span>
+                                                                <div className="flex gap-1 items-center">
+                                                                    <span className={`text-lg font-black ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>{studentAns === "BLANK" ? "—" : studentAns}</span>
+                                                                    {!isCorrect && (
+                                                                        <>
+                                                                            <span className="text-slate-500 text-xs">→</span>
+                                                                            <span className="text-green-400 text-lg font-black">{correctAns}</span>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+
                                         <p className="text-white text-center font-bold mt-12 bg-blue-600/90 backdrop-blur-sm mx-8 py-2 rounded-full shadow-lg text-sm">Align all 4 corners inside this box</p>
+
                                         {showHelpPrompt && (
                                             <div className="absolute bottom-12 left-6 right-6 bg-amber-500 text-white p-4 rounded-2xl flex flex-col gap-2 items-center text-center shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 pointer-events-auto">
                                                 <AlertTriangle className="w-8 h-8" />
