@@ -11,9 +11,11 @@ interface OMRScannerProps {
 export function OMRScanner({ correctAnswers, onScanComplete, enabled = true }: OMRScannerProps = {}) {
     const webcamRef = useRef<Webcam>(null);
     const workerRef = useRef<Worker | null>(null);
+    const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null); // NEW: Persistent canvas
 
     const [isWorkerReady, setIsWorkerReady] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isWorkerBusy, setIsWorkerBusy] = useState(false); // NEW: Backpressure tracking
     const [scanResult, setScanResult] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
     const [isPaused, setIsPaused] = useState(false);
@@ -163,6 +165,11 @@ export function OMRScanner({ correctAnswers, onScanComplete, enabled = true }: O
         workerRef.current.onmessage = (e) => {
             const { success, error, answers, examCode, studentNo, sessionId, status } = e.data;
             
+            // Release the backpressure lock regardless of outcome
+            if (status !== 'READY') {
+                setIsWorkerBusy(false);
+            }
+
             // 1. Ghost result prevention
             if (sessionId !== -1 && sessionId !== scanSessionId) return;
 
@@ -223,28 +230,38 @@ export function OMRScanner({ correctAnswers, onScanComplete, enabled = true }: O
     };
 
     const captureAndScan = useCallback(() => {
-        if (!webcamRef.current || isProcessing || !enabled || isPaused) return;
+        if (!webcamRef.current || isProcessing || !enabled || isPaused || isWorkerBusy) return;
         const videoElement = webcamRef.current.video;
         if (!videoElement || videoElement.readyState !== 4) return;
 
         setIsProcessing(true);
+        setIsWorkerBusy(true); // Engage backpressure lock
         setError(null);
 
-        const canvas = document.createElement('canvas');
+        // RECYCLING CANVAS: Prevent DOM memory leaks
+        if (!offscreenCanvasRef.current) {
+            offscreenCanvasRef.current = document.createElement('canvas');
+        }
+        const canvas = offscreenCanvasRef.current;
         canvas.width = videoElement.videoWidth;
         canvas.height = videoElement.videoHeight;
-        const ctx = canvas.getContext('2d');
+        
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         if (ctx) {
             ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const physicalSheetType = (correctAnswers && correctAnswers.length > 20) ? '50' : '20';
+            
             workerRef.current?.postMessage({ 
                 imageData, 
                 examType: physicalSheetType,
                 sessionId: scanSessionId 
             }, [imageData.data.buffer]);
+        } else {
+            setIsWorkerBusy(false);
+            setIsProcessing(false);
         }
-    }, [webcamRef, correctAnswers, isProcessing, enabled, isPaused, scanSessionId]);
+    }, [webcamRef, correctAnswers, isProcessing, enabled, isPaused, scanSessionId, isWorkerBusy]);
 
     useEffect(() => {
         if (!isAutoMode || !isWorkerReady || scanResult || reviewQueue.length > 0 || !enabled || isPaused) return;
@@ -255,6 +272,18 @@ export function OMRScanner({ correctAnswers, onScanComplete, enabled = true }: O
         }, 300);
         return () => clearInterval(interval);
     }, [isAutoMode, isWorkerReady, isProcessing, captureAndScan, scanResult, reviewQueue, enabled, isPaused]);
+
+    // --- EFFECT: EXPLICIT CAMERA CLEANUP ---
+    useEffect(() => {
+        return () => {
+            // When the scanner unmounts, forcefully stop the camera tracks
+            if (webcamRef.current && webcamRef.current.video && webcamRef.current.video.srcObject) {
+                const stream = webcamRef.current.video.srcObject as MediaStream;
+                const tracks = stream.getTracks();
+                tracks.forEach(track => track.stop());
+            }
+        };
+    }, []);
 
     if (!isWorkerReady) {
         return <div className="p-10 text-center font-bold text-slate-500 flex flex-col items-center justify-center h-screen bg-black">
