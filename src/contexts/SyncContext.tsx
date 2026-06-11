@@ -95,7 +95,7 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
     }, []);
 
-    // Auto-sync on auth or every 5 minutes (PUSH ONLY)
+    // Auto-sync on auth or every 1 minute (PUSH ONLY)
     useEffect(() => {
         // 4. Trigger an initial sync (PUSH & PULL) if the user logs in
         if (currentUser) {
@@ -107,7 +107,7 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 // Periodic sync is now PUSH ONLY to save costs
                 triggerPush();
             }
-        }, 5 * 60 * 1000);//
+        }, 1 * 60 * 1000);//
 
         return () => {
             clearInterval(interval);
