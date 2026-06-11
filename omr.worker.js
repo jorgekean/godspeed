@@ -4,16 +4,16 @@
 self.importScripts('./opencv.js');
 
 self.onmessage = function (e) {
-    const { imageData, action, examType = '20' } = e.data;
+    const { imageData, action, examType = '20', sessionId } = e.data;
     const cv = self.cv;
 
     if (action === 'PING') {
-        self.postMessage({ status: 'READY' });
+        self.postMessage({ status: 'READY', sessionId });
         return;
     }
 
     if (!cv || !cv.Mat) {
-        self.postMessage({ error: "OpenCV engine is not initialized yet." });
+        self.postMessage({ error: "OpenCV engine is not initialized yet.", sessionId });
         return;
     }
 
@@ -118,27 +118,76 @@ self.onmessage = function (e) {
         // 🚀 PHASE 4: DYNAMIC BUBBLE EVALUATION
         // ==========================================
         let numQuestions, colStarts, startY, rowHeight, bubbleSpacing, bubbleSize;
+        let idGrids = []; // Store configurations for ID detection
 
-        // Apply mathematical grid based on the UI Toggle
+        // Shifted coordinates to match updated OMRTemplate.tsx
         if (examType === '20') {
             numQuestions = 20;
-            colStarts = [120]; // 1 Column
+            colStarts = [520]; // 1 Column moved to the right
             startY = 180; rowHeight = 35; bubbleSpacing = 45; bubbleSize = 30;
+
+            // Identification Grids
+            idGrids = [
+                { name: 'examCode', digits: 2, startX: 100, startY: 180 + 18 + 5, spacingX: 24, spacingY: 22, bubbleSize: 18 },
+                { name: 'studentNo', digits: 8, startX: 100, startY: 460 + 18 + 5, spacingX: 24, spacingY: 22, bubbleSize: 18 }
+            ];
         } else {
             numQuestions = 50;
-            colStarts = [100, 450]; // 2 Columns
+            colStarts = [340, 580]; // 2 Columns moved to the right
             startY = 160; rowHeight = 28; bubbleSpacing = 35; bubbleSize = 24;
+
+            // Identification Grids
+            idGrids = [
+                { name: 'examCode', digits: 2, startX: 60, startY: 160 + 18 + 5, spacingX: 24, spacingY: 22, bubbleSize: 18 },
+                { name: 'studentNo', digits: 8, startX: 60, startY: 440 + 18 + 5, spacingX: 24, spacingY: 22, bubbleSize: 18 }
+            ];
         }
 
-        const choicesMap = ['A', 'B', 'C', 'D']; // Standardized to 4 choices
+        const choicesMap = ['A', 'B', 'C', 'D'];
         const numChoices = 4;
 
         // Lower threshold for 50-item test because the bubbles are physically smaller
         const BLANK_THRESHOLD = examType === '20' ? 80 : 50;
         const CONFIDENCE_MARGIN = examType === '20' ? 40 : 25;
 
-        let studentAnswers = {};
+        // ID Grid Specific Thresholds (smaller bubbles)
+        const ID_BLANK_THRESHOLD = 35;
+        const ID_CONFIDENCE_MARGIN = 20;
 
+        let studentAnswers = {};
+        let detectedIds = { examCode: "", studentNo: "" };
+
+        // 1. Evaluate Identification Grids
+        for (const grid of idGrids) {
+            let resultString = "";
+            for (let d = 0; d < grid.digits; d++) {
+                let digitStats = [];
+                for (let v = 0; v < 10; v++) {
+                    let x = grid.startX + (d * grid.spacingX);
+                    let y = grid.startY + (v * grid.spacingY);
+                    
+                    // Small safety margin for ROI
+                    let roiMargin = 2;
+                    let rect = new cv.Rect(x + roiMargin, y + roiMargin, grid.bubbleSize - (roiMargin * 2), grid.bubbleSize - (roiMargin * 2));
+
+                    let bubbleROI = warpedThresh.roi(rect);
+                    let filledPixels = cv.countNonZero(bubbleROI);
+                    digitStats.push({ val: v, pixels: filledPixels });
+                    bubbleROI.delete();
+                }
+
+                digitStats.sort((a, b) => b.pixels - a.pixels);
+
+                if (digitStats[0].pixels < ID_BLANK_THRESHOLD) {
+                    resultString += "?"; // Unknown/Blank
+                } else {
+                    resultString += digitStats[0].val.toString();
+                }
+            }
+            detectedIds[grid.name] = resultString;
+        }
+
+        // 2. Evaluate Question Bubbles
         for (let q = 0; q < numQuestions; q++) {
             let bubbleStats = [];
 
@@ -174,10 +223,16 @@ self.onmessage = function (e) {
             }
         }
 
-        self.postMessage({ success: true, answers: studentAnswers });
+        self.postMessage({ 
+            success: true, 
+            answers: studentAnswers, 
+            examCode: detectedIds.examCode, 
+            studentNo: detectedIds.studentNo,
+            sessionId: sessionId 
+        });
 
     } catch (err) {
-        self.postMessage({ error: err.message || "An error occurred during processing." });
+        self.postMessage({ error: err.message || "An error occurred during processing.", sessionId });
     } finally {
         // GUARANTEED MEMORY CLEANUP
         if (src && !src.isDeleted()) src.delete();
