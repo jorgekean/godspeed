@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, DEMO_USER_ID } from '../services/db';
@@ -75,7 +75,65 @@ export default function SmartScannerPage() {
     // 3. HANDLERS
     // ---------------------------------------------------------
 
-    const handleScanSuccess = (score: number, rawAnswers: string[], examCode?: string, studentNo?: string) => {
+    const handleRescan = useCallback(() => {
+        setCurrentScore(null);
+        setCurrentRawAnswers([]);
+        setShowDetails(false);
+        setScanMode('scanning');
+    }, []);
+
+    const handleTagStudent = useCallback(async (studentId: string, studentName: string, scoreOverride?: number, answersOverride?: string[]) => {
+        if (!exam) return;
+
+        const finalScore = scoreOverride !== undefined ? scoreOverride : currentScore;
+        const finalAnswers = answersOverride !== undefined ? answersOverride : currentRawAnswers;
+
+        if (finalScore === null) return;
+
+        // 1. Check if a result already exists for this Student + Exam combo
+        const existing = await db.scanResults
+            .where('[examId+studentId]')
+            .equals([exam.id, studentId])
+            .first();
+
+        const baseData = {
+            examId: exam.id,
+            sectionId: selectedSectionId,
+            studentId: studentId,
+            score: finalScore,
+            total: exam.itemCount,
+            answers: finalAnswers.reduce((acc, ans, i) => ({ ...acc, [i + 1]: ans }), {}),
+            scannedAt: Date.now(),
+            createdBy: currentUser?.email || DEMO_USER_ID,
+            updatedAt: Date.now(),
+            isSynced: false,
+            isDeleted: false
+        };
+
+        if (existing) {
+            // 2. Perform a targeted UPDATE on the existing GUID
+            await db.scanResults.update(existing.id, baseData);
+        } else {
+            // 3. Create a NEW record with a fresh GUID
+            await db.scanResults.add({
+                id: crypto.randomUUID(),
+                ...baseData
+            });
+        }
+
+        // Only show toast here if we were in manual tagging mode (not auto-tagged)
+        if (scanMode === 'tagging') {
+            toast.success(`${studentName} scored ${finalScore}/${exam.itemCount}. Saved! Go to next paper.`, {
+                duration: 3000,
+                icon: <CheckCircle2 className="w-5 h-5 text-green-500" />
+            });
+        }
+
+        setScannedStudentIds(prev => new Set(prev).add(studentId));
+        handleRescan(); // Reset and lower the sheet
+    }, [exam, selectedSectionId, currentUser, currentScore, currentRawAnswers, scanMode, handleRescan]);
+
+    const handleScanSuccess = useCallback((score: number, rawAnswers: string[], examCode?: string, studentNo?: string) => {
         if (!exam || scanMode === 'tagging') return;
 
         setCurrentScore(score);
@@ -95,68 +153,19 @@ export default function SmartScannerPage() {
                 handleTagStudent(student.id, student.fullName, score, rawAnswers);
                 return;
             } else {
-                toast.info(`Student No ${studentNo} not found in this section.`, { duration: 3000 });
+                toast.info(`Student No ${studentNo} (Score: ${score}) not found. Please tag manually.`, { duration: 4000 });
             }
         }
 
         if (selectedSectionId === 'anonymous') {
-            toast.success(`Quick Scan: ${score}/${exam.itemCount}`);
+            // No toast needed here, OMRScanner handles the success overlay
             setTimeout(() => setCurrentScore(null), 1500);
         } else {
             setScanMode('tagging');
             setSearchQuery('');
         }
-    };
+    }, [exam, scanMode, selectedSectionId, students, handleTagStudent]);
 
-    const handleRescan = () => {
-        setCurrentScore(null);
-        setCurrentRawAnswers([]);
-        setShowDetails(false);
-        setScanMode('scanning');
-    };
-
-    const handleTagStudent = async (studentId: string, studentName: string, scoreOverride?: number, answersOverride?: string[]) => {
-        if (!exam) return;
-
-        const finalScore = scoreOverride !== undefined ? scoreOverride : currentScore;
-        const finalAnswers = answersOverride !== undefined ? answersOverride : currentRawAnswers;
-
-        if (finalScore === null) return;
-
-        // --- NEW: Upsert Logic ---
-        const existing = await db.scanResults
-            .where('[examId+studentId]')
-            .equals([exam.id, studentId])
-            .first();
-
-        const scanData = {
-            examId: exam.id,
-            sectionId: selectedSectionId,
-            studentId: studentId,
-            score: finalScore,
-            total: exam.itemCount,
-            answers: finalAnswers.reduce((acc, ans, i) => ({ ...acc, [i + 1]: ans }), {}),
-            scannedAt: Date.now(),
-            createdBy: currentUser?.email || DEMO_USER_ID,
-            updatedAt: Date.now(),
-            isSynced: false,
-            isDeleted: false
-        };
-
-        if (existing) {
-            await db.scanResults.update(existing.id, scanData);
-            toast.success(`Updated: ${studentName} (${finalScore}/${exam.itemCount})`);
-        } else {
-            await db.scanResults.add({
-                id: crypto.randomUUID(),
-                ...scanData
-            });
-            toast.success(`Saved: ${studentName} (${finalScore}/${exam.itemCount})`);
-        }
-
-        setScannedStudentIds(prev => new Set(prev).add(studentId));
-        handleRescan(); // Reset and lower the sheet
-    };
 
     // ---------------------------------------------------------
     // LOADING STATES
@@ -274,6 +283,7 @@ export default function SmartScannerPage() {
                     <OMRScanner
                         correctAnswers={exam.answerKey.split('')}
                         onScanComplete={(score, rawAnswers, examCode, studentNo) => handleScanSuccess(score, rawAnswers, examCode, studentNo)}
+                        enabled={scanMode === 'scanning'}
                     />
                 </div>
             </main>

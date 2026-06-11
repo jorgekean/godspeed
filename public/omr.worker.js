@@ -4,16 +4,16 @@
 self.importScripts('./opencv.js');
 
 self.onmessage = function (e) {
-    const { imageData, action, examType = '20' } = e.data;
+    const { imageData, action, examType = '20', sessionId } = e.data;
     const cv = self.cv;
 
     if (action === 'PING') {
-        self.postMessage({ status: 'READY' });
+        self.postMessage({ status: 'READY', sessionId });
         return;
     }
 
     if (!cv || !cv.Mat) {
-        self.postMessage({ error: "OpenCV engine is not initialized yet." });
+        self.postMessage({ error: "OpenCV engine is not initialized yet.", sessionId });
         return;
     }
 
@@ -227,11 +227,12 @@ self.onmessage = function (e) {
             success: true, 
             answers: studentAnswers, 
             examCode: detectedIds.examCode, 
-            studentNo: detectedIds.studentNo 
+            studentNo: detectedIds.studentNo,
+            sessionId: sessionId 
         });
 
     } catch (err) {
-        self.postMessage({ error: err.message || "An error occurred during processing." });
+        self.postMessage({ error: err.message || "An error occurred during processing.", sessionId });
     } finally {
         // GUARANTEED MEMORY CLEANUP
         if (src && !src.isDeleted()) src.delete();

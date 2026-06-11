@@ -4,11 +4,11 @@ import { Camera, CheckCircle, AlertTriangle, RefreshCw, HelpCircle } from 'lucid
 
 interface OMRScannerProps {
     correctAnswers?: string[];
-    // --- NEW: Add the callback prop so the parent knows when grading is done ---
     onScanComplete?: (score: number, rawAnswers: string[], examCode?: string, studentNo?: string) => void;
+    enabled?: boolean;
 }
 
-export function OMRScanner({ correctAnswers, onScanComplete }: OMRScannerProps = {}) {
+export function OMRScanner({ correctAnswers, onScanComplete, enabled = true }: OMRScannerProps = {}) {
     const webcamRef = useRef<Webcam>(null);
     const workerRef = useRef<Worker | null>(null);
 
@@ -16,126 +16,216 @@ export function OMRScanner({ correctAnswers, onScanComplete }: OMRScannerProps =
     const [isProcessing, setIsProcessing] = useState(false);
     const [scanResult, setScanResult] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
+    const [isPaused, setIsPaused] = useState(false);
 
     const [reviewQueue, setReviewQueue] = useState<string[]>([]);
     const [pendingAnswers, setPendingAnswers] = useState<Record<string, string>>({});
     const [detectedExamCode, setDetectedExamCode] = useState<string | undefined>();
     const [detectedStudentNo, setDetectedStudentNo] = useState<string | undefined>();
 
-    // State to toggle the details view
+    // --- AUTO-CAPTURE STATE ---
+    const [isAutoMode, setIsAutoMode] = useState(true);
+    const [scanBuffer, setScanBuffer] = useState<any[]>([]);
+    const [lastError, setLastError] = useState<string | null>(null);
+    const [showHelpPrompt, setShowHelpPrompt] = useState(false);
+    const [lastSuccess, setLastSuccess] = useState<{ studentNo: string, score: number, total: number } | null>(null);
+    const [scanSessionId, setScanSessionId] = useState(0); 
+    const autoScanTimeoutRef = useRef<any>(null); // Use 'any' to avoid NodeJS.Timeout reference errors in browser
+
     const [showDetails, setShowDetails] = useState(false);
 
+    // --- AUDIO FEEDBACK ---
+    const playSuccessBeep = useCallback(() => {
+        try {
+            const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+            if (!AudioContextClass) return;
+            
+            const audioCtx = new AudioContextClass();
+            const playNote = (freq: number, startTime: number, duration: number) => {
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(freq, startTime);
+                gainNode.gain.setValueAtTime(0, startTime);
+                gainNode.gain.linearRampToValueAtTime(0.1, startTime + 0.01);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+                oscillator.start(startTime);
+                oscillator.stop(startTime + duration);
+            };
+            const now = audioCtx.currentTime;
+            playNote(880, now, 0.1);
+            playNote(1046, now + 0.12, 0.1);
+        } catch (e) {
+            console.warn("Audio feedback failed:", e);
+        }
+    }, []);
+
+    const finalizeGrading = useCallback((finalAnswers: Record<string, string>, examCode?: string, studentNo?: string) => {
+        const totalItems = correctAnswers ? correctAnswers.length : 20;
+        let score = 0;
+        if (correctAnswers && correctAnswers.length > 0) {
+            Object.keys(finalAnswers).forEach(q => {
+                const questionIndex = parseInt(q, 10) - 1;
+                if (questionIndex < totalItems && finalAnswers[q] === correctAnswers[questionIndex]) {
+                    score++;
+                }
+            });
+        }
+        const rawAnswersArray: string[] = [];
+        for (let i = 1; i <= totalItems; i++) {
+            rawAnswersArray.push(finalAnswers[i.toString()] || "BLANK");
+        }
+        
+        setLastSuccess({ studentNo: studentNo || '?', score: score, total: totalItems });
+        playSuccessBeep();
+        setIsPaused(true);
+        setIsProcessing(false);
+
+        if (onScanComplete) {
+            onScanComplete(score, rawAnswersArray, examCode, studentNo);
+        }
+    }, [correctAnswers, onScanComplete, playSuccessBeep]);
+
+    const resetAutoScan = useCallback(() => {
+        setScanSessionId(prev => prev + 1);
+        setScanBuffer([]);
+        setShowHelpPrompt(false);
+        setLastSuccess(null);
+        setScanResult(null);
+        setIsPaused(false);
+        setIsProcessing(false);
+        if (autoScanTimeoutRef.current) clearTimeout(autoScanTimeoutRef.current);
+        
+        autoScanTimeoutRef.current = setTimeout(() => {
+            setShowHelpPrompt(true);
+        }, 10000);
+    }, []);
+
+    const handleRescan = useCallback(() => {
+        setScanSessionId(prev => prev + 1);
+        setIsPaused(false);
+        setIsProcessing(false);
+        setLastSuccess(null);
+        setScanResult(null);
+        setScanBuffer([]);
+        if (autoScanTimeoutRef.current) clearTimeout(autoScanTimeoutRef.current);
+        autoScanTimeoutRef.current = setTimeout(() => {
+            setShowHelpPrompt(true);
+        }, 10000);
+    }, []);
+
+    // Initial worker setup
     useEffect(() => {
         const baseUrl = import.meta.env.BASE_URL;
         const workerPath = `${baseUrl}omr.worker.js`;
-
         workerRef.current = new Worker(workerPath);
-
-        workerRef.current.onerror = (_err: ErrorEvent) => {
-            setError("Worker failed to load.");
-        };
-
-        workerRef.current.onmessage = (e) => {
-            if (e.data.status === 'READY') {
-                setIsWorkerReady(true);
-            } else if (e.data.error) {
-                setError(e.data.error);
-                setIsProcessing(false);
-            } else if (e.data.success) {
-                const extractedAnswers = e.data.answers;
-                const needsReview = Object.keys(extractedAnswers).filter(
-                    q => extractedAnswers[q] === "REVIEW"
-                );
-
-                setPendingAnswers(extractedAnswers);
-                setDetectedExamCode(e.data.examCode);
-                setDetectedStudentNo(e.data.studentNo);
-
-                if (needsReview.length > 0) {
-                    setReviewQueue(needsReview);
-                    setIsProcessing(false);
-                } else {
-                    finalizeGrading(extractedAnswers, e.data.examCode, e.data.studentNo);
-                }
-            }
-        };
-
+        
         const pingInterval = setInterval(() => {
-            if (!isWorkerReady) workerRef.current?.postMessage({ action: 'PING' });
+            if (!isWorkerReady) workerRef.current?.postMessage({ action: 'PING', sessionId: -1 });
         }, 1000);
 
         return () => {
             clearInterval(pingInterval);
             workerRef.current?.terminate();
         };
-    }, [isWorkerReady]);
+    }, []);
 
-    const finalizeGrading = (finalAnswers: Record<string, string>, examCode?: string, studentNo?: string) => {
-        // Automatically determine the total items from the correctAnswers array (fallback to 20)
-        const totalItems = correctAnswers ? correctAnswers.length : 20;
-        let score = 0;
+    // --- EFFECT: MONITOR SCAN BUFFER ---
+    // This moves the side effects OUT of the functional state update
+    useEffect(() => {
+        if (isAutoMode && scanBuffer.length >= 3) {
+            const finalResult = scanBuffer[scanBuffer.length - 1];
+            const extractedAnswers = finalResult.answers;
+            const needsReview = Object.keys(extractedAnswers).filter(q => extractedAnswers[q] === "REVIEW");
 
-        if (correctAnswers && correctAnswers.length > 0) {
-            Object.keys(finalAnswers).forEach(q => {
-                const questionIndex = parseInt(q, 10) - 1;
-                // Ensure we only grade up to the length of the actual exam
-                if (questionIndex < totalItems && finalAnswers[q] === correctAnswers[questionIndex]) {
-                    score++;
-                }
-            });
-        } else {
-            const dummyAnswerKey: Record<string, string> = {};
-            const options = ['A', 'B', 'C', 'D'];
-            for (let i = 1; i <= totalItems; i++) {
-                dummyAnswerKey[i.toString()] = options[i % 4];
+            if (needsReview.length > 0) {
+                setPendingAnswers(extractedAnswers);
+                setDetectedExamCode(finalResult.examCode);
+                setDetectedStudentNo(finalResult.studentNo);
+                setReviewQueue(needsReview);
+                setIsProcessing(false);
+            } else {
+                finalizeGrading(extractedAnswers, finalResult.examCode, finalResult.studentNo);
+            }
+            
+            // Clear the buffer once finalized
+            setScanBuffer([]);
+            if (autoScanTimeoutRef.current) clearTimeout(autoScanTimeoutRef.current);
+        }
+    }, [scanBuffer, isAutoMode, finalizeGrading]);
+
+    // Worker Message Listener with session tracking
+    useEffect(() => {
+        if (!workerRef.current) return;
+
+        workerRef.current.onmessage = (e) => {
+            const { success, error, answers, examCode, studentNo, sessionId, status } = e.data;
+            
+            // 1. Ghost result prevention
+            if (sessionId !== -1 && sessionId !== scanSessionId) return;
+
+            if (isPaused) {
+                setIsProcessing(false);
+                return;
             }
 
-            Object.keys(finalAnswers).forEach(q => {
-                if (finalAnswers[q] === dummyAnswerKey[q]) score++;
-            });
-        }
+            if (status === 'READY') {
+                setIsWorkerReady(true);
+            } else if (error) {
+                setLastError(error);
+                setIsProcessing(false);
+            } else if (success) {
+                setLastError(null);
+                const currentResult = { answers, examCode, studentNo };
 
-        // --- NEW: Convert answers Record to an Array for the parent component ---
-        const rawAnswersArray: string[] = [];
-        for (let i = 1; i <= totalItems; i++) {
-            rawAnswersArray.push(finalAnswers[i.toString()] || "BLANK");
-        }
+                if (isAutoMode) {
+                    setScanBuffer(prev => {
+                        if (prev.length === 0) setLastSuccess(null);
+                        const last = prev[prev.length - 1];
+                        
+                        // Robust match check
+                        const isMatch = last && 
+                            last.examCode === currentResult.examCode && 
+                            last.studentNo === currentResult.studentNo &&
+                            JSON.stringify(last.answers) === JSON.stringify(currentResult.answers);
 
-        // --- NEW: If parent provided onScanComplete, use it and bypass the local overlay ---
-        if (onScanComplete) {
-            onScanComplete(score, rawAnswersArray, examCode, studentNo);
-            setIsProcessing(false);
-        } else {
-            // Fallback for isolated testing (shows the giant CheckCircle overlay)
-            setScanResult({
-                studentId: studentNo || "Auto-Detected ID",
-                examCode: examCode || "??",
-                score: score,
-                total: totalItems,
-                answers: finalAnswers
-            });
-            setIsProcessing(false);
-        }
-    };
+                        return isMatch ? [...prev, currentResult] : [currentResult];
+                    });
+                } else {
+                    // Manual mode
+                    const extractedAnswers = answers;
+                    const needsReview = Object.keys(extractedAnswers).filter(q => extractedAnswers[q] === "REVIEW");
+                    if (needsReview.length > 0) {
+                        setPendingAnswers(extractedAnswers);
+                        setDetectedExamCode(examCode);
+                        setDetectedStudentNo(studentNo);
+                        setReviewQueue(needsReview);
+                    } else {
+                        finalizeGrading(extractedAnswers, examCode, studentNo);
+                    }
+                }
+                setIsProcessing(false);
+            }
+        };
+    }, [isWorkerReady, isAutoMode, scanSessionId, isPaused, finalizeGrading]);
 
     const handleReviewDecision = (decision: string) => {
         const currentQ = reviewQueue[0];
         const updatedAnswers = { ...pendingAnswers, [currentQ]: decision };
-
         setPendingAnswers(updatedAnswers);
-
         const newQueue = reviewQueue.slice(1);
         setReviewQueue(newQueue);
-
         if (newQueue.length === 0) {
             finalizeGrading(updatedAnswers, detectedExamCode, detectedStudentNo);
         }
     };
 
     const captureAndScan = useCallback(() => {
-        if (!webcamRef.current) return;
+        if (!webcamRef.current || isProcessing || !enabled || isPaused) return;
         const videoElement = webcamRef.current.video;
-        if (!videoElement) return;
+        if (!videoElement || videoElement.readyState !== 4) return;
 
         setIsProcessing(true);
         setError(null);
@@ -144,17 +234,27 @@ export function OMRScanner({ correctAnswers, onScanComplete }: OMRScannerProps =
         canvas.width = videoElement.videoWidth;
         canvas.height = videoElement.videoHeight;
         const ctx = canvas.getContext('2d');
-
         if (ctx) {
             ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-            // Automatically determine physical paper size for the OpenCV worker
             const physicalSheetType = (correctAnswers && correctAnswers.length > 20) ? '50' : '20';
-
-            workerRef.current?.postMessage({ imageData, examType: physicalSheetType }, [imageData.data.buffer]);
+            workerRef.current?.postMessage({ 
+                imageData, 
+                examType: physicalSheetType,
+                sessionId: scanSessionId 
+            }, [imageData.data.buffer]);
         }
-    }, [webcamRef, correctAnswers]);
+    }, [webcamRef, correctAnswers, isProcessing, enabled, isPaused, scanSessionId]);
+
+    useEffect(() => {
+        if (!isAutoMode || !isWorkerReady || scanResult || reviewQueue.length > 0 || !enabled || isPaused) return;
+        const interval = setInterval(() => {
+            if (!isProcessing) {
+                captureAndScan();
+            }
+        }, 300);
+        return () => clearInterval(interval);
+    }, [isAutoMode, isWorkerReady, isProcessing, captureAndScan, scanResult, reviewQueue, enabled, isPaused]);
 
     if (!isWorkerReady) {
         return <div className="p-10 text-center font-bold text-slate-500 flex flex-col items-center justify-center h-screen bg-black">
@@ -166,44 +266,33 @@ export function OMRScanner({ correctAnswers, onScanComplete }: OMRScannerProps =
     return (
         <div className="flex flex-col h-screen bg-black">
             <div className="p-4 bg-slate-900 text-white flex justify-between items-center z-10 shadow-md">
-                <h2 className="font-bold tracking-wide">Godspeed Scanner</h2>
+                <h2 className="font-bold tracking-wide text-sm">Godspeed Scanner</h2>
+                <button 
+                    onClick={() => {
+                        setIsAutoMode(!isAutoMode);
+                        resetAutoScan();
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${isAutoMode ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-400'}`}
+                >
+                    {isAutoMode ? 'Auto-Capture' : 'Manual Mode'}
+                </button>
             </div>
 
             <div className="flex-1 relative overflow-hidden flex items-center justify-center">
-
                 {scanResult && reviewQueue.length === 0 ? (
-
                     showDetails ? (
                         <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-md z-40 p-6 overflow-y-auto pb-32 flex flex-col items-center">
-
                             <div className="w-full max-w-md flex justify-between items-center mt-2 mb-6">
                                 <h3 className="text-white text-xl font-bold tracking-tight">Answer Details</h3>
-                                {/* --- Button group with Back and Next Scan --- */}
                                 <div className="flex gap-2">
-                                    <button
-                                        onClick={() => setShowDetails(false)}
-                                        className="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-slate-700 transition-colors"
-                                    >
-                                        Back
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            setScanResult(null);
-                                            setShowDetails(false);
-                                        }}
-                                        className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors"
-                                    >
-                                        Next Scan
-                                    </button>
+                                    <button onClick={() => setShowDetails(false)} className="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-slate-700 transition-colors">Back</button>
+                                    <button onClick={() => { setScanResult(null); setShowDetails(false); resetAutoScan(); }} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors">Next Scan</button>
                                 </div>
                             </div>
-
                             <div className="w-full max-w-md grid grid-cols-2 sm:grid-cols-3 gap-3">
                                 {Array.from({ length: scanResult.total }).map((_, i) => {
                                     const qNum = (i + 1).toString();
                                     const studentAns = scanResult.answers[qNum] || '-';
-
-                                    // Compute correct answer to display
                                     let correctAns = '-';
                                     if (correctAnswers && correctAnswers.length > 0) {
                                         correctAns = correctAnswers[i] || '-';
@@ -211,16 +300,12 @@ export function OMRScanner({ correctAnswers, onScanComplete }: OMRScannerProps =
                                         const options = ['A', 'B', 'C', 'D'];
                                         correctAns = options[(i + 1) % 4];
                                     }
-
                                     const isCorrect = studentAns === correctAns;
-
                                     return (
                                         <div key={qNum} className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center shadow-lg ${isCorrect ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
                                             <span className="text-slate-400 text-[11px] font-bold mb-1 tracking-wider uppercase">Item {qNum}</span>
                                             <div className="flex gap-2 items-center">
-                                                <span className={`text-2xl font-black ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>
-                                                    {studentAns === "BLANK" ? "—" : studentAns}
-                                                </span>
+                                                <span className={`text-2xl font-black ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>{studentAns === "BLANK" ? "—" : studentAns}</span>
                                                 {!isCorrect && (
                                                     <>
                                                         <span className="text-slate-500 text-lg">→</span>
@@ -238,95 +323,79 @@ export function OMRScanner({ correctAnswers, onScanComplete }: OMRScannerProps =
                             <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-4" />
                             <h3 className="text-5xl font-black text-slate-900 mb-2">{scanResult.score} <span className="text-2xl text-slate-400">/ {scanResult.total}</span></h3>
                             <p className="text-slate-500 font-medium mb-8 bg-slate-100 py-2 rounded-lg">{scanResult.studentId}</p>
-
-                            <button
-                                onClick={() => {
-                                    setScanResult(null);
-                                    setShowDetails(false); // Reset details state too
-                                }}
-                                className="w-full py-4 bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold rounded-xl text-lg mb-3"
-                            >
-                                Scan Next Paper
-                            </button>
-
-                            <button
-                                onClick={() => setShowDetails(true)}
-                                className="w-full py-3 bg-slate-100 hover:bg-slate-200 transition-colors text-slate-600 font-bold rounded-xl text-md"
-                            >
-                                Show Details
-                            </button>
+                            <button onClick={() => { setScanResult(null); setShowDetails(false); resetAutoScan(); }} className="w-full py-4 bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold rounded-xl text-lg mb-3">Scan Next Paper</button>
+                            <button onClick={() => setShowDetails(true)} className="w-full py-3 bg-slate-100 hover:bg-slate-200 transition-colors text-slate-600 font-bold rounded-xl text-md">Show Details</button>
                         </div>
                     )
                 ) :
-
                     reviewQueue.length > 0 ? (
                         <div className="bg-amber-50 p-6 rounded-3xl text-center max-w-sm w-full mx-4 absolute z-50 shadow-2xl border-4 border-amber-200">
                             <HelpCircle className="w-14 h-14 text-amber-500 mx-auto mb-3" />
                             <h3 className="text-2xl font-bold text-slate-900 mb-2">Ambiguous Answer</h3>
-                            <p className="text-slate-600 mb-6">
-                                Check the physical paper. What did the student intend for
-                                <span className="font-black text-xl text-indigo-600 block mt-2">Question {reviewQueue[0]}?</span>
-                            </p>
-
+                            <p className="text-slate-600 mb-6">Check the physical paper. What did the student intend for <span className="font-black text-xl text-indigo-600 block mt-2">Question {reviewQueue[0]}?</span></p>
                             <div className="grid grid-cols-2 gap-3 mb-4">
                                 {['A', 'B', 'C', 'D'].map(letter => (
-                                    <button
-                                        key={letter}
-                                        onClick={() => handleReviewDecision(letter)}
-                                        className="py-4 bg-white border-2 border-slate-200 rounded-xl font-bold text-xl hover:border-indigo-500 hover:text-indigo-600 active:bg-indigo-50 transition-all shadow-sm"
-                                    >
-                                        {letter}
-                                    </button>
+                                    <button key={letter} onClick={() => handleReviewDecision(letter)} className="py-4 bg-white border-2 border-slate-200 rounded-xl font-bold text-xl hover:border-indigo-500 hover:text-indigo-600 active:bg-indigo-50 transition-all shadow-sm">{letter}</button>
                                 ))}
                             </div>
-                            <button
-                                onClick={() => handleReviewDecision("BLANK")}
-                                className="w-full py-4 bg-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-300 transition-colors"
-                            >
-                                Mark as Blank / Invalid
-                            </button>
+                            <button onClick={() => handleReviewDecision("BLANK")} className="w-full py-4 bg-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-300 transition-colors">Mark as Blank / Invalid</button>
                         </div>
                     ) :
-
                         (
                             <>
-                                <Webcam
-                                    audio={false}
-                                    ref={webcamRef}
-                                    screenshotFormat="image/jpeg"
-                                    videoConstraints={{ facingMode: "environment" }}
-                                    className="absolute inset-0 w-full h-full object-cover"
-                                />
-
+                                <Webcam audio={false} ref={webcamRef} screenshotFormat="image/jpeg" videoConstraints={{ facingMode: "environment" }} className="absolute inset-0 w-full h-full object-cover" />
                                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center p-8">
                                     <div className="w-full max-w-md aspect-[1/1.4] border-4 border-dashed border-blue-400 rounded-2xl relative shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]">
-                                        <p className="text-white text-center font-bold mt-12 bg-blue-600/90 backdrop-blur-sm mx-8 py-2 rounded-full shadow-lg text-sm">
-                                            Align all 4 corners inside this box
-                                        </p>
+                                        {isAutoMode && scanBuffer.length > 0 && (
+                                            <div className="absolute inset-0 bg-blue-500/10 flex flex-col items-center justify-center rounded-xl animate-pulse">
+                                                <div className="bg-white px-4 py-2 rounded-full flex items-center gap-2 shadow-xl border-2 border-blue-500">
+                                                    <RefreshCw className="w-4 h-4 animate-spin text-blue-600" />
+                                                    <span className="text-blue-600 font-black text-xs uppercase tracking-tighter">Validating {scanBuffer.length}/3</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {lastSuccess && (
+                                            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center p-4 pointer-events-auto bg-black/40 backdrop-blur-[2px]">
+                                                <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xs overflow-hidden border-2 border-green-500 animate-in zoom-in-95 duration-300">
+                                                    <div className="bg-green-500 p-4 flex flex-col items-center">
+                                                        <div className="bg-white/20 p-2 rounded-full mb-2"><CheckCircle className="w-8 h-8 text-white" /></div>
+                                                        <h4 className="text-white font-black text-xl leading-none">Result Saved</h4>
+                                                    </div>
+                                                    <div className="p-6 text-center">
+                                                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Student No: {lastSuccess.studentNo}</p>
+                                                        <div className="text-4xl font-black text-slate-900 mb-6">{lastSuccess.score} <span className="text-lg text-slate-400">/ {lastSuccess.total}</span></div>
+                                                        <div className="flex flex-col gap-2">
+                                                            <button onClick={resetAutoScan} className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-md active:scale-95">Next Paper →</button>
+                                                            <button onClick={handleRescan} className="w-full py-2.5 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors">Rescan</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                        <p className="text-white text-center font-bold mt-12 bg-blue-600/90 backdrop-blur-sm mx-8 py-2 rounded-full shadow-lg text-sm">Align all 4 corners inside this box</p>
+                                        {showHelpPrompt && (
+                                            <div className="absolute bottom-12 left-6 right-6 bg-amber-500 text-white p-4 rounded-2xl flex flex-col gap-2 items-center text-center shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 pointer-events-auto">
+                                                <AlertTriangle className="w-8 h-8" />
+                                                <p className="font-bold leading-tight">Having trouble?</p>
+                                                <p className="text-xs opacity-90">Ensure the paper is flat, well-lit, and all 4 corners are visible.</p>
+                                                <button onClick={(e) => { e.stopPropagation(); resetAutoScan(); }} className="mt-2 bg-white text-amber-600 px-4 py-1.5 rounded-lg text-xs font-black uppercase shadow-md active:scale-95 transition-transform">Retry</button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-
-                                {error && (
-                                    <div className="absolute top-6 left-4 right-4 bg-red-500 text-white p-4 rounded-xl flex gap-3 items-center font-medium z-50 shadow-xl border border-red-400">
-                                        <AlertTriangle className="w-6 h-6 shrink-0" />
-                                        <p className="text-sm leading-tight">{error}</p>
+                                {lastError && !showHelpPrompt && (
+                                    <div className="absolute top-6 left-4 right-4 bg-red-500/90 backdrop-blur-sm text-white p-3 rounded-xl flex gap-3 items-center font-medium z-50 shadow-xl border border-red-400">
+                                        <AlertTriangle className="w-5 h-5 shrink-0" />
+                                        <p className="text-xs leading-tight">{lastError}</p>
                                     </div>
                                 )}
                             </>
                         )}
             </div>
-
-            {/* BOTTOM CONTROLS */}
-            {!scanResult && reviewQueue.length === 0 && (
+            {!scanResult && reviewQueue.length === 0 && !isAutoMode && (
                 <div className="p-6 bg-slate-900 pb-safe z-10 flex flex-col items-center justify-center">
-                    <button
-                        onClick={captureAndScan}
-                        disabled={isProcessing}
-                        className="w-20 h-20 rounded-full border-4 border-slate-500 p-1 active:scale-95 transition-transform"
-                    >
-                        <div className={`w-full h-full rounded-full flex items-center justify-center transition-colors ${isProcessing ? 'bg-slate-700' : 'bg-white'}`}>
-                            {isProcessing ? <RefreshCw className="w-8 h-8 text-white animate-spin" /> : <Camera className="w-8 h-8 text-slate-900" />}
-                        </div>
+                    <button onClick={captureAndScan} disabled={isProcessing} className="w-20 h-20 rounded-full border-4 border-slate-500 p-1 active:scale-95 transition-transform">
+                        <div className={`w-full h-full rounded-full flex items-center justify-center transition-colors ${isProcessing ? 'bg-slate-700' : 'bg-white'}`}>{isProcessing ? <RefreshCw className="w-8 h-8 text-white animate-spin" /> : <Camera className="w-8 h-8 text-slate-900" />}</div>
                     </button>
                 </div>
             )}
