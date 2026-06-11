@@ -5,7 +5,7 @@ import { Camera, CheckCircle, AlertTriangle, RefreshCw, HelpCircle } from 'lucid
 interface OMRScannerProps {
     correctAnswers?: string[];
     // --- NEW: Add the callback prop so the parent knows when grading is done ---
-    onScanComplete?: (score: number, rawAnswers: string[]) => void;
+    onScanComplete?: (score: number, rawAnswers: string[], examCode?: string, studentNo?: string) => void;
 }
 
 export function OMRScanner({ correctAnswers, onScanComplete }: OMRScannerProps = {}) {
@@ -19,6 +19,8 @@ export function OMRScanner({ correctAnswers, onScanComplete }: OMRScannerProps =
 
     const [reviewQueue, setReviewQueue] = useState<string[]>([]);
     const [pendingAnswers, setPendingAnswers] = useState<Record<string, string>>({});
+    const [detectedExamCode, setDetectedExamCode] = useState<string | undefined>();
+    const [detectedStudentNo, setDetectedStudentNo] = useState<string | undefined>();
 
     // State to toggle the details view
     const [showDetails, setShowDetails] = useState(false);
@@ -46,12 +48,14 @@ export function OMRScanner({ correctAnswers, onScanComplete }: OMRScannerProps =
                 );
 
                 setPendingAnswers(extractedAnswers);
+                setDetectedExamCode(e.data.examCode);
+                setDetectedStudentNo(e.data.studentNo);
 
                 if (needsReview.length > 0) {
                     setReviewQueue(needsReview);
                     setIsProcessing(false);
                 } else {
-                    finalizeGrading(extractedAnswers);
+                    finalizeGrading(extractedAnswers, e.data.examCode, e.data.studentNo);
                 }
             }
         };
@@ -66,7 +70,7 @@ export function OMRScanner({ correctAnswers, onScanComplete }: OMRScannerProps =
         };
     }, [isWorkerReady]);
 
-    const finalizeGrading = (finalAnswers: Record<string, string>) => {
+    const finalizeGrading = (finalAnswers: Record<string, string>, examCode?: string, studentNo?: string) => {
         // Automatically determine the total items from the correctAnswers array (fallback to 20)
         const totalItems = correctAnswers ? correctAnswers.length : 20;
         let score = 0;
@@ -99,12 +103,13 @@ export function OMRScanner({ correctAnswers, onScanComplete }: OMRScannerProps =
 
         // --- NEW: If parent provided onScanComplete, use it and bypass the local overlay ---
         if (onScanComplete) {
-            onScanComplete(score, rawAnswersArray);
+            onScanComplete(score, rawAnswersArray, examCode, studentNo);
             setIsProcessing(false);
         } else {
             // Fallback for isolated testing (shows the giant CheckCircle overlay)
             setScanResult({
-                studentId: "Auto-Detected ID",
+                studentId: studentNo || "Auto-Detected ID",
+                examCode: examCode || "??",
                 score: score,
                 total: totalItems,
                 answers: finalAnswers
@@ -123,7 +128,7 @@ export function OMRScanner({ correctAnswers, onScanComplete }: OMRScannerProps =
         setReviewQueue(newQueue);
 
         if (newQueue.length === 0) {
-            finalizeGrading(updatedAnswers);
+            finalizeGrading(updatedAnswers, detectedExamCode, detectedStudentNo);
         }
     };
 

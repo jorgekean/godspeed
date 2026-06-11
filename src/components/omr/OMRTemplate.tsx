@@ -38,20 +38,62 @@ const SheetBase = ({ children, title }: { children: React.ReactNode, title: stri
 
 const Document20Item = () => {
     const choicesMap = ['A', 'B', 'C', 'D'];
-    const startX = 120; const startY = 180;
+    const startX = 520; const startY = 180;
     const rowHeight = 35; const bubbleSpacing = 45; const bubbleSize = 30;
+
+    // Grid config for Student Info
+    const gridStartX = 100;
+    const examCodeY = 180;
+    const studentNoY = 460;
+    const gridBubbleSize = 18;
+    const gridSpacingX = 24;
+    const gridSpacingY = 22;
 
     return (
         <SheetBase title="20-Item Answer Sheet">
+            {/* Exam Code Grid (2 digits) */}
+            <Text style={[styles.questionNumber, { top: examCodeY - 15, left: gridStartX, fontSize: 10 }]}>EXAM CODE</Text>
+            {/* Row labels for ID grids */}
+            {Array.from({ length: 10 }).map((_, row) => (
+                <Text key={`ec-row-label-${row}`} style={[styles.questionNumber, { top: examCodeY + gridBubbleSize + 10 + (row * gridSpacingY), left: gridStartX - 15, fontSize: 8 }]}>{row}</Text>
+            ))}
+            {Array.from({ length: 2 }).map((_, col) => (
+                <React.Fragment key={`ec-col-${col}`}>
+                    <View style={{ position: 'absolute', top: examCodeY, left: gridStartX + (col * gridSpacingX), width: gridBubbleSize, height: gridBubbleSize, borderWidth: 1, borderColor: '#000' }} />
+                    {Array.from({ length: 10 }).map((_, row) => (
+                        <View key={`ec-q${col}-${row}`} style={[styles.bubble, { top: examCodeY + gridBubbleSize + 5 + (row * gridSpacingY), left: gridStartX + (col * gridSpacingX), width: gridBubbleSize, height: gridBubbleSize, borderRadius: 9 }]} />
+                    ))}
+                </React.Fragment>
+            ))}
+
+            {/* Student Number Grid (8 digits) */}
+            <Text style={[styles.questionNumber, { top: studentNoY - 15, left: gridStartX, fontSize: 10 }]}>STUDENT NUMBER (Pad with leading 0s)</Text>
+            {/* Row labels for ID grids */}
+            {Array.from({ length: 10 }).map((_, row) => (
+                <Text key={`sn-row-label-${row}`} style={[styles.questionNumber, { top: studentNoY + gridBubbleSize + 10 + (row * gridSpacingY), left: gridStartX - 15, fontSize: 8 }]}>{row}</Text>
+            ))}
+            {Array.from({ length: 8 }).map((_, col) => (
+                <React.Fragment key={`sn-col-${col}`}>
+                    <View style={{ position: 'absolute', top: studentNoY, left: gridStartX + (col * gridSpacingX), width: gridBubbleSize, height: gridBubbleSize, borderWidth: 1, borderColor: '#000' }} />
+                    {Array.from({ length: 10 }).map((_, row) => (
+                        <View key={`sn-q${col}-${row}`} style={[styles.bubble, { top: studentNoY + gridBubbleSize + 5 + (row * gridSpacingY), left: gridStartX + (col * gridSpacingX), width: gridBubbleSize, height: gridBubbleSize, borderRadius: 9 }]} />
+                    ))}
+                </React.Fragment>
+            ))}
+
+            {/* Questions Header (A B C D) */}
+            {choicesMap.map((letter, cIndex) => (
+                <Text key={`q-header-${letter}`} style={[styles.questionNumber, { top: startY - 25, left: startX + (cIndex * bubbleSpacing) + 10, fontSize: 12 }]}>{letter}</Text>
+            ))}
+
+            {/* Questions (1-20) moved to the right */}
             {Array.from({ length: 20 }).map((_, qIndex) => (
                 <React.Fragment key={`q-${qIndex}`}>
                     <Text style={[styles.questionNumber, { top: startY + (qIndex * rowHeight) + 8, left: startX - 30, fontSize: 12 }]}>
                         {qIndex + 1}.
                     </Text>
                     {choicesMap.map((letter, cIndex) => (
-                        <View key={`q${qIndex}-${letter}`} style={[styles.bubble, { top: startY + (qIndex * rowHeight), left: startX + (cIndex * bubbleSpacing), width: bubbleSize, height: bubbleSize }]}>
-                            <Text style={[styles.bubbleText, { fontSize: 12 }]}>{letter}</Text>
-                        </View>
+                        <View key={`q${qIndex}-${letter}`} style={[styles.bubble, { top: startY + (qIndex * rowHeight), left: startX + (cIndex * bubbleSpacing), width: bubbleSize, height: bubbleSize }]} />
                     ))}
                 </React.Fragment>
             ))}
@@ -61,11 +103,57 @@ const Document20Item = () => {
 
 const Document50Item = () => {
     const choicesMap = ['A', 'B', 'C', 'D'];
-    const colStarts = [100, 450]; const startY = 160;
+    const colStarts = [340, 580]; // Shifted right to make room for ID grids
+    const startY = 160;
     const rowHeight = 28; const bubbleSpacing = 35; const bubbleSize = 24;
+
+    // Grid config for Student Info (copied from Document20Item)
+    const gridStartX = 60;
+    const examCodeY = 160;
+    const studentNoY = 440;
+    const gridBubbleSize = 18;
+    const gridSpacingX = 24;
+    const gridSpacingY = 22;
 
     return (
         <SheetBase title="50-Item Answer Sheet">
+            {/* Exam Code Grid (2 digits) */}
+            <Text style={[styles.questionNumber, { top: examCodeY - 15, left: gridStartX, fontSize: 10 }]}>EXAM CODE</Text>
+            {Array.from({ length: 10 }).map((_, row) => (
+                <Text key={`ec-row-label-${row}`} style={[styles.questionNumber, { top: examCodeY + gridBubbleSize + 10 + (row * gridSpacingY), left: gridStartX - 15, fontSize: 8 }]}>{row}</Text>
+            ))}
+            {Array.from({ length: 2 }).map((_, col) => (
+                <React.Fragment key={`ec-col-${col}`}>
+                    <View style={{ position: 'absolute', top: examCodeY, left: gridStartX + (col * gridSpacingX), width: gridBubbleSize, height: gridBubbleSize, borderWidth: 1, borderColor: '#000' }} />
+                    {Array.from({ length: 10 }).map((_, row) => (
+                        <View key={`ec-q${col}-${row}`} style={[styles.bubble, { top: examCodeY + gridBubbleSize + 5 + (row * gridSpacingY), left: gridStartX + (col * gridSpacingX), width: gridBubbleSize, height: gridBubbleSize, borderRadius: 9 }]} />
+                    ))}
+                </React.Fragment>
+            ))}
+
+            {/* Student Number Grid (8 digits) */}
+            <Text style={[styles.questionNumber, { top: studentNoY - 15, left: gridStartX, fontSize: 10 }]}>STUDENT NUMBER (Pad with leading 0s)</Text>
+            {Array.from({ length: 10 }).map((_, row) => (
+                <Text key={`sn-row-label-${row}`} style={[styles.questionNumber, { top: studentNoY + gridBubbleSize + 10 + (row * gridSpacingY), left: gridStartX - 15, fontSize: 8 }]}>{row}</Text>
+            ))}
+            {Array.from({ length: 8 }).map((_, col) => (
+                <React.Fragment key={`sn-col-${col}`}>
+                    <View style={{ position: 'absolute', top: studentNoY, left: gridStartX + (col * gridSpacingX), width: gridBubbleSize, height: gridBubbleSize, borderWidth: 1, borderColor: '#000' }} />
+                    {Array.from({ length: 10 }).map((_, row) => (
+                        <View key={`sn-q${col}-${row}`} style={[styles.bubble, { top: studentNoY + gridBubbleSize + 5 + (row * gridSpacingY), left: gridStartX + (col * gridSpacingX), width: gridBubbleSize, height: gridBubbleSize, borderRadius: 9 }]} />
+                    ))}
+                </React.Fragment>
+            ))}
+
+            {/* Column Headers */}
+            {colStarts.map((colX, colIdx) => (
+                <React.Fragment key={`col-header-${colIdx}`}>
+                    {choicesMap.map((letter, cIndex) => (
+                        <Text key={`col${colIdx}-header-${letter}`} style={[styles.questionNumber, { top: startY - 20, left: colX + (cIndex * bubbleSpacing) + 8, fontSize: 11 }]}>{letter}</Text>
+                    ))}
+                </React.Fragment>
+            ))}
+
             {Array.from({ length: 50 }).map((_, qIndex) => {
                 const isCol2 = qIndex >= 25;
                 const colX = isCol2 ? colStarts[1] : colStarts[0];
@@ -77,9 +165,7 @@ const Document50Item = () => {
                             {qIndex + 1}.
                         </Text>
                         {choicesMap.map((letter, cIndex) => (
-                            <View key={`q${qIndex}-${letter}`} style={[styles.bubble, { top: rowY, left: colX + (cIndex * bubbleSpacing), width: bubbleSize, height: bubbleSize }]}>
-                                <Text style={[styles.bubbleText, { fontSize: 10 }]}>{letter}</Text>
-                            </View>
+                            <View key={`q${qIndex}-${letter}`} style={[styles.bubble, { top: rowY, left: colX + (cIndex * bubbleSpacing), width: bubbleSize, height: bubbleSize }]} />
                         ))}
                     </React.Fragment>
                 );

@@ -24,6 +24,16 @@ export default function SmartScannerPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [scannedStudentIds, setScannedStudentIds] = useState<Set<string>>(new Set());
 
+    // NEW: Initialize scanned student IDs from DB
+    React.useEffect(() => {
+        const loadExistingScans = async () => {
+            if (!examId) return;
+            const existingScans = await db.scanResults.where('examId').equals(examId).toArray();
+            setScannedStudentIds(new Set(existingScans.filter(s => !s.isDeleted).map(s => s.studentId)));
+        };
+        loadExistingScans();
+    }, [examId]);
+
     // NEW: Toggle to show the item analysis grid
     const [showDetails, setShowDetails] = useState(false);
 
@@ -65,12 +75,29 @@ export default function SmartScannerPage() {
     // 3. HANDLERS
     // ---------------------------------------------------------
 
-    const handleScanSuccess = (score: number, rawAnswers: string[]) => {
+    const handleScanSuccess = (score: number, rawAnswers: string[], examCode?: string, studentNo?: string) => {
         if (!exam || scanMode === 'tagging') return;
 
         setCurrentScore(score);
         setCurrentRawAnswers(rawAnswers);
         setShowDetails(false); // Reset details view on new scan
+
+        // --- NEW: Auto-Tagging Logic ---
+        if (selectedSectionId !== 'anonymous' && studentNo && studentNo.indexOf('?') === -1) {
+            // Refined matching: Pad the student's stored ID with leading zeros to 8 digits to match the OMR grid
+            const student = students?.find(s => {
+                if (!s.studentNo) return false;
+                const paddedStored = s.studentNo.padStart(8, '0');
+                return paddedStored === studentNo;
+            });
+
+            if (student) {
+                handleTagStudent(student.id, student.fullName, score, rawAnswers);
+                return;
+            } else {
+                toast.info(`Student No ${studentNo} not found in this section.`, { duration: 3000 });
+            }
+        }
 
         if (selectedSectionId === 'anonymous') {
             toast.success(`Quick Scan: ${score}/${exam.itemCount}`);
@@ -88,27 +115,46 @@ export default function SmartScannerPage() {
         setScanMode('scanning');
     };
 
-    const handleTagStudent = async (studentId: string, studentName: string) => {
-        if (!exam || currentScore === null) return;
+    const handleTagStudent = async (studentId: string, studentName: string, scoreOverride?: number, answersOverride?: string[]) => {
+        if (!exam) return;
 
-        await db.scanResults.add({
-            id: crypto.randomUUID(),
+        const finalScore = scoreOverride !== undefined ? scoreOverride : currentScore;
+        const finalAnswers = answersOverride !== undefined ? answersOverride : currentRawAnswers;
+
+        if (finalScore === null) return;
+
+        // --- NEW: Upsert Logic ---
+        const existing = await db.scanResults
+            .where('[examId+studentId]')
+            .equals([exam.id, studentId])
+            .first();
+
+        const scanData = {
             examId: exam.id,
             sectionId: selectedSectionId,
             studentId: studentId,
-            score: currentScore,
+            score: finalScore,
             total: exam.itemCount,
-            answers: currentRawAnswers.reduce((acc, ans, i) => ({ ...acc, [i + 1]: ans }), {}),
+            answers: finalAnswers.reduce((acc, ans, i) => ({ ...acc, [i + 1]: ans }), {}),
             scannedAt: Date.now(),
             createdBy: currentUser?.email || DEMO_USER_ID,
             updatedAt: Date.now(),
             isSynced: false,
             isDeleted: false
-        });
+        };
+
+        if (existing) {
+            await db.scanResults.update(existing.id, scanData);
+            toast.success(`Updated: ${studentName} (${finalScore}/${exam.itemCount})`);
+        } else {
+            await db.scanResults.add({
+                id: crypto.randomUUID(),
+                ...scanData
+            });
+            toast.success(`Saved: ${studentName} (${finalScore}/${exam.itemCount})`);
+        }
 
         setScannedStudentIds(prev => new Set(prev).add(studentId));
-        toast.success(`Saved: ${studentName} (${currentScore}/${exam.itemCount})`);
-
         handleRescan(); // Reset and lower the sheet
     };
 
@@ -227,7 +273,7 @@ export default function SmartScannerPage() {
                 <div className={`relative w-full flex flex-col min-h-[650px] sm:min-h-[700px] bg-black rounded-[28px] sm:rounded-[32px] overflow-hidden shadow-2xl shadow-black/40 dark:shadow-violet-900/10 border-4 md:border-[6px] border-slate-200 dark:border-slate-900 transition-opacity duration-300 ${scanMode === 'tagging' ? 'opacity-40 blur-sm pointer-events-none' : 'opacity-100'}`}>
                     <OMRScanner
                         correctAnswers={exam.answerKey.split('')}
-                        onScanComplete={(score, rawAnswers) => handleScanSuccess(score, rawAnswers)}
+                        onScanComplete={(score, rawAnswers, examCode, studentNo) => handleScanSuccess(score, rawAnswers, examCode, studentNo)}
                     />
                 </div>
             </main>
