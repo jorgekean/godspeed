@@ -1,9 +1,140 @@
 import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, DEMO_USER_ID } from '../services/db';
-import { Plus, FolderKanban, Edit3, Trash2, X, Users } from 'lucide-react';
+import { Plus, FolderKanban, Edit3, Trash2, X, Users, Printer, FileText } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 
+// Need to import the generator components from OMRTemplate to wrap them
+// Because we modified OMRTemplate.tsx to export Document20Item and Document50Item, we'll redefine a wrapper here for multi-page export
+// For simplicity and avoiding massive PDF rendering freezes, we'll generate one multi-page PDF document.
+
+// --- STYLES FOR PRE-FILLED PDF ---
+const styles = StyleSheet.create({
+    page: { backgroundColor: '#FFFFFF', position: 'relative', padding: 0 },
+    markerTopLeft: { position: 'absolute', top: 30, left: 30, width: 40, height: 40, backgroundColor: '#000000' },
+    markerTopRight: { position: 'absolute', top: 30, left: 730, width: 40, height: 40, backgroundColor: '#000000' },
+    markerBottomLeft: { position: 'absolute', top: 930, left: 30, width: 40, height: 40, backgroundColor: '#000000' },
+    markerBottomRight: { position: 'absolute', top: 930, left: 730, width: 40, height: 40, backgroundColor: '#000000' },
+    title: { position: 'absolute', width: '100%', textAlign: 'center', fontFamily: 'Helvetica-Bold' },
+    headerText: { position: 'absolute', fontFamily: 'Helvetica' },
+    questionNumber: { position: 'absolute', fontFamily: 'Helvetica-Bold', color: '#000000' },
+    bubble: { position: 'absolute', borderRadius: 15, borderWidth: 1.5, borderColor: '#B4B4B4', justifyContent: 'center', alignItems: 'center' },
+});
+
+// A pure functional representation of the pre-filled sheet logic
+const PreFilledPage = ({ studentName, studentNo, examType }: { studentName: string, studentNo: string, examType: '20' | '50' }) => {
+    const choicesMap = ['A', 'B', 'C', 'D'];
+    const is20 = examType === '20';
+    const startX = is20 ? 520 : 0; // We'll compute inside
+    const colStarts = is20 ? [520] : [340, 580];
+    const startY = is20 ? 180 : 160;
+    const rowHeight = is20 ? 35 : 28;
+    const bubbleSpacing = is20 ? 45 : 35;
+    const bubbleSize = is20 ? 30 : 24;
+
+    const gridStartX = is20 ? 100 : 60;
+    const examCodeY = is20 ? 180 : 160;
+    const studentNoY = is20 ? 460 : 440;
+    const gridBubbleSize = 18;
+    const gridSpacingX = 24;
+    const gridSpacingY = 22;
+
+    const paddedStudentNo = studentNo ? studentNo.padStart(8, '0') : '';
+    const numQuestions = is20 ? 20 : 50;
+
+    return (
+        <Page size={[800, 1000]} style={styles.page}>
+            <View style={styles.markerTopLeft} />
+            <View style={styles.markerTopRight} />
+            <View style={styles.markerBottomLeft} />
+            <View style={styles.markerBottomRight} />
+
+            <Text style={[styles.title, { top: 60, fontSize: 24 }]}>{examType}-Item Answer Sheet</Text>
+            
+            {/* PRE-FILLED NAME */}
+            <Text style={[styles.headerText, { top: 110, left: 100, fontSize: 14 }]}>Name: {studentName}</Text>
+            <Text style={[styles.headerText, { top: 110, left: 500, fontSize: 14 }]}>Score: _______________</Text>
+
+            {/* Exam Code Grid (Blank) */}
+            <Text style={[styles.questionNumber, { top: examCodeY - 15, left: gridStartX, fontSize: 10 }]}>EXAM CODE</Text>
+            {Array.from({ length: 10 }).map((_, row) => (
+                <Text key={`ec-row-label-${row}`} style={[styles.questionNumber, { top: examCodeY + gridBubbleSize + 10 + (row * gridSpacingY), left: gridStartX - 15, fontSize: 8 }]}>{row}</Text>
+            ))}
+            {Array.from({ length: 2 }).map((_, col) => (
+                <React.Fragment key={`ec-col-${col}`}>
+                    <View style={{ position: 'absolute', top: examCodeY, left: gridStartX + (col * gridSpacingX), width: gridBubbleSize, height: gridBubbleSize, borderWidth: 1, borderColor: '#000' }} />
+                    {Array.from({ length: 10 }).map((_, row) => (
+                        <View key={`ec-q${col}-${row}`} style={[styles.bubble, { top: examCodeY + gridBubbleSize + 5 + (row * gridSpacingY), left: gridStartX + (col * gridSpacingX), width: gridBubbleSize, height: gridBubbleSize, borderRadius: 9 }]} />
+                    ))}
+                </React.Fragment>
+            ))}
+
+            {/* PRE-FILLED Student Number Grid */}
+            <Text style={[styles.questionNumber, { top: studentNoY - 15, left: gridStartX, fontSize: 10 }]}>STUDENT NUMBER ({paddedStudentNo})</Text>
+            {Array.from({ length: 10 }).map((_, row) => (
+                <Text key={`sn-row-label-${row}`} style={[styles.questionNumber, { top: studentNoY + gridBubbleSize + 10 + (row * gridSpacingY), left: gridStartX - 15, fontSize: 8 }]}>{row}</Text>
+            ))}
+            {Array.from({ length: 8 }).map((_, col) => (
+                <React.Fragment key={`sn-col-${col}`}>
+                    <View style={{ position: 'absolute', top: studentNoY, left: gridStartX + (col * gridSpacingX), width: gridBubbleSize, height: gridBubbleSize, borderWidth: 1, borderColor: '#000' }}>
+                        {paddedStudentNo && <Text style={{ fontSize: 10, textAlign: 'center', marginTop: 3 }}>{paddedStudentNo[col]}</Text>}
+                    </View>
+                    {Array.from({ length: 10 }).map((_, row) => {
+                        const isFilled = paddedStudentNo && paddedStudentNo[col] === row.toString();
+                        return (
+                            <View key={`sn-q${col}-${row}`} style={[styles.bubble, { 
+                                top: studentNoY + gridBubbleSize + 5 + (row * gridSpacingY), 
+                                left: gridStartX + (col * gridSpacingX), 
+                                width: gridBubbleSize, 
+                                height: gridBubbleSize, 
+                                borderRadius: 9,
+                                backgroundColor: isFilled ? '#000000' : 'transparent',
+                                borderColor: isFilled ? '#000000' : '#B4B4B4'
+                            }]} />
+                        )
+                    })}
+                </React.Fragment>
+            ))}
+
+            {/* Questions Headers */}
+            {colStarts.map((colX, colIdx) => (
+                <React.Fragment key={`col-header-${colIdx}`}>
+                    {choicesMap.map((letter, cIndex) => (
+                        <Text key={`col${colIdx}-header-${letter}`} style={[styles.questionNumber, { top: startY - (is20 ? 25 : 20), left: colX + (cIndex * bubbleSpacing) + (is20 ? 10 : 8), fontSize: is20 ? 12 : 11 }]}>{letter}</Text>
+                    ))}
+                </React.Fragment>
+            ))}
+
+            {/* Questions Array */}
+            {Array.from({ length: numQuestions }).map((_, qIndex) => {
+                const itemsPerCol = is20 ? 20 : 25;
+                const isCol2 = qIndex >= itemsPerCol;
+                const colX = isCol2 ? colStarts[1] : colStarts[0];
+                const rowY = startY + ((qIndex % itemsPerCol) * rowHeight);
+
+                return (
+                    <React.Fragment key={`q-${qIndex}`}>
+                        <Text style={[styles.questionNumber, { top: rowY + (is20 ? 8 : 6), left: colX - 30, fontSize: is20 ? 12 : 11 }]}>
+                            {qIndex + 1}.
+                        </Text>
+                        {choicesMap.map((letter, cIndex) => (
+                            <View key={`q${qIndex}-${letter}`} style={[styles.bubble, { top: rowY, left: colX + (cIndex * bubbleSpacing), width: bubbleSize, height: bubbleSize }]} />
+                        ))}
+                    </React.Fragment>
+                );
+            })}
+        </Page>
+    );
+};
+
+const MultiStudentDocument = ({ students, examType }: { students: any[], examType: '20' | '50' }) => (
+    <Document>
+        {students.map(s => (
+            <PreFilledPage key={s.id} studentName={s.fullName} studentNo={s.studentNo || '00000000'} examType={examType} />
+        ))}
+    </Document>
+);
 
 const GRADE_LEVELS = ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12"];
 
@@ -20,6 +151,16 @@ export default function SectionsPage() {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [gradeLevel, setGradeLevel] = useState('');
     const [sectionName, setSectionName] = useState('');
+
+    // --- NEW: Print Modal State ---
+    const [printSectionId, setPrintSectionId] = useState<string | null>(null);
+    const [printExamType, setPrintExamType] = useState<'20' | '50'>('50');
+
+    // Fetch students only for the selected print section
+    const printStudents = useLiveQuery(
+        () => printSectionId ? db.students.where('sectionId').equals(printSectionId).filter(s => !s.isDeleted).toArray() : [],
+        [printSectionId]
+    );
 
     // 3. Handlers
     const handleOpenModal = (section?: any) => {
@@ -119,6 +260,13 @@ export default function SectionsPage() {
                             {/* Actions Container */}
                             <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                                 <button
+                                    onClick={() => setPrintSectionId(section.id)}
+                                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-lg transition-colors"
+                                    title="Print Pre-filled Answer Sheets"
+                                >
+                                    <Printer className="w-4 h-4" />
+                                </button>
+                                <button
                                     onClick={() => handleOpenModal(section)}
                                     className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
                                 >
@@ -141,6 +289,69 @@ export default function SectionsPage() {
                     </div>
                 ))}
             </div>
+
+            {/* ========================================== */}
+            {/* PRINT MODAL OVERLAY */}
+            {/* ========================================== */}
+            {printSectionId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[24px] shadow-2xl border border-slate-200/50 dark:border-white/10 overflow-hidden animate-in zoom-in-95 duration-200">
+
+                        <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800">
+                            <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <Printer className="w-5 h-5 text-indigo-500" />
+                                Print Pre-filled Sheets
+                            </h2>
+                            <button onClick={() => setPrintSectionId(null)} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 bg-slate-50 dark:bg-slate-800 rounded-full transition-colors">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 text-center">
+                            {printStudents && printStudents.length > 0 ? (
+                                <>
+                                    <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-indigo-100 dark:border-indigo-500/20">
+                                        <FileText className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+                                    </div>
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Generate PDF</h3>
+                                    <p className="text-sm text-slate-500 mb-6">
+                                        This will generate a multi-page PDF containing <strong>{printStudents.length}</strong> answer sheets. Each sheet will have the student's Name and ID automatically bubbled in.
+                                    </p>
+
+                                    <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl mb-6">
+                                        <button 
+                                            onClick={() => setPrintExamType('20')}
+                                            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${printExamType === '20' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                        >
+                                            20 Items
+                                        </button>
+                                        <button 
+                                            onClick={() => setPrintExamType('50')}
+                                            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${printExamType === '50' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                        >
+                                            50 Items
+                                        </button>
+                                    </div>
+
+                                    <PDFDownloadLink 
+                                        document={<MultiStudentDocument students={printStudents} examType={printExamType} />} 
+                                        fileName={`Prefilled_Sheets_${sections?.find(s => s.id === printSectionId)?.sectionName}.pdf`}
+                                        className="w-full flex items-center justify-center py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors shadow-md shadow-indigo-500/20"
+                                    >
+                                        {({ loading }) => (loading ? 'Generating PDF Document...' : 'Download PDF')}
+                                    </PDFDownloadLink>
+                                </>
+                            ) : (
+                                <div className="py-8">
+                                    <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                                    <p className="text-slate-500 font-medium">This section has no students yet.</p>
+                                    <p className="text-xs text-slate-400 mt-2">Add students in the Students tab before printing.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ========================================== */}
             {/* CRUD MODAL OVERLAY */}

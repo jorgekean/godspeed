@@ -36,7 +36,7 @@ const SheetBase = ({ children, title }: { children: React.ReactNode, title: stri
     </Document>
 );
 
-const Document20Item = () => {
+const Document20Item = ({ studentNo }: { studentNo?: string }) => {
     const choicesMap = ['A', 'B', 'C', 'D'];
     const startX = 520; const startY = 180;
     const rowHeight = 35; const bubbleSpacing = 45; const bubbleSize = 30;
@@ -48,6 +48,8 @@ const Document20Item = () => {
     const gridBubbleSize = 18;
     const gridSpacingX = 24;
     const gridSpacingY = 22;
+
+    const paddedStudentNo = studentNo ? studentNo.padStart(8, '0') : '';
 
     return (
         <SheetBase title="20-Item Answer Sheet">
@@ -74,10 +76,24 @@ const Document20Item = () => {
             ))}
             {Array.from({ length: 8 }).map((_, col) => (
                 <React.Fragment key={`sn-col-${col}`}>
-                    <View style={{ position: 'absolute', top: studentNoY, left: gridStartX + (col * gridSpacingX), width: gridBubbleSize, height: gridBubbleSize, borderWidth: 1, borderColor: '#000' }} />
-                    {Array.from({ length: 10 }).map((_, row) => (
-                        <View key={`sn-q${col}-${row}`} style={[styles.bubble, { top: studentNoY + gridBubbleSize + 5 + (row * gridSpacingY), left: gridStartX + (col * gridSpacingX), width: gridBubbleSize, height: gridBubbleSize, borderRadius: 9 }]} />
-                    ))}
+                    <View style={{ position: 'absolute', top: studentNoY, left: gridStartX + (col * gridSpacingX), width: gridBubbleSize, height: gridBubbleSize, borderWidth: 1, borderColor: '#000' }}>
+                        {/* Optionally show the typed digit in the top box if pre-filled */}
+                        {paddedStudentNo && <Text style={{ fontSize: 10, textAlign: 'center', marginTop: 3 }}>{paddedStudentNo[col]}</Text>}
+                    </View>
+                    {Array.from({ length: 10 }).map((_, row) => {
+                        const isFilled = paddedStudentNo && paddedStudentNo[col] === row.toString();
+                        return (
+                            <View key={`sn-q${col}-${row}`} style={[styles.bubble, { 
+                                top: studentNoY + gridBubbleSize + 5 + (row * gridSpacingY), 
+                                left: gridStartX + (col * gridSpacingX), 
+                                width: gridBubbleSize, 
+                                height: gridBubbleSize, 
+                                borderRadius: 9,
+                                backgroundColor: isFilled ? '#000000' : 'transparent',
+                                borderColor: isFilled ? '#000000' : '#B4B4B4'
+                            }]} />
+                        )
+                    })}
                 </React.Fragment>
             ))}
 
@@ -101,7 +117,7 @@ const Document20Item = () => {
     );
 };
 
-const Document50Item = () => {
+const Document50Item = ({ studentNo }: { studentNo?: string }) => {
     const choicesMap = ['A', 'B', 'C', 'D'];
     const colStarts = [340, 580]; // Shifted right to make room for ID grids
     const startY = 160;
@@ -114,6 +130,8 @@ const Document50Item = () => {
     const gridBubbleSize = 18;
     const gridSpacingX = 24;
     const gridSpacingY = 22;
+
+    const paddedStudentNo = studentNo ? studentNo.padStart(8, '0') : '';
 
     return (
         <SheetBase title="50-Item Answer Sheet">
@@ -138,10 +156,24 @@ const Document50Item = () => {
             ))}
             {Array.from({ length: 8 }).map((_, col) => (
                 <React.Fragment key={`sn-col-${col}`}>
-                    <View style={{ position: 'absolute', top: studentNoY, left: gridStartX + (col * gridSpacingX), width: gridBubbleSize, height: gridBubbleSize, borderWidth: 1, borderColor: '#000' }} />
-                    {Array.from({ length: 10 }).map((_, row) => (
-                        <View key={`sn-q${col}-${row}`} style={[styles.bubble, { top: studentNoY + gridBubbleSize + 5 + (row * gridSpacingY), left: gridStartX + (col * gridSpacingX), width: gridBubbleSize, height: gridBubbleSize, borderRadius: 9 }]} />
-                    ))}
+                    <View style={{ position: 'absolute', top: studentNoY, left: gridStartX + (col * gridSpacingX), width: gridBubbleSize, height: gridBubbleSize, borderWidth: 1, borderColor: '#000' }}>
+                        {/* Optionally show the typed digit in the top box if pre-filled */}
+                        {paddedStudentNo && <Text style={{ fontSize: 10, textAlign: 'center', marginTop: 3 }}>{paddedStudentNo[col]}</Text>}
+                    </View>
+                    {Array.from({ length: 10 }).map((_, row) => {
+                        const isFilled = paddedStudentNo && paddedStudentNo[col] === row.toString();
+                        return (
+                            <View key={`sn-q${col}-${row}`} style={[styles.bubble, { 
+                                top: studentNoY + gridBubbleSize + 5 + (row * gridSpacingY), 
+                                left: gridStartX + (col * gridSpacingX), 
+                                width: gridBubbleSize, 
+                                height: gridBubbleSize, 
+                                borderRadius: 9,
+                                backgroundColor: isFilled ? '#000000' : 'transparent',
+                                borderColor: isFilled ? '#000000' : '#B4B4B4'
+                            }]} />
+                        )
+                    })}
                 </React.Fragment>
             ))}
 
