@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, DEMO_USER_ID } from '../services/db';
 import { ArrowLeft, BarChart3, TrendingUp, UserCheck, FileDown, Loader2 } from 'lucide-react';
-import { PDFDownloadLink } from '@react-pdf/renderer';
+import { pdf } from '@react-pdf/renderer';
 import { ItemAnalysisPDF, type ItemAnalysisData } from '../components/omr/ItemAnalysisPDF';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -12,6 +12,7 @@ export default function ExamResultsPage() {
     const navigate = useNavigate();
     const { currentUser } = useAuth();
     const [filterSectionId, setFilterSectionId] = useState<string>('all');
+    const [isGenerating, setIsGenerating] = useState(false);
 
     const userEmail = currentUser?.email || DEMO_USER_ID;
 
@@ -87,6 +88,35 @@ export default function ExamResultsPage() {
         ? 'All Sections' 
         : sections?.find(s => s.id === filterSectionId)?.sectionName || 'Selected Section';
 
+    const handleDownload = async () => {
+        if (!exam || totalScanned === 0) return;
+        
+        setIsGenerating(true);
+        try {
+            const fileName = `Item_Analysis_${exam.title.replace(/\s+/g, '_')}_${currentSectionName}.pdf`;
+            const doc = (
+                <ItemAnalysisPDF
+                    title={exam.title}
+                    sectionName={currentSectionName}
+                    totalStudents={totalScanned}
+                    averageScore={averageScore.toString()}
+                    data={analysisData}
+                />
+            );
+            const blob = await pdf(doc).toBlob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            link.click();
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Failed to generate PDF", error);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 transition-colors">
             <div className="max-w-4xl mx-auto">
@@ -99,32 +129,18 @@ export default function ExamResultsPage() {
                     </button>
 
                     {totalScanned > 0 && (
-                        <PDFDownloadLink
-                            document={
-                                <ItemAnalysisPDF
-                                    title={exam.title}
-                                    sectionName={currentSectionName}
-                                    totalStudents={totalScanned}
-                                    averageScore={averageScore.toString()}
-                                    data={analysisData}
-                                />
-                            }
-                            fileName={`Item_Analysis_${exam.title.replace(/\s+/g, '_')}_${currentSectionName}.pdf`}
+                        <button
+                            onClick={handleDownload}
+                            disabled={isGenerating}
+                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/20 active:scale-95 transition-all disabled:opacity-50"
                         >
-                            {({ loading }) => (
-                                <button
-                                    disabled={loading}
-                                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/20 active:scale-95 transition-all disabled:opacity-50"
-                                >
-                                    {loading ? (
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                    ) : (
-                                        <FileDown className="w-5 h-5" />
-                                    )}
-                                    {loading ? 'Preparing Report...' : 'Download Item Analysis'}
-                                </button>
+                            {isGenerating ? (
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                                <FileDown className="w-5 h-5" />
                             )}
-                        </PDFDownloadLink>
+                            {isGenerating ? 'Preparing Report...' : 'Download Item Analysis'}
+                        </button>
                     )}
                 </div>
 

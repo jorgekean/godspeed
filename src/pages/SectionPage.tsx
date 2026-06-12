@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useTransition } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, DEMO_USER_ID } from '../services/db';
-import { Plus, FolderKanban, Edit3, Trash2, X, Users, Printer, FileText } from 'lucide-react';
+import { Plus, FolderKanban, Edit3, Trash2, X, Users, Printer, FileText, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import { pdf, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 
 // Need to import the generator components from OMRTemplate to wrap them
 // Because we modified OMRTemplate.tsx to export Document20Item and Document50Item, we'll redefine a wrapper here for multi-page export
@@ -154,7 +154,7 @@ export default function SectionsPage() {
 
     // --- NEW: Print Modal State ---
     const [printSectionId, setPrintSectionId] = useState<string | null>(null);
-    const [printExamType, setPrintExamType] = useState<'20' | '50'>('50');
+    const [isGenerating, setIsGenerating] = useState<'20' | '50' | null>(null);
 
     // Fetch students only for the selected print section
     const printStudents = useLiveQuery(
@@ -181,6 +181,33 @@ export default function SectionsPage() {
         setEditingId(null);
         setGradeLevel('');
         setSectionName('');
+    };
+
+    const handleClosePrintModal = () => {
+        setPrintSectionId(null);
+        setIsGenerating(null);
+    };
+
+    const handleDownload = async (type: '20' | '50') => {
+        if (!printStudents || printStudents.length === 0) return;
+        
+        setIsGenerating(type);
+        try {
+            const currentSectionName = sections?.find(s => s.id === printSectionId)?.sectionName || 'Section';
+            const fileName = `Prefilled_${type}Items_${currentSectionName}.pdf`;
+            
+            const blob = await pdf(<MultiStudentDocument students={printStudents} examType={type} />).toBlob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            link.click();
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Failed to generate PDF", error);
+        } finally {
+            setIsGenerating(null);
+        }
     };
 
     const handleSave = async () => {
@@ -302,7 +329,7 @@ export default function SectionsPage() {
                                 <Printer className="w-5 h-5 text-indigo-500" />
                                 Print Pre-filled Sheets
                             </h2>
-                            <button onClick={() => setPrintSectionId(null)} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 bg-slate-50 dark:bg-slate-800 rounded-full transition-colors">
+                            <button onClick={handleClosePrintModal} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 bg-slate-50 dark:bg-slate-800 rounded-full transition-colors">
                                 <X className="w-4 h-4" />
                             </button>
                         </div>
@@ -313,33 +340,60 @@ export default function SectionsPage() {
                                     <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-indigo-100 dark:border-indigo-500/20">
                                         <FileText className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
                                     </div>
-                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Generate PDF</h3>
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Print Pre-filled Sheets</h3>
                                     <p className="text-sm text-slate-500 mb-6">
-                                        This will generate a multi-page PDF containing <strong>{printStudents.length}</strong> answer sheets. Each sheet will have the student's Name and ID automatically bubbled in.
+                                        Generate PDFs for <strong>{printStudents.length}</strong> students in this section. Each sheet will be pre-filled with student details.
                                     </p>
 
-                                    <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl mb-6">
+                                    <div className="flex flex-col gap-3">
                                         <button 
-                                            onClick={() => setPrintExamType('20')}
-                                            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${printExamType === '20' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                            disabled={isGenerating !== null}
+                                            onClick={() => handleDownload('20')}
+                                            className={`w-full flex items-center justify-center gap-2 py-3 font-bold rounded-xl transition-all shadow-md ${
+                                                isGenerating === '20' 
+                                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-wait shadow-none' 
+                                                : isGenerating === '50'
+                                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed'
+                                                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20'
+                                            }`}
                                         >
-                                            20 Items
+                                            {isGenerating === '20' ? (
+                                                <>
+                                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                                    Generating 20-Item...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Printer className="w-5 h-5" />
+                                                    Generate 20-Item Sheets
+                                                </>
+                                            )}
                                         </button>
+
                                         <button 
-                                            onClick={() => setPrintExamType('50')}
-                                            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${printExamType === '50' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                            disabled={isGenerating !== null}
+                                            onClick={() => handleDownload('50')}
+                                            className={`w-full flex items-center justify-center gap-2 py-3 font-bold rounded-xl transition-all shadow-md ${
+                                                isGenerating === '50' 
+                                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-wait shadow-none' 
+                                                : isGenerating === '20'
+                                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed'
+                                                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20'
+                                            }`}
                                         >
-                                            50 Items
+                                            {isGenerating === '50' ? (
+                                                <>
+                                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                                    Generating 50-Item...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Printer className="w-5 h-5" />
+                                                    Generate 50-Item Sheets
+                                                </>
+                                            )}
                                         </button>
                                     </div>
-
-                                    <PDFDownloadLink 
-                                        document={<MultiStudentDocument students={printStudents} examType={printExamType} />} 
-                                        fileName={`Prefilled_Sheets_${sections?.find(s => s.id === printSectionId)?.sectionName}.pdf`}
-                                        className="w-full flex items-center justify-center py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors shadow-md shadow-indigo-500/20"
-                                    >
-                                        {({ loading }) => (loading ? 'Generating PDF Document...' : 'Download PDF')}
-                                    </PDFDownloadLink>
                                 </>
                             ) : (
                                 <div className="py-8">

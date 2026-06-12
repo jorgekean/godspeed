@@ -1,5 +1,5 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, PDFDownloadLink } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, pdf } from '@react-pdf/renderer';
 
 const styles = StyleSheet.create({
     page: { backgroundColor: '#FFFFFF', position: 'relative', padding: 0 },
@@ -206,19 +206,84 @@ const Document50Item = ({ studentNo }: { studentNo?: string }) => {
     );
 };
 
+import { Printer, Loader2 } from 'lucide-react';
+
 export function OMRTemplateGenerator() {
+    const [isGenerating, setIsGenerating] = React.useState<'20' | '50' | null>(null);
+
+    const handleDownload = async (type: '20' | '50') => {
+        setIsGenerating(type);
+        try {
+            const fileName = `${type}_Item_Sheet_Blank.pdf`;
+            const doc = type === '20' ? <Document20Item /> : <Document50Item />;
+            const blob = await pdf(doc).toBlob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            link.click();
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Failed to generate PDF", error);
+        } finally {
+            setIsGenerating(null);
+        }
+    };
+
     return (
-        <div className="p-8 border rounded-xl bg-slate-50 mt-8 flex flex-col gap-4 max-w-md mx-auto text-center">
-            <h3 className="text-xl font-bold">Download Answer Sheets</h3>
-            <p className="text-slate-500 text-sm mb-4">Print on standard A4 or Letter paper. Do not scale.</p>
+        <div className="flex flex-col gap-4 text-center">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Blank Answer Sheets</h3>
+            <p className="text-slate-500 text-sm mb-4">Print on standard A4 or Letter paper. Do not scale to fit.</p>
 
-            <PDFDownloadLink document={<Document20Item />} fileName="20_Item_Sheet.pdf" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
-                {({ loading }) => (loading ? 'Generating...' : 'Download 20-Item Sheet')}
-            </PDFDownloadLink>
+            <div className="flex flex-col sm:flex-row gap-3">
+                <button 
+                    disabled={isGenerating !== null} 
+                    onClick={() => handleDownload('20')} 
+                    className={`flex-1 py-3 px-4 font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
+                        isGenerating === '20' 
+                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-wait' 
+                        : isGenerating === '50'
+                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed'
+                        : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md'
+                    }`}
+                >
+                    {isGenerating === '20' ? (
+                        <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            Generating...
+                        </>
+                    ) : (
+                        <>
+                            <Printer className="w-5 h-5" />
+                            Generate 20-Item Sheet
+                        </>
+                    )}
+                </button>
 
-            <PDFDownloadLink document={<Document50Item />} fileName="50_Item_Sheet.pdf" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
-                {({ loading }) => (loading ? 'Generating...' : 'Download 50-Item Sheet')}
-            </PDFDownloadLink>
+                <button 
+                    disabled={isGenerating !== null} 
+                    onClick={() => handleDownload('50')} 
+                    className={`flex-1 py-3 px-4 font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
+                        isGenerating === '50' 
+                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-wait' 
+                        : isGenerating === '20'
+                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed'
+                        : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md'
+                    }`}
+                >
+                    {isGenerating === '50' ? (
+                        <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            Generating...
+                        </>
+                    ) : (
+                        <>
+                            <Printer className="w-5 h-5" />
+                            Generate 50-Item Sheet
+                        </>
+                    )}
+                </button>
+            </div>
         </div>
     );
 }
