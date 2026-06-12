@@ -228,20 +228,27 @@ export default function SmartScannerPage() {
                         {/* Sections List: Only show if NOT a guest */}
                         {!isGuest ? (
                             <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-                                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider ml-1">Select Section</h3>
-                                {sections.map(section => (
-                                    <button
-                                        key={section.id}
-                                        onClick={() => { setSelectedSectionId(section.id); setScanMode('scanning'); }}
-                                        className="w-full flex items-center p-5 rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-violet-400 transition-all active:scale-[0.98]"
-                                    >
-                                        <Users className="w-6 h-6 text-slate-400 mr-4" />
-                                        <div className="text-left">
-                                            <h4 className="font-bold text-slate-900 dark:text-white">{section.sectionName}</h4>
-                                            <p className="text-xs text-slate-500">{section.gradeLevel}</p>
-                                        </div>
-                                    </button>
-                                ))}
+                                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider ml-1">Select Section ({exam.gradeLevel})</h3>
+                                {sections.filter(s => s.gradeLevel === exam.gradeLevel).length > 0 ? (
+                                    sections.filter(s => s.gradeLevel === exam.gradeLevel).map(section => (
+                                        <button
+                                            key={section.id}
+                                            onClick={() => { setSelectedSectionId(section.id); setScanMode('scanning'); }}
+                                            className="w-full flex items-center p-5 rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-violet-400 transition-all active:scale-[0.98]"
+                                        >
+                                            <Users className="w-6 h-6 text-slate-400 mr-4" />
+                                            <div className="text-left">
+                                                <h4 className="font-bold text-slate-900 dark:text-white">{section.sectionName}</h4>
+                                                <p className="text-xs text-slate-500">{section.gradeLevel}</p>
+                                            </div>
+                                        </button>
+                                    ))
+                                ) : (
+                                    <div className="p-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-center">
+                                        <p className="text-sm text-slate-500 dark:text-slate-400">No sections found for {exam.gradeLevel}.</p>
+                                        <p className="text-xs text-slate-400 mt-1">Use Quick Scan above, or create a matching section in the Sections tab.</p>
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             <div className="mt-6 p-4 bg-slate-100 dark:bg-slate-800/50 rounded-xl text-center">

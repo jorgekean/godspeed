@@ -13,9 +13,11 @@ export default function Dashboard() {
     // 1. Fetch Periods
     const userEmail = currentUser?.email || DEMO_USER_ID;
     const periods = useLiveQuery(() => db.periods.filter(p => !p.isDeleted && p.createdBy === userEmail).sortBy('startDate'), [userEmail]);
+    const sections = useLiveQuery(() => db.sections.filter(s => !s.isDeleted && s.createdBy === userEmail).toArray(), [userEmail]);
     
     // 2. State for Filter
     const [selectedPeriod, setSelectedPeriod] = useState<string>('all');
+    const [selectedGrade, setSelectedGrade] = useState<string>('all');
 
     // 3. Helper: Robust selection logic
     const bestPeriodId = useMemo(() => {
@@ -48,15 +50,30 @@ export default function Dashboard() {
         }
     }, [periods, bestPeriodId, selectedPeriod]);
 
+    // NEW: Extract unique active grade levels from the user's sections
+    const activeGradeLevels = useMemo(() => {
+        if (!sections) return [];
+        const grades = new Set(sections.map(s => s.gradeLevel));
+        return Array.from(grades).sort(); // Sort alphabetically/numerically
+    }, [sections]);
+
     // 5. Reactive Exam Fetching with Filter
     const exams = useLiveQuery(
-        () => {
+        async () => {
+            let results = [];
             if (selectedPeriod !== 'all') {
-                return db.exams.where('periodId').equals(selectedPeriod).filter(e => !e.isDeleted && e.createdBy === userEmail).reverse().toArray();
+                results = await db.exams.where('periodId').equals(selectedPeriod).filter(e => !e.isDeleted && e.createdBy === userEmail).toArray();
+            } else {
+                results = await db.exams.filter(e => !e.isDeleted && e.createdBy === userEmail).toArray();
             }
-            return db.exams.filter(e => !e.isDeleted && e.createdBy === userEmail).reverse().toArray();
+
+            if (selectedGrade !== 'all') {
+                results = results.filter(e => e.gradeLevel === selectedGrade);
+            }
+
+            return results.reverse(); // Newest first
         },
-        [selectedPeriod, userEmail]
+        [selectedPeriod, selectedGrade, userEmail]
     );
 
     // 6. Lazy load from localStorage
@@ -119,32 +136,52 @@ export default function Dashboard() {
 
                 {/* EXAM LIST SECTION WITH INTEGRATED FILTER */}
                 <div className="flex flex-col gap-3">
+                    {/* Filters Row */}
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 px-1 mb-1">
-                        <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 whitespace-nowrap">
                             <FileText className="w-3 h-3" />
                             {activePeriodName} • {exams?.length || 0} Exams
                         </h3>
 
-                        {/* Period Dropdown */}
-                        <div className="relative group w-full md:w-64">
-                            <select
-                                value={selectedPeriod}
-                                onChange={(e) => setSelectedPeriod(e.target.value)}
-                                className="w-full bg-slate-200/50 dark:bg-slate-800/50 border-none rounded-xl px-4 py-2 text-[12px] font-bold text-slate-600 dark:text-slate-300 appearance-none focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all cursor-pointer pr-10"
-                            >
-                                <option value="all">📁 All Periods</option>
-                                {periods?.map(p => {
-                                    const now = Date.now();
-                                    const isCurrent = now >= p.startDate && now <= p.endDate;
-                                    return (
-                                        <option key={p.id} value={p.id}>
-                                            {isCurrent ? '⭐ ' : '📅 '} {p.name} {isCurrent ? '(Current)' : ''}
-                                        </option>
-                                    );
-                                })}
-                            </select>
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-violet-500 transition-colors">
-                                <ChevronDown className="w-4 h-4" />
+                        <div className="flex flex-row items-center gap-2 w-full md:w-auto">
+                            {/* Grade Dropdown */}
+                            <div className="relative group flex-1 md:w-40">
+                                <select
+                                    value={selectedGrade}
+                                    onChange={(e) => setSelectedGrade(e.target.value)}
+                                    className="w-full bg-slate-200/50 dark:bg-slate-800/50 border-none rounded-xl px-4 py-2 text-[12px] font-bold text-slate-600 dark:text-slate-300 appearance-none focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all cursor-pointer pr-10"
+                                >
+                                    <option value="all">🎓 All Grades</option>
+                                    {activeGradeLevels.map(grade => (
+                                        <option key={grade} value={grade}>{grade}</option>
+                                    ))}
+                                </select>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-violet-500 transition-colors">
+                                    <ChevronDown className="w-4 h-4" />
+                                </div>
+                            </div>
+
+                            {/* Period Dropdown */}
+                            <div className="relative group flex-1 md:w-56">
+                                <select
+                                    value={selectedPeriod}
+                                    onChange={(e) => setSelectedPeriod(e.target.value)}
+                                    className="w-full bg-slate-200/50 dark:bg-slate-800/50 border-none rounded-xl px-4 py-2 text-[12px] font-bold text-slate-600 dark:text-slate-300 appearance-none focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all cursor-pointer pr-10"
+                                >
+                                    <option value="all">📁 All Periods</option>
+                                    {periods?.map(p => {
+                                        const now = Date.now();
+                                        const isCurrent = now >= p.startDate && now <= p.endDate;
+                                        return (
+                                            <option key={p.id} value={p.id}>
+                                                {isCurrent ? '⭐ ' : '📅 '} {p.name} {isCurrent ? '(Current)' : ''}
+                                            </option>
+                                        );
+                                    })}
+                                </select>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-violet-500 transition-colors">
+                                    <ChevronDown className="w-4 h-4" />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -155,7 +192,7 @@ export default function Dashboard() {
                             <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
                                 <FileText className="w-8 h-8 text-slate-300 dark:text-slate-600" />
                             </div>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">No exams found for this period.</p>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">No exams found matching your filters.</p>
                             <button onClick={() => navigate('/create')} className="mt-4 text-xs font-bold text-violet-600 uppercase tracking-wider hover:underline">Create your first exam</button>
                         </div>
                     )}
