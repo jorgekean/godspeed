@@ -10,7 +10,7 @@ export default function AppLayout() {
     const { status: syncStatus } = useSync();
     const navigate = useNavigate();
     const location = useLocation();
-    
+
     // NEW: State for mobile Manage menu
     const [isManageMenuOpen, setIsManageMenuOpen] = useState(false);
 
@@ -40,9 +40,9 @@ export default function AppLayout() {
 
     const navItems = [
         { path: '/', label: 'Overview', icon: LayoutDashboard, requiresAuth: false },
+        { path: '/periods', label: 'Periods', icon: CalendarDays, requiresAuth: true },
         { path: '/sections', label: 'Sections', icon: FolderKanban, requiresAuth: true },
         { path: '/students', label: 'Students', icon: Users, requiresAuth: true },
-        { path: '/periods', label: 'Periods', icon: CalendarDays, requiresAuth: true },
         { path: '/account', label: 'Account', icon: User, requiresAuth: false },
     ];
 
@@ -192,7 +192,7 @@ export default function AppLayout() {
             {/* MAIN CONTENT AREA */}
             {/* ========================================== */}
             <main className="flex-1 h-full overflow-y-auto relative w-full flex flex-col bg-slate-100 dark:bg-slate-950">
-                
+
                 {/* GLOBAL HEADER */}
                 <header className="sticky top-0 z-40 bg-slate-100/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-white/5 pt-safe-top">
                     <div className="w-full max-w-5xl mx-auto flex items-center justify-between px-4 md:px-8 py-4">
@@ -221,11 +221,11 @@ export default function AppLayout() {
             {/* MOBILE MANAGE MENU (OVERLAY) */}
             {/* ========================================== */}
             {isManageMenuOpen && (
-                <div 
+                <div
                     className="md:hidden fixed inset-0 z-[60] bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200"
                     onClick={() => setIsManageMenuOpen(false)}
                 >
-                    <div 
+                    <div
                         className="absolute bottom-20 left-4 right-4 bg-white dark:bg-slate-900 rounded-[28px] p-2 shadow-2xl border border-slate-200/50 dark:border-white/10 animate-in slide-in-from-bottom-10 duration-300"
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -239,8 +239,8 @@ export default function AppLayout() {
                                     to={item.path}
                                     onClick={() => setIsManageMenuOpen(false)}
                                     className={({ isActive }) =>
-                                        `flex items-center gap-4 px-4 py-4 rounded-2xl transition-all ${isActive 
-                                            ? 'bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400' 
+                                        `flex items-center gap-4 px-4 py-4 rounded-2xl transition-all ${isActive
+                                            ? 'bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400'
                                             : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                                         }`
                                     }
@@ -290,7 +290,7 @@ export default function AppLayout() {
                                     className={`flex flex-col items-center justify-center w-16 h-14 rounded-xl transition-all relative ${isActive
                                         ? 'text-violet-600 dark:text-violet-400'
                                         : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                                    }`}
+                                        }`}
                                 >
                                     <div className="relative">
                                         {isManageMenuOpen ? <ChevronUp className="w-6 h-6 mb-1 animate-bounce" /> : <item.icon className={`w-6 h-6 mb-1 ${isActive ? 'fill-violet-500/20' : ''}`} />}

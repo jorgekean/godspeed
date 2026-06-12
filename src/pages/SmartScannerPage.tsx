@@ -291,6 +291,13 @@ export default function SmartScannerPage() {
                         correctAnswers={exam.answerKey.split('')}
                         onScanComplete={handleScanSuccess}
                         enabled={scanMode === 'scanning'}
+                        allStudentsGraded={
+                            selectedSectionId !== 'anonymous' && 
+                            students && 
+                            students.length > 0 && 
+                            students.filter(s => scannedStudentIds.has(s.id)).length >= students.length
+                        }
+                        onViewResults={() => navigate(`/exams/${exam.id}/results`)}
                     />
                 </div>
             </main>

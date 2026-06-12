@@ -6,9 +6,11 @@ interface OMRScannerProps {
     correctAnswers?: string[];
     onScanComplete?: (score: number, rawAnswers: string[], examCode?: string, studentNo?: string) => void;
     enabled?: boolean;
+    allStudentsGraded?: boolean;
+    onViewResults?: () => void;
 }
 
-export function OMRScanner({ correctAnswers, onScanComplete, enabled = true }: OMRScannerProps = {}) {
+export function OMRScanner({ correctAnswers, onScanComplete, enabled = true, allStudentsGraded = false, onViewResults }: OMRScannerProps = {}) {
     const webcamRef = useRef<Webcam>(null);
     const workerRef = useRef<Worker | null>(null);
     const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null); // NEW: Persistent canvas
@@ -354,7 +356,15 @@ export function OMRScanner({ correctAnswers, onScanComplete, enabled = true }: O
                                                         <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Student No: {lastSuccess.studentNo}</p>
                                                         <div className="text-4xl font-black text-slate-900 mb-6">{lastSuccess.score} <span className="text-lg text-slate-400">/ {lastSuccess.total}</span></div>
                                                         <div className="flex flex-col gap-2">
-                                                            <button onClick={resetAutoScan} className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-md active:scale-95">Next Paper →</button>
+                                                            {allStudentsGraded ? (
+                                                                <button onClick={onViewResults} className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-colors shadow-md active:scale-95">
+                                                                    All Graded! View Results →
+                                                                </button>
+                                                            ) : (
+                                                                <button onClick={resetAutoScan} className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-md active:scale-95">
+                                                                    Next Paper →
+                                                                </button>
+                                                            )}
                                                             <div className="flex gap-2">
                                                                 <button onClick={() => setShowDetails(true)} className="flex-1 py-2.5 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors">Details</button>
                                                                 <button onClick={handleRescan} className="flex-1 py-2.5 bg-red-50 text-red-600 font-bold rounded-xl hover:bg-red-100 transition-colors">Rescan</button>
