@@ -103,7 +103,10 @@ export default function StudentsPage() {
         return pasteData.split('\n').filter(row => row.trim() !== '').map(row => {
             const columns = row.split('\t').map(col => col.trim());
             if (columns.length >= 2) {
-                return { studentNo: columns[0], fullName: columns[1] };
+                // Strip non-digits and truncate to max 8 characters
+                const rawId = columns[0].replace(/\D/g, ''); 
+                const validId = rawId.substring(0, 8);
+                return { studentNo: validId, fullName: columns[1] };
             }
             return { studentNo: '', fullName: columns[0] };
         });
@@ -272,7 +275,19 @@ export default function StudentsPage() {
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-slate-700">Student No. (Optional)</label>
-                                <input type="text" value={studentNo} onChange={(e) => setStudentNo(e.target.value)} placeholder="e.g. 2026-001" className="w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-violet-500/50" />
+                                <input 
+                                    type="text" 
+                                    value={studentNo} 
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        // Allow only digits (integers) and restrict to max 8 characters
+                                        if (val === '' || (/^\d+$/.test(val) && val.length <= 8)) {
+                                            setStudentNo(val);
+                                        }
+                                    }} 
+                                    placeholder="e.g. 2026001 (Max 8 digits)" 
+                                    className="w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-violet-500/50" 
+                                />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-slate-700">Full Name</label>
