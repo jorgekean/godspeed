@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Zap, Camera, Printer, ShieldCheck, ArrowRight, BarChart3, CheckCircle, Check, Star, X, Lock, Loader2 } from 'lucide-react';
+import { Zap, Camera, Printer, ShieldCheck, ArrowRight, BarChart3, CheckCircle, Check, Star, X, Lock, Loader2, Mail } from 'lucide-react';
 
 // 1. Import your custom AuthContext instead of Firebase
 import { useAuth } from '../contexts/AuthContext';
@@ -219,7 +219,7 @@ export default function LandingPage() {
                                 <p className="text-slate-400 text-sm">Peace of mind & deep analytics.</p>
                                 <div className="mt-4 flex flex-col">
                                     <div className="flex items-end gap-2">
-                                        <span className="text-4xl font-black text-white line-through decoration-rose-500 opacity-50">₱399</span>
+                                        <span className="text-4xl font-black text-white line-through decoration-rose-500 opacity-50">499</span>
                                         <span className="text-3xl font-black text-emerald-400">FREE</span>
                                     </div>
                                     <div className="mt-1 inline-block bg-emerald-950/50 border border-emerald-800/50 rounded-md px-2 py-1 w-fit">
@@ -238,6 +238,27 @@ export default function LandingPage() {
                             </button>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            {/* PARTNERSHIP / CONTACT SECTION */}
+            <section className="py-24 px-6 bg-white">
+                <div className="max-w-4xl mx-auto text-center">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-violet-50 text-violet-600 rounded-full text-sm font-bold mb-8">
+                        <Zap className="w-4 h-4" /> Institutional Partnerships
+                    </div>
+                    <h2 className="text-3xl md:text-5xl font-black tracking-tight text-slate-900 mb-6">
+                        Bring Godspeed to your school.
+                    </h2>
+                    <p className="text-slate-500 font-medium text-lg mb-10 leading-relaxed">
+                        Are you a school administrator or department head? We offer customized solutions, bulk licensing, and dedicated support for educational institutions interested in a more structured grading workflow.
+                    </p>
+                    <a
+                        href="mailto:contact@godspeedgrader.com"
+                        className="inline-flex items-center gap-3 px-8 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-full font-bold text-lg shadow-xl transition-all active:scale-95 mx-auto"
+                    >
+                        <Mail className="w-5 h-5" /> Contact Us via Email
+                    </a>
                 </div>
             </section>
 

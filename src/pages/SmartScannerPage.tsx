@@ -142,6 +142,13 @@ export default function SmartScannerPage() {
         setCurrentRawAnswers(rawAnswers);
         setShowDetails(false); // Reset details view on new scan
 
+        // --- NEW: Quick Scan logic ---
+        if (selectedSectionId === 'anonymous') {
+            // No toast needed here, OMRScanner handles the success overlay
+            setTimeout(() => setCurrentScore(null), 1500);
+            return;
+        }
+
         // --- NEW: Auto-Tagging Logic ---
         if (studentNo && studentNo.indexOf('?') === -1) {
             // Refined matching: Pad the student's stored ID with leading zeros to 8 digits to match the OMR grid
@@ -205,7 +212,21 @@ export default function SmartScannerPage() {
                     </div>
 
                     <div className="space-y-4">
-                        <div className="space-y-3">
+                        {/* Quick Scan: Always shown */}
+                        <button
+                            onClick={() => { setSelectedSectionId('anonymous'); setScanMode('scanning'); }}
+                            className="w-full flex items-center p-6 rounded-2xl border-2 border-amber-400 bg-amber-50 dark:bg-amber-500/10 hover:shadow-lg transition-all active:scale-[0.98]"
+                        >
+                            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 mr-4 bg-amber-100 dark:bg-amber-500/20">
+                                <Zap className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                            </div>
+                            <div className="text-left">
+                                <h4 className="text-lg font-bold text-amber-900 dark:text-amber-400">Quick Scan</h4>
+                                <p className="text-sm text-amber-800/70 dark:text-amber-400/70">Grade papers immediately without saving.</p>
+                            </div>
+                        </button>
+
+                        <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-800">
                             <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider ml-1">Select Section ({exam.gradeLevel})</h3>
                             {sections.filter(s => s.gradeLevel === exam.gradeLevel).length > 0 ? (
                                 sections.filter(s => s.gradeLevel === exam.gradeLevel).map(section => (
@@ -270,6 +291,13 @@ export default function SmartScannerPage() {
                     />
                 </div>
             </main>
+
+            {/* Quick Scan Floating Score */}
+            {selectedSectionId === 'anonymous' && currentScore !== null && (
+                <div className="fixed top-1/3 left-1/2 -translate-x-1/2 z-50 bg-amber-500 text-black px-8 py-4 rounded-3xl font-black text-6xl shadow-[0_0_50px_rgba(245,158,11,0.5)] animate-in zoom-in slide-out-to-top-8 duration-300">
+                    {currentScore}/{exam.itemCount}
+                </div>
+            )}
 
             {/* ========================================== */}
             {/* THE TAGGING BOTTOM SHEET */}
