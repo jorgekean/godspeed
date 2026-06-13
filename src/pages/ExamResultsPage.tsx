@@ -2,17 +2,19 @@ import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../services/db';
-import { ArrowLeft, BarChart3, TrendingUp, UserCheck, FileDown, Loader2, List, LayoutGrid } from 'lucide-react';
+import { ArrowLeft, BarChart3, TrendingUp, UserCheck, FileDown, Loader2, List, LayoutGrid, Target, Award, AlertCircle } from 'lucide-react';
 import { pdf } from '@react-pdf/renderer';
 import { ItemAnalysisPDF, type ItemAnalysisData } from '../components/omr/ItemAnalysisPDF';
 import { useAuth } from '../contexts/AuthContext';
+
+type ViewMode = 'summary' | 'detailed' | 'mastery';
 
 export default function ExamResultsPage() {
     const { examId } = useParams();
     const navigate = useNavigate();
     const { currentUser } = useAuth();
     const [filterSectionId, setFilterSectionId] = useState<string>('all');
-    const [viewMode, setViewMode] = useState<'summary' | 'detailed'>('summary');
+    const [viewMode, setViewMode] = useState<ViewMode>('summary');
     const [isGenerating, setIsGenerating] = useState(false);
 
     const userEmail = currentUser?.email!;
@@ -39,6 +41,7 @@ export default function ExamResultsPage() {
         const totalStudents = currentResults.length;
         const itemCount = exam.itemCount;
         const answerKey = exam.answerKey;
+        const compMap = exam.competencyMap || {};
 
         const analysis: ItemAnalysisData[] = [];
         for (let i = 0; i < itemCount; i++) {
@@ -61,7 +64,7 @@ export default function ExamResultsPage() {
             analysis.push({
                 itemNumber,
                 correctAnswer,
-                competency: `Item ${itemNumber}`, // Placeholder
+                competency: compMap[itemNumber.toString()] || `Item ${itemNumber}`,
                 percentPassed: Math.round((correctCount / totalStudents) * 100),
                 distractors: {
                     A: Math.round((distractors.A / totalStudents) * 100),
@@ -74,6 +77,28 @@ export default function ExamResultsPage() {
         return analysis;
     }, [exam, results, filterSectionId]);
 
+    const masteryData = useMemo(() => {
+        if (analysisData.length === 0) return [];
+
+        // Group analysis items by competency
+        const groups: Record<string, { totalPercent: number, count: number, items: number[] }> = {};
+
+        analysisData.forEach(item => {
+            const name = item.competency;
+            if (!groups[name]) groups[name] = { totalPercent: 0, count: 0, items: [] };
+            groups[name].totalPercent += item.percentPassed;
+            groups[name].count += 1;
+            groups[name].items.push(item.itemNumber);
+        });
+
+        return Object.entries(groups).map(([name, data]) => ({
+            name,
+            mastery: Math.round(data.totalPercent / data.count),
+            itemCount: data.count,
+            items: data.items
+        })).sort((a, b) => a.mastery - b.mastery);
+    }, [analysisData]);
+
     if (!exam || !results) return null;
 
     const filteredResults = filterSectionId === 'all'
@@ -85,13 +110,13 @@ export default function ExamResultsPage() {
         ? (filteredResults.reduce((acc, r) => acc + r.score, 0) / totalScanned).toFixed(1)
         : 0;
 
-    const currentSectionName = filterSectionId === 'all' 
-        ? 'All Sections' 
+    const currentSectionName = filterSectionId === 'all'
+        ? 'All Sections'
         : sections?.find(s => s.id === filterSectionId)?.sectionName || 'Selected Section';
 
     const handleDownload = async () => {
         if (!exam || totalScanned === 0) return;
-        
+
         setIsGenerating(true);
         try {
             const fileName = `Item_Analysis_${exam.title.replace(/\s+/g, '_')}_${currentSectionName}.pdf`;
@@ -131,12 +156,18 @@ export default function ExamResultsPage() {
 
                     {totalScanned > 0 && (
                         <div className="flex flex-col sm:flex-row gap-2">
-                             <div className="flex bg-slate-200 dark:bg-slate-800 p-1 rounded-xl">
+                            <div className="flex bg-slate-200 dark:bg-slate-800 p-1 rounded-xl">
                                 <button
                                     onClick={() => setViewMode('summary')}
                                     className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'summary' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                                 >
                                     <List className="w-4 h-4" /> Summary
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('mastery')}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'mastery' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                >
+                                    <Target className="w-4 h-4" /> Mastery
                                 </button>
                                 <button
                                     onClick={() => setViewMode('detailed')}
@@ -205,7 +236,7 @@ export default function ExamResultsPage() {
                     </div>
                 </div>
 
-                {viewMode === 'summary' ? (
+                {viewMode === 'summary' && (
                     /* SUMMARY RESULTS LIST */
                     <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                         <div className="p-6 border-b border-slate-100 dark:border-slate-800 font-bold text-slate-900 dark:text-white">
@@ -231,7 +262,58 @@ export default function ExamResultsPage() {
                             })}
                         </div>
                     </div>
-                ) : (
+                )}
+
+                {viewMode === 'mastery' && (
+                    /* MASTERY BY COMPETENCY VIEW */
+                    <div className="space-y-4">
+                        {masteryData.length === 0 && <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl text-center text-slate-400">No competency data mapped.</div>}
+                        {masteryData.map((comp, idx) => {
+                            const isLow = comp.mastery < 50;
+                            const isHigh = comp.mastery >= 85;
+
+                            return (
+                                <div key={idx} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-2 rounded-xl ${isLow ? 'bg-red-50 dark:bg-red-500/10' : isHigh ? 'bg-green-50 dark:bg-green-500/10' : 'bg-violet-50 dark:bg-violet-500/10'}`}>
+                                                {isLow ? <AlertCircle className="w-5 h-5 text-red-500" /> : isHigh ? <Award className="w-5 h-5 text-green-500" /> : <Target className="w-5 h-5 text-violet-500" />}
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-slate-900 dark:text-white">{comp.name}</h3>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                                                    Items: {comp.items.join(', ')}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className={`text-2xl font-black ${isLow ? 'text-red-500' : isHigh ? 'text-green-500' : 'text-slate-900 dark:text-white'}`}>
+                                                {comp.mastery}%
+                                            </span>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mastery</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                        <div
+                                            className={`h-full transition-all duration-1000 ${isLow ? 'bg-red-500' : isHigh ? 'bg-green-500' : 'bg-violet-500'}`}
+                                            style={{ width: `${comp.mastery}%` }}
+                                        />
+                                    </div>
+
+                                    <div className="mt-4 flex justify-between items-center text-[11px] font-bold">
+                                        <span className={isLow ? 'text-red-500' : 'text-slate-400'}>
+                                            {isLow ? 'Intervention Recommended' : isHigh ? 'Exceptional Mastery' : 'Steady Progress'}
+                                        </span>
+                                        <span className="text-slate-400">{comp.itemCount} items mapped</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {viewMode === 'detailed' && (
                     /* DETAILED RESULTS TABLE */
                     <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                         <div className="p-6 border-b border-slate-100 dark:border-slate-800 font-bold text-slate-900 dark:text-white">
@@ -269,13 +351,12 @@ export default function ExamResultsPage() {
 
                                                     return (
                                                         <td key={i} className="p-1 text-center">
-                                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center mx-auto text-[11px] font-bold transition-all ${
-                                                                !studentAns || studentAns === 'BLANK'
+                                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center mx-auto text-[11px] font-bold transition-all ${!studentAns || studentAns === 'BLANK'
                                                                     ? 'bg-slate-100 dark:bg-slate-800 text-slate-400'
                                                                     : isCorrect
                                                                         ? 'bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-500/30'
                                                                         : 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/30'
-                                                            }`}>
+                                                                }`}>
                                                                 {studentAns === 'BLANK' ? '—' : studentAns || '—'}
                                                             </div>
                                                         </td>

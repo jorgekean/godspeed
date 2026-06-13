@@ -48,6 +48,7 @@ export interface Exam {
     maxScore?: number;    // NEW: Overrides itemCount if set
     itemCount: number;
     answerKey: string;
+    competencyMap?: Record<string, string>; // Maps "itemNumber" -> "Competency Name"
     createdAt: number;
     createdBy: string;
     updatedAt: number;    // NEW: For sync
@@ -109,7 +110,7 @@ export class GodspeedDatabase extends Dexie {
         super('GodspeedGraderDBV2');
 
         // Schema versioning
-        this.version(8).stores({
+        this.version(9).stores({
             sections: 'id, gradeLevel, sectionName, [gradeLevel+sectionName], createdAt, createdBy, isSynced, updatedAt',
             students: 'id, sectionId, fullName, studentNo, createdBy, isSynced, updatedAt',
             periods: 'id, name, createdBy, isSynced, updatedAt, createdAt, startDate',
