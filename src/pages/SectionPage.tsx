@@ -1,6 +1,6 @@
 import React, { useState, useTransition } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, DEMO_USER_ID } from '../services/db';
+import { db } from '../services/db';
 import { Plus, FolderKanban, Edit3, Trash2, X, Users, Printer, FileText, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { pdf, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
@@ -141,7 +141,7 @@ const GRADE_LEVELS = ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Gr
 export default function SectionsPage() {
     const { currentUser } = useAuth();
 
-    const userEmail = currentUser?.email || DEMO_USER_ID;
+    const userEmail = currentUser?.email!;
     const sections = useLiveQuery(() =>
         db.sections.filter(s => s.createdBy === userEmail && !s.isDeleted).toArray(), [userEmail]
     );

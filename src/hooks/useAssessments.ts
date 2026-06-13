@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { db, type Assessment, DEMO_USER_ID } from '../services/db';
+import { db, type Assessment } from '../services/db';
 import { useAuth } from '../contexts/AuthContext';
 
 export function useAssessments(subjectId?: string, termId?: string) {
@@ -10,7 +10,11 @@ export function useAssessments(subjectId?: string, termId?: string) {
     const refresh = useCallback(async () => {
         setIsLoading(true);
         try {
-            const userEmail = currentUser?.email || DEMO_USER_ID;
+            const userEmail = currentUser?.email;
+            if (!userEmail) {
+                setAssessments([]);
+                return;
+            }
             // Note: Exam has 'subject' (string) and 'periodId'. 
             // If subjectId/termId are passed, we filter.
             let query: any = db.assessments.filter(a => a.createdBy === userEmail);
@@ -32,7 +36,7 @@ export function useAssessments(subjectId?: string, termId?: string) {
     const mockService = {
         create: async (data: any) => db.assessments.add({
             ...data,
-            createdBy: currentUser?.email || DEMO_USER_ID
+            createdBy: currentUser?.email as string
         }),
         update: async (id: string, data: any) => db.assessments.update(id, data),
         delete: async (id: string) => db.assessments.delete(id)

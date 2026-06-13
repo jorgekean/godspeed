@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { db, type Section, DEMO_USER_ID } from '../services/db';
+import { db, type Section } from '../services/db';
 import { useAuth } from '../contexts/AuthContext';
 
 export function useSections() {
@@ -10,7 +10,8 @@ export function useSections() {
     const fetchSections = useCallback(async () => {
         setIsLoading(true);
         try {
-            const userEmail = currentUser?.email || DEMO_USER_ID;
+            const userEmail = currentUser?.email;
+            if (!userEmail) return;
             const data = await db.sections.filter(s => s.createdBy === userEmail).toArray();
             setSections(data);
         } catch (error) {
@@ -31,7 +32,7 @@ export function useSections() {
         // Exposing service methods
         create: async (data: any) => db.sections.add({
             ...data,
-            createdBy: currentUser?.email || DEMO_USER_ID
+            createdBy: currentUser?.email as string
         }),
         update: async (id: string, data: any) => db.sections.update(id, data),
         remove: async (id: string) => db.sections.delete(id),

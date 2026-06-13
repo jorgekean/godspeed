@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { db, type Student, type Assessment, type Grade, DEMO_USER_ID } from '../services/db';
+import { db, type Student, type Assessment, type Grade } from '../services/db';
 import { useAuth } from '../contexts/AuthContext';
 
 export function useGradebook(subjectId: string, sectionId: string, termId: string) {
@@ -14,7 +14,8 @@ export function useGradebook(subjectId: string, sectionId: string, termId: strin
         setIsLoading(true);
 
         try {
-            const userEmail = currentUser?.email || DEMO_USER_ID;
+            const userEmail = currentUser?.email;
+            if (!userEmail) return;
 
             // 1. Fetch Students in the Section
             const studentData = await db.students.where({ sectionId }).filter(s => s.createdBy === userEmail).toArray();
@@ -58,7 +59,7 @@ export function useGradebook(subjectId: string, sectionId: string, termId: strin
             answers: {},
             scannedAt: Date.now(),
             sectionId: student?.sectionId || sectionId,
-            createdBy: currentUser?.email || DEMO_USER_ID,
+            createdBy: currentUser?.email as string,
             updatedAt: Date.now(),
             isSynced: false,
             isDeleted: false

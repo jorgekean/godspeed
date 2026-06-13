@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, type Period, DEMO_USER_ID } from '../services/db';
+import { db, type Period } from '../services/db';
 import { Plus, ChevronRight, FileText, X, HelpCircle, Printer, Edit3, BarChart3, ChevronDown } from 'lucide-react';
 import { OMRTemplateGenerator } from '../components/omr/OMRTemplate';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,7 +11,7 @@ export default function Dashboard() {
     const { currentUser } = useAuth();
     
     // 1. Fetch Periods
-    const userEmail = currentUser?.email || DEMO_USER_ID;
+    const userEmail = currentUser?.email as string;
     const periods = useLiveQuery(() => db.periods.filter(p => !p.isDeleted && p.createdBy === userEmail).sortBy('startDate'), [userEmail]);
     const sections = useLiveQuery(() => db.sections.filter(s => !s.isDeleted && s.createdBy === userEmail).toArray(), [userEmail]);
     

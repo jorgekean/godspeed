@@ -27,7 +27,7 @@ export default function AppLayout() {
     };
 
     const getPageSub = (path: string) => {
-        if (path === '/') return `Welcome back, ${currentUser?.email || 'Guest'}`;
+        if (path === '/') return `Welcome back, ${currentUser?.email}`;
         if (path.startsWith('/sections')) return 'Manage your classes and advisory groups.';
         if (path.startsWith('/students')) return 'Manage your student rosters.';
         if (path.startsWith('/periods')) return 'Manage your grading periods.';
@@ -39,17 +39,17 @@ export default function AppLayout() {
     const pageSub = getPageSub(location.pathname);
 
     const navItems = [
-        { path: '/', label: 'Overview', icon: LayoutDashboard, requiresAuth: false },
-        { path: '/periods', label: 'Periods', icon: CalendarDays, requiresAuth: true },
-        { path: '/sections', label: 'Sections', icon: FolderKanban, requiresAuth: true },
-        { path: '/students', label: 'Students', icon: Users, requiresAuth: true },
-        { path: '/account', label: 'Account', icon: User, requiresAuth: false },
+        { path: '/', label: 'Overview', icon: LayoutDashboard },
+        { path: '/periods', label: 'Periods', icon: CalendarDays },
+        { path: '/sections', label: 'Sections', icon: FolderKanban },
+        { path: '/students', label: 'Students', icon: Users },
+        { path: '/account', label: 'Account', icon: User },
     ];
 
     const mobileMainItems = [
-        { path: '/', label: 'Home', icon: LayoutDashboard, requiresAuth: false },
-        { path: '/manage', label: 'Manage', icon: Settings2, requiresAuth: true, isAction: true },
-        { path: '/account', label: 'Account', icon: User, requiresAuth: false },
+        { path: '/', label: 'Home', icon: LayoutDashboard },
+        { path: '/manage', label: 'Manage', icon: Settings2, isAction: true },
+        { path: '/account', label: 'Account', icon: User },
     ];
 
     const manageSubItems = [
@@ -61,13 +61,6 @@ export default function AppLayout() {
     const handleLogout = async () => {
         await logout();
         navigate('/landing?mode=login');
-    };
-
-    const showAuthToast = () => {
-        toast('Free Account Required', {
-            icon: '🔒',
-            description: 'Please sign up for a free account to access this feature.'
-        });
     };
 
     const isManageActive = manageSubItems.some(item => location.pathname.startsWith(item.path));
@@ -87,30 +80,6 @@ export default function AppLayout() {
 
                 <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
                     {navItems.map((item) => {
-                        const isDisabled = item.requiresAuth && !currentUser;
-                        const needsAttention = !currentUser && item.path === '/account';
-
-                        if (isDisabled) {
-                            return (
-                                <button
-                                    key={item.path}
-                                    onClick={showAuthToast}
-                                    className="w-full flex flex-col px-4 py-2.5 rounded-2xl cursor-not-allowed bg-slate-50 dark:bg-slate-800/20 text-left border border-transparent dark:border-white/5 transition-all"
-                                >
-                                    <div className="flex items-center justify-between w-full text-slate-400 dark:text-slate-500 opacity-70">
-                                        <div className="flex items-center gap-3">
-                                            <item.icon className="w-5 h-5" />
-                                            <span className="line-through">{item.label}</span>
-                                        </div>
-                                        <Lock className="w-4 h-4 text-slate-300 dark:text-slate-600" />
-                                    </div>
-                                    <span className="text-[10px] font-bold text-violet-500 dark:text-violet-400 uppercase tracking-wider mt-1 ml-8">
-                                        Registered Only
-                                    </span>
-                                </button>
-                            );
-                        }
-
                         return (
                             <NavLink
                                 key={item.path}
@@ -126,9 +95,6 @@ export default function AppLayout() {
                                     <>
                                         <div className="relative">
                                             <item.icon className="w-5 h-5" />
-                                            {needsAttention && (
-                                                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-bounce shadow-[0_0_8px_rgba(239,68,68,0.8)] border-2 border-white dark:border-slate-900"></span>
-                                            )}
                                         </div>
                                         {item.label}
                                     </>
@@ -146,10 +112,10 @@ export default function AppLayout() {
                         </div>
                         <div className="overflow-hidden">
                             <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                                {currentUser ? currentUser.email : 'Local Guest'}
+                                {currentUser?.email}
                             </p>
                             <p className="text-xs font-medium text-slate-500 truncate">
-                                {currentUser ? 'Free Account' : 'Data not backed up'}
+                                Free Account
                             </p>
                         </div>
                     </div>
@@ -170,21 +136,12 @@ export default function AppLayout() {
                         </div>
                     )}
 
-                    {currentUser ? (
-                        <button
-                            onClick={handleLogout}
-                            className="w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-colors"
-                        >
-                            <LogOut className="w-4 h-4" /> Sign Out
-                        </button>
-                    ) : (
-                        <button
-                            onClick={() => navigate('/account')}
-                            className="w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold text-violet-600 bg-violet-50 dark:bg-violet-500/10 hover:bg-violet-100 dark:hover:bg-violet-500/20 rounded-xl transition-colors relative"
-                        >
-                            <Lock className="w-4 h-4" /> Sign Up for Free
-                        </button>
-                    )}
+                    <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-colors"
+                    >
+                        <LogOut className="w-4 h-4" /> Sign Out
+                    </button>
                 </div>
             </aside>
 
@@ -262,25 +219,7 @@ export default function AppLayout() {
             <nav className="md:hidden fixed bottom-0 w-full z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-slate-200/50 dark:border-white/5 pb-safe">
                 <div className="flex items-center justify-around px-2 py-2">
                     {mobileMainItems.map((item) => {
-                        const isDisabled = item.requiresAuth && !currentUser;
-                        const needsAttention = !currentUser && item.path === '/account';
                         const isActive = item.isAction ? (isManageActive || isManageMenuOpen) : location.pathname.startsWith(item.path);
-
-                        if (isDisabled) {
-                            return (
-                                <button
-                                    key={item.label}
-                                    onClick={showAuthToast}
-                                    className="flex flex-col items-center justify-center w-16 h-14 rounded-xl opacity-50 cursor-not-allowed text-slate-400"
-                                >
-                                    <div className="relative">
-                                        <item.icon className="w-6 h-6 mb-1" />
-                                        <Lock className="w-3 h-3 absolute -top-1 -right-1 text-violet-500" />
-                                    </div>
-                                    <span className="text-[10px] font-semibold line-through">{item.label}</span>
-                                </button>
-                            );
-                        }
 
                         if (item.isAction) {
                             return (
@@ -313,9 +252,6 @@ export default function AppLayout() {
                             >
                                 <div className="relative">
                                     <item.icon className={`w-6 h-6 mb-1 ${isActive ? 'fill-violet-500/20' : ''}`} />
-                                    {needsAttention && (
-                                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-bounce shadow-[0_0_8px_rgba(239,68,68,0.8)] border-2 border-white dark:border-slate-900"></span>
-                                    )}
                                     {currentUser && item.path === '/account' && syncStatus === 'syncing' && (
                                         <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full animate-pulse border-2 border-white dark:border-slate-900 flex items-center justify-center">
                                             <RefreshCw className="w-2 h-2 text-white animate-spin" />

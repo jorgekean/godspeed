@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, DEMO_USER_ID } from '../services/db';
+import { db } from '../services/db';
 import { ArrowLeft, BarChart3, TrendingUp, UserCheck, FileDown, Loader2 } from 'lucide-react';
 import { pdf } from '@react-pdf/renderer';
 import { ItemAnalysisPDF, type ItemAnalysisData } from '../components/omr/ItemAnalysisPDF';
@@ -14,7 +14,7 @@ export default function ExamResultsPage() {
     const [filterSectionId, setFilterSectionId] = useState<string>('all');
     const [isGenerating, setIsGenerating] = useState(false);
 
-    const userEmail = currentUser?.email || DEMO_USER_ID;
+    const userEmail = currentUser?.email!;
 
     const exam = useLiveQuery(async () => {
         const e = await db.exams.get(examId as string);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
-import { db, DEMO_USER_ID } from '../services/db';
+import { db } from '../services/db';
 import { RapidKeyEditor } from '../components/omr/RapidKeyEditor';
 import { useAuth } from '../contexts/AuthContext';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -66,7 +66,7 @@ export default function CreateExam() {
             periodId: periodId,
             gradeLevel: gradeLevel,
             subject: subject,
-            createdBy: currentUser?.email || DEMO_USER_ID, 
+            createdBy: currentUser?.email!, 
             itemCount: cleanAnswerKey.length,
             answerKey: cleanAnswerKey,
             createdAt: Date.now(),

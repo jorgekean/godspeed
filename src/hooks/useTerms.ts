@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { db, type AcademicTerm, DEMO_USER_ID } from '../services/db';
+import { db, type AcademicTerm } from '../services/db';
 import { useAuth } from '../contexts/AuthContext';
 
 export function useTerms() {
@@ -10,7 +10,7 @@ export function useTerms() {
     const fetchTerms = useCallback(async () => {
         setIsLoading(true);
         try {
-            const userEmail = currentUser?.email || DEMO_USER_ID;
+            const userEmail = currentUser?.email!;
             const data = await db.terms.filter(t => t.createdBy === userEmail).toArray();
             setTerms(data);
         } catch (error) {
@@ -31,7 +31,7 @@ export function useTerms() {
         // Exposing service methods
         create: async (data: any) => db.terms.add({
             ...data,
-            createdBy: currentUser?.email || DEMO_USER_ID
+            createdBy: currentUser?.email!
         }),
         update: async (id: string, data: any) => db.terms.update(id, data),
         remove: async (id: string) => db.terms.delete(id),

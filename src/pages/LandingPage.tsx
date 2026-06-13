@@ -121,12 +121,12 @@ export default function LandingPage() {
                         <span className="font-bold tracking-tight text-lg">GodSpeed <span className="font-normal text-slate-500">Grader</span></span>
                     </div>
                     <div className="flex items-center gap-4">
-                        <button onClick={() => openModal('login')} className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">Sign In</button>
+                        {/* <button onClick={() => openModal('login')} className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">Sign In</button> */}
                         <button
-                            onClick={() => navigate('/')}
+                            onClick={() => openModal('login')}
                             className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-full transition-colors"
                         >
-                            Open App (Guest)
+                            Sign In
                         </button>
                     </div>
                 </div>
@@ -186,28 +186,11 @@ export default function LandingPage() {
                         <p className="text-slate-500 font-medium max-w-2xl mx-auto text-lg">Serverless, local-first architecture keeps Godspeed free forever. Upgrade only when you need cloud peace of mind.</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {/* 1. Guest Tier */}
-                        <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col">
-                            <div className="mb-6">
-                                <h3 className="text-xl font-bold text-slate-900 mb-2">Guest</h3>
-                                <p className="text-slate-500 text-sm">Perfect for a quick pop quiz.</p>
-                                <div className="mt-4"><span className="text-4xl font-black text-slate-900">Free</span></div>
-                            </div>
-                            <ul className="space-y-4 mb-8 flex-1">
-                                <li className="flex items-center gap-3 text-slate-600 font-medium"><Check className="w-5 h-5 text-violet-500 shrink-0" /> 50 Scans total</li>
-                                <li className="flex items-center gap-3 text-slate-600 font-medium"><Check className="w-5 h-5 text-violet-500 shrink-0" /> Local device storage</li>
-                                <li className="flex items-center gap-3 text-slate-600 font-medium"><Check className="w-5 h-5 text-violet-500 shrink-0" /> No account required</li>
-                            </ul>
-                            <button onClick={() => navigate('/')} className="w-full py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold rounded-xl transition-colors">
-                                Try it out (Guest)
-                            </button>
-                        </div>
-
-                        {/* 2. Free Account Tier */}
-                        <div className="bg-white rounded-3xl p-8 border-2 border-violet-500 shadow-xl shadow-violet-500/10 flex flex-col relative transform md:-translate-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto gap-8">
+                        {/* 1. Free Account Tier */}
+                        <div className="bg-white rounded-3xl p-8 border-2 border-violet-500 shadow-xl shadow-violet-500/10 flex flex-col relative">
                             <div className="absolute top-0 inset-x-0 flex justify-center -translate-y-1/2">
-                                <span className="bg-violet-500 text-white text-xs font-bold px-3 py-1 uppercase tracking-wider rounded-full">Most Popular</span>
+                                <span className="bg-violet-500 text-white text-xs font-bold px-3 py-1 uppercase tracking-wider rounded-full">Standard</span>
                             </div>
                             <div className="mb-6">
                                 <h3 className="text-xl font-bold text-slate-900 mb-2">Teacher Free</h3>

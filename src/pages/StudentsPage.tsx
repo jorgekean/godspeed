@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, DEMO_USER_ID } from '../services/db';
+import { db } from '../services/db';
 import { Plus, Users, Edit3, Trash2, X, ClipboardPaste, AlertTriangle, FolderKanban, Search, UserPlus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -10,7 +10,7 @@ export default function StudentsPage() {
     // ==========================================
     // 1. DATA FETCHING & FILTERING
     // ==========================================
-    const userEmail = currentUser?.email || DEMO_USER_ID;
+    const userEmail = currentUser?.email!;
     const sections = useLiveQuery(() => db.sections.filter(s => !s.isDeleted && s.createdBy === userEmail).sortBy('gradeLevel'), [userEmail]);
 
     const [selectedFilterSection, setSelectedFilterSection] = useState<string>('');

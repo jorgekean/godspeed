@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, DEMO_USER_ID } from '../services/db';
+import { db } from '../services/db';
 import { Camera, X, CheckCircle2, Search, UserCheck, Zap, ArrowLeft, Loader2, Users, RefreshCcw, ListChecks } from 'lucide-react';
 import { toast } from 'sonner';
 import { OMRScanner } from '../components/omr/OMRScanner';
@@ -38,18 +38,20 @@ export default function SmartScannerPage() {
     const [showDetails, setShowDetails] = useState(false);
 
     const exam = useLiveQuery(async () => {
-        const userEmail = currentUser?.email || DEMO_USER_ID;
+        const userEmail = currentUser?.email;
+        if (!userEmail) return null;
         const e = await db.exams.get(examId as string);
         if (e && e.createdBy === userEmail) return e;
         return null;
     }, [examId, currentUser]);
 
     const sections = useLiveQuery(() => {
-        const userEmail = currentUser?.email || DEMO_USER_ID;
+        const userEmail = currentUser?.email;
+        if (!userEmail) return [];
         return db.sections.filter(s => s.createdBy === userEmail && !s.isDeleted).toArray();
     }, [currentUser]);
     const students = useLiveQuery(
-        () => selectedSectionId && selectedSectionId !== 'anonymous' ? db.students.where('sectionId').equals(selectedSectionId).toArray() : [],
+        () => selectedSectionId ? db.students.where('sectionId').equals(selectedSectionId).toArray() : [],
         [selectedSectionId]
     );
 
@@ -83,7 +85,7 @@ export default function SmartScannerPage() {
     }, []);
 
     const handleTagStudent = useCallback(async (studentId: string, studentName: string, scoreOverride?: number, answersOverride?: string[]) => {
-        if (!exam) return;
+        if (!exam || !currentUser) return;
 
         const finalScore = scoreOverride !== undefined ? scoreOverride : currentScore;
         const finalAnswers = answersOverride !== undefined ? answersOverride : currentRawAnswers;
@@ -104,7 +106,7 @@ export default function SmartScannerPage() {
             total: exam.itemCount,
             answers: finalAnswers.reduce((acc, ans, i) => ({ ...acc, [i + 1]: ans }), {}),
             scannedAt: Date.now(),
-            createdBy: currentUser?.email || DEMO_USER_ID,
+            createdBy: currentUser.email,
             updatedAt: Date.now(),
             isSynced: false,
             isDeleted: false
@@ -141,7 +143,7 @@ export default function SmartScannerPage() {
         setShowDetails(false); // Reset details view on new scan
 
         // --- NEW: Auto-Tagging Logic ---
-        if (selectedSectionId !== 'anonymous' && studentNo && studentNo.indexOf('?') === -1) {
+        if (studentNo && studentNo.indexOf('?') === -1) {
             // Refined matching: Pad the student's stored ID with leading zeros to 8 digits to match the OMR grid
             const student = students?.find(s => {
                 if (!s.studentNo) return false;
@@ -157,14 +159,9 @@ export default function SmartScannerPage() {
             }
         }
 
-        if (selectedSectionId === 'anonymous') {
-            // No toast needed here, OMRScanner handles the success overlay
-            setTimeout(() => setCurrentScore(null), 1500);
-        } else {
-            setScanMode('tagging');
-            setSearchQuery('');
-        }
-    }, [exam, scanMode, selectedSectionId, students, handleTagStudent]);
+        setScanMode('tagging');
+        setSearchQuery('');
+    }, [exam, scanMode, students, handleTagStudent]);
 
 
     // ---------------------------------------------------------
@@ -187,18 +184,15 @@ export default function SmartScannerPage() {
     }
 
     // ---------------------------------------------------------
-    // RENDER: SETUP MODE (Conditional Guest Logic)
+    // RENDER: SETUP MODE
     // ---------------------------------------------------------
     if (scanMode === 'setup') {
-        const isGuest = !currentUser; // Assumes you have currentUser from your AuthContext
-
         return (
             <div className="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950 p-4 md:p-8 relative">
                 <div className="flex items-center justify-between mb-8 max-w-xl mx-auto w-full">
                     <button onClick={() => navigate('/')} className="p-2 -ml-2 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors">
                         <ArrowLeft className="w-6 h-6" />
                     </button>
-                    {/* The Quick Scan is now a central feature */}
                 </div>
 
                 <div className="flex-1 flex flex-col justify-center max-w-xl mx-auto w-full animate-in zoom-in-95 duration-300 pb-12">
@@ -211,53 +205,29 @@ export default function SmartScannerPage() {
                     </div>
 
                     <div className="space-y-4">
-                        {/* Quick Scan: Always shown */}
-                        <button
-                            onClick={() => { setSelectedSectionId('anonymous'); setScanMode('scanning'); }}
-                            className="w-full flex items-center p-6 rounded-2xl border-2 border-amber-400 bg-amber-50 dark:bg-amber-500/10 hover:shadow-lg transition-all active:scale-[0.98]"
-                        >
-                            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 mr-4 bg-amber-100 dark:bg-amber-500/20">
-                                <Zap className="w-6 h-6 text-amber-600 dark:text-amber-400" />
-                            </div>
-                            <div className="text-left">
-                                <h4 className="text-lg font-bold text-amber-900 dark:text-amber-400">Quick Scan</h4>
-                                <p className="text-sm text-amber-800/70 dark:text-amber-400/70">Grade papers immediately without saving.</p>
-                            </div>
-                        </button>
-
-                        {/* Sections List: Only show if NOT a guest */}
-                        {!isGuest ? (
-                            <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-                                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider ml-1">Select Section ({exam.gradeLevel})</h3>
-                                {sections.filter(s => s.gradeLevel === exam.gradeLevel).length > 0 ? (
-                                    sections.filter(s => s.gradeLevel === exam.gradeLevel).map(section => (
-                                        <button
-                                            key={section.id}
-                                            onClick={() => { setSelectedSectionId(section.id); setScanMode('scanning'); }}
-                                            className="w-full flex items-center p-5 rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-violet-400 transition-all active:scale-[0.98]"
-                                        >
-                                            <Users className="w-6 h-6 text-slate-400 mr-4" />
-                                            <div className="text-left">
-                                                <h4 className="font-bold text-slate-900 dark:text-white">{section.sectionName}</h4>
-                                                <p className="text-xs text-slate-500">{section.gradeLevel}</p>
-                                            </div>
-                                        </button>
-                                    ))
-                                ) : (
-                                    <div className="p-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-center">
-                                        <p className="text-sm text-slate-500 dark:text-slate-400">No sections found for {exam.gradeLevel}.</p>
-                                        <p className="text-xs text-slate-400 mt-1">Use Quick Scan above, or create a matching section in the Sections tab.</p>
-                                    </div>
-                                )}
-                            </div>
-                        ) : (
-                            <div className="mt-6 p-4 bg-slate-100 dark:bg-slate-800/50 rounded-xl text-center">
-                                <p className="text-sm text-slate-500 mb-2">Want to save grades to class rosters?</p>
-                                <button onClick={() => navigate('/account')} className="text-violet-600 dark:text-violet-400 font-bold hover:underline">
-                                    Create a free account
-                                </button>
-                            </div>
-                        )}
+                        <div className="space-y-3">
+                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider ml-1">Select Section ({exam.gradeLevel})</h3>
+                            {sections.filter(s => s.gradeLevel === exam.gradeLevel).length > 0 ? (
+                                sections.filter(s => s.gradeLevel === exam.gradeLevel).map(section => (
+                                    <button
+                                        key={section.id}
+                                        onClick={() => { setSelectedSectionId(section.id); setScanMode('scanning'); }}
+                                        className="w-full flex items-center p-5 rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-violet-400 transition-all active:scale-[0.98]"
+                                    >
+                                        <Users className="w-6 h-6 text-slate-400 mr-4" />
+                                        <div className="text-left">
+                                            <h4 className="font-bold text-slate-900 dark:text-white">{section.sectionName}</h4>
+                                            <p className="text-xs text-slate-500">{section.gradeLevel}</p>
+                                        </div>
+                                    </button>
+                                ))
+                            ) : (
+                                <div className="p-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-center">
+                                    <p className="text-sm text-slate-500 dark:text-slate-400">No sections found for {exam.gradeLevel}.</p>
+                                    <p className="text-xs text-slate-400 mt-1">Please create a matching section in the Sections tab.</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -278,7 +248,7 @@ export default function SmartScannerPage() {
                     <div className="text-center flex flex-col items-center">
                         <h1 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight leading-tight">{exam.title}</h1>
                         <span className="text-[10px] font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-500/20 px-2 py-0.5 rounded-md mt-1">
-                            {selectedSectionId === 'anonymous' ? 'Quick Scan' : sections?.find(s => s.id === selectedSectionId)?.sectionName}
+                            {sections?.find(s => s.id === selectedSectionId)?.sectionName}
                         </span>
                     </div>
                     <div className="w-10" />
@@ -292,7 +262,6 @@ export default function SmartScannerPage() {
                         onScanComplete={handleScanSuccess}
                         enabled={scanMode === 'scanning'}
                         allStudentsGraded={
-                            selectedSectionId !== 'anonymous' && 
                             students && 
                             students.length > 0 && 
                             students.filter(s => scannedStudentIds.has(s.id)).length >= students.length
@@ -301,13 +270,6 @@ export default function SmartScannerPage() {
                     />
                 </div>
             </main>
-
-            {/* Quick Scan Floating Score */}
-            {selectedSectionId === 'anonymous' && currentScore !== null && (
-                <div className="fixed top-1/3 left-1/2 -translate-x-1/2 z-50 bg-amber-500 text-black px-8 py-4 rounded-3xl font-black text-6xl shadow-[0_0_50px_rgba(245,158,11,0.5)] animate-in zoom-in slide-out-to-top-8 duration-300">
-                    {currentScore}/{exam.itemCount}
-                </div>
-            )}
 
             {/* ========================================== */}
             {/* THE TAGGING BOTTOM SHEET */}

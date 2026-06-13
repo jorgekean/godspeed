@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom'
 import './App.css'
 import { ConfirmProvider } from './contexts/ConfirmContext'
 import { ThemeProvider } from './contexts/ThemeContext'
@@ -17,11 +17,23 @@ import SectionsPage from './pages/SectionPage'
 import StudentsPage from './pages/StudentsPage'
 import PeriodsPage from './pages/PeriodsPage'
 import LandingPage from './pages/LandingPage'
-import { AuthProvider } from './contexts/AuthContext'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { SyncProvider } from './contexts/SyncContext'
 import AccountPage from './pages/AccountPage'
 import ExamResultsPage from './pages/ExamResultsPage'
 import SmartScannerPage from './pages/SmartScannerPage'
+
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { currentUser, isLoading } = useAuth();
+
+  if (isLoading) return null; // Or a loading spinner
+
+  if (!currentUser) {
+    return <Navigate to="/landing" replace />;
+  }
+
+  return <>{children}</>;
+};
 
 function App() {
   return (
@@ -40,7 +52,7 @@ function App() {
                 {/* ========================================== */}
                 {/* 1. CORE LAYOUT ROUTES (With Bottom Nav / Sidebar) */}
                 {/* ========================================== */}
-                <Route element={<AppLayout />}>
+                <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
                   {/* The main dashboard listing all exams */}
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/sections" element={<SectionsPage />} />
@@ -55,15 +67,15 @@ function App() {
                 {/* 2. FULL SCREEN ROUTES (No Navigation Bars) */}
                 {/* ========================================== */}
                 {/* The rapid key importer / exam creation screen */}
-                <Route path="/create" element={<CreateExam />} />
+                <Route path="/create" element={<ProtectedRoute><CreateExam /></ProtectedRoute>} />
 
                 {/* Exam Editing */}
-                <Route path="/edit/:examId" element={<EditExam />} />
+                <Route path="/edit/:examId" element={<ProtectedRoute><EditExam /></ProtectedRoute>} />
 
-                <Route path="/exams/:examId/results" element={<ExamResultsPage />} />
+                <Route path="/exams/:examId/results" element={<ProtectedRoute><ExamResultsPage /></ProtectedRoute>} />
 
                 {/* The scanner view, utilizing dynamic routing to fetch the correct exam key */}
-                <Route path="/scan/:examId" element={<SmartScannerPage />} />
+                <Route path="/scan/:examId" element={<ProtectedRoute><SmartScannerPage /></ProtectedRoute>} />
 
                 {/* Catch-all for 404s */}
                 <Route path="*" element={<NotFound />} />

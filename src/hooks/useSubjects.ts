@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { db, type Subject, DEMO_USER_ID } from '../services/db';
+import { db, type Subject } from '../services/db';
 import { useAuth } from '../contexts/AuthContext';
 
 export function useSubjects() {
@@ -10,7 +10,7 @@ export function useSubjects() {
     const fetchSubjects = useCallback(async () => {
         setIsLoading(true);
         try {
-            const userEmail = currentUser?.email || DEMO_USER_ID;
+            const userEmail = currentUser?.email!;
             const data = await db.subjects.filter(s => s.createdBy === userEmail).toArray();
             setSubjects(data);
         } catch (error) {
@@ -31,7 +31,7 @@ export function useSubjects() {
         getById: async (id: string) => db.subjects.get(id),
         create: async (data: any) => db.subjects.add({
             ...data,
-            createdBy: currentUser?.email || DEMO_USER_ID
+            createdBy: currentUser?.email!
         }),
         update: async (id: string, data: any) => db.subjects.update(id, data),
         remove: async (id: string) => db.subjects.delete(id)

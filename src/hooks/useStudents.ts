@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { db, type Student, DEMO_USER_ID } from '../services/db';
+import { db, type Student } from '../services/db';
 import { useAuth } from '../contexts/AuthContext';
 
 export function useStudents() {
@@ -10,7 +10,7 @@ export function useStudents() {
     const fetchStudents = useCallback(async () => {
         setIsLoading(true);
         try {
-            const userEmail = currentUser?.email || DEMO_USER_ID;
+            const userEmail = currentUser?.email!;
             const data = await db.students.filter(s => s.createdBy === userEmail).toArray();
             setStudents(data);
         } catch (error) {
@@ -32,7 +32,7 @@ export function useStudents() {
         update: async (id: string, data: any) => db.students.update(id, data),
         create: async (data: any) => db.students.add({
             ...data,
-            createdBy: currentUser?.email || DEMO_USER_ID
+            createdBy: currentUser?.email!
         })
     };
 }

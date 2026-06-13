@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { db, DEMO_USER_ID } from '../services/db';
+import { db } from '../services/db';
 import { useAuth } from '../contexts/AuthContext';
 
 export function useStudentPerformance(studentId: string, termId: string) {
@@ -12,7 +12,7 @@ export function useStudentPerformance(studentId: string, termId: string) {
         setIsLoading(true);
 
         try {
-            const userEmail = currentUser?.email || DEMO_USER_ID;
+            const userEmail = currentUser?.email!;
             const student = await db.students.get(studentId);
             if (!student || student.createdBy !== userEmail) return;
 

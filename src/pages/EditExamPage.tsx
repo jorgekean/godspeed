@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, DEMO_USER_ID } from '../services/db';
+import { db } from '../services/db';
 import { RapidKeyEditor } from '../components/omr/RapidKeyEditor';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -15,7 +15,7 @@ export default function EditExam() {
     const { currentUser } = useAuth();
 
     // Fetch the existing exam
-    const userEmail = currentUser?.email || DEMO_USER_ID;
+    const userEmail = currentUser?.email!;
     const exam = useLiveQuery(async () => {
         const e = await db.exams.get(examId as string);
         if (e && e.createdBy === userEmail) return e;
