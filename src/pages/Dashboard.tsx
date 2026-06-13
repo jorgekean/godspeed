@@ -18,6 +18,7 @@ export default function Dashboard() {
     // 2. State for Filter
     const [selectedPeriod, setSelectedPeriod] = useState<string>('all');
     const [selectedGrade, setSelectedGrade] = useState<string>('all');
+    const [selectedSubject, setSelectedSubject] = useState<string>('all');
 
     // 3. Helper: Robust selection logic
     const bestPeriodId = useMemo(() => {
@@ -57,6 +58,14 @@ export default function Dashboard() {
         return Array.from(grades).sort(); // Sort alphabetically/numerically
     }, [sections]);
 
+    // Fetch all exams once to extract active subjects globally
+    const allUserExams = useLiveQuery(() => db.exams.filter(e => !e.isDeleted && e.createdBy === userEmail).toArray(), [userEmail]);
+    const activeSubjects = useMemo(() => {
+        if (!allUserExams) return [];
+        const subjects = new Set(allUserExams.map(e => e.subject));
+        return Array.from(subjects).sort();
+    }, [allUserExams]);
+
     // 5. Reactive Exam Fetching with Filter
     const exams = useLiveQuery(
         async () => {
@@ -70,10 +79,14 @@ export default function Dashboard() {
             if (selectedGrade !== 'all') {
                 results = results.filter(e => e.gradeLevel === selectedGrade);
             }
+            
+            if (selectedSubject !== 'all') {
+                results = results.filter(e => e.subject === selectedSubject);
+            }
 
             return results.reverse(); // Newest first
         },
-        [selectedPeriod, selectedGrade, userEmail]
+        [selectedPeriod, selectedGrade, selectedSubject, userEmail]
     );
 
     // 6. Lazy load from localStorage
@@ -143,26 +156,9 @@ export default function Dashboard() {
                             {activePeriodName} • {exams?.length || 0} Exams
                         </h3>
 
-                        <div className="flex flex-row items-center gap-2 w-full md:w-auto">
-                            {/* Grade Dropdown */}
-                            <div className="relative group flex-1 md:w-40">
-                                <select
-                                    value={selectedGrade}
-                                    onChange={(e) => setSelectedGrade(e.target.value)}
-                                    className="w-full bg-slate-200/50 dark:bg-slate-800/50 border-none rounded-xl px-4 py-2 text-[12px] font-bold text-slate-600 dark:text-slate-300 appearance-none focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all cursor-pointer pr-10"
-                                >
-                                    <option value="all">🎓 All Grades</option>
-                                    {activeGradeLevels.map(grade => (
-                                        <option key={grade} value={grade}>{grade}</option>
-                                    ))}
-                                </select>
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-violet-500 transition-colors">
-                                    <ChevronDown className="w-4 h-4" />
-                                </div>
-                            </div>
-
-                            {/* Period Dropdown */}
-                            <div className="relative group flex-1 md:w-56">
+                        <div className="flex flex-col md:flex-row w-full md:w-auto gap-2">
+                            {/* Period Dropdown (Row 1 on mobile) */}
+                            <div className="relative group w-full md:w-48 md:order-3">
                                 <select
                                     value={selectedPeriod}
                                     onChange={(e) => setSelectedPeriod(e.target.value)}
@@ -181,6 +177,43 @@ export default function Dashboard() {
                                 </select>
                                 <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-violet-500 transition-colors">
                                     <ChevronDown className="w-4 h-4" />
+                                </div>
+                            </div>
+
+                            {/* Grade and Subject Dropdowns (Row 2 on mobile) */}
+                            <div className="flex flex-row gap-2 w-full md:w-auto md:order-1">
+                                {/* Grade Dropdown */}
+                                <div className="relative group flex-1 md:flex-none md:w-36">
+                                    <select
+                                        value={selectedGrade}
+                                        onChange={(e) => setSelectedGrade(e.target.value)}
+                                        className="w-full bg-slate-200/50 dark:bg-slate-800/50 border-none rounded-xl px-4 py-2 text-[12px] font-bold text-slate-600 dark:text-slate-300 appearance-none focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all cursor-pointer pr-10"
+                                    >
+                                        <option value="all">🎓 All Grades</option>
+                                        {activeGradeLevels.map(grade => (
+                                            <option key={grade} value={grade}>{grade}</option>
+                                        ))}
+                                    </select>
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-violet-500 transition-colors">
+                                        <ChevronDown className="w-4 h-4" />
+                                    </div>
+                                </div>
+                                
+                                {/* Subject Dropdown */}
+                                <div className="relative group flex-1 md:flex-none md:w-40">
+                                    <select
+                                        value={selectedSubject}
+                                        onChange={(e) => setSelectedSubject(e.target.value)}
+                                        className="w-full bg-slate-200/50 dark:bg-slate-800/50 border-none rounded-xl px-4 py-2 text-[12px] font-bold text-slate-600 dark:text-slate-300 appearance-none focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all cursor-pointer pr-10"
+                                    >
+                                        <option value="all">📚 All Subjects</option>
+                                        {activeSubjects.map(subject => (
+                                            <option key={subject} value={subject}>{subject}</option>
+                                        ))}
+                                    </select>
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-violet-500 transition-colors">
+                                        <ChevronDown className="w-4 h-4" />
+                                    </div>
                                 </div>
                             </div>
                         </div>
