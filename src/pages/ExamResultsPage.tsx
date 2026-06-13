@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../services/db';
-import { ArrowLeft, BarChart3, TrendingUp, UserCheck, FileDown, Loader2 } from 'lucide-react';
+import { ArrowLeft, BarChart3, TrendingUp, UserCheck, FileDown, Loader2, List, LayoutGrid } from 'lucide-react';
 import { pdf } from '@react-pdf/renderer';
 import { ItemAnalysisPDF, type ItemAnalysisData } from '../components/omr/ItemAnalysisPDF';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,6 +12,7 @@ export default function ExamResultsPage() {
     const navigate = useNavigate();
     const { currentUser } = useAuth();
     const [filterSectionId, setFilterSectionId] = useState<string>('all');
+    const [viewMode, setViewMode] = useState<'summary' | 'detailed'>('summary');
     const [isGenerating, setIsGenerating] = useState(false);
 
     const userEmail = currentUser?.email!;
@@ -119,7 +120,7 @@ export default function ExamResultsPage() {
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 transition-colors">
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-6xl mx-auto">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <button
                         onClick={() => navigate('/')}
@@ -129,18 +130,35 @@ export default function ExamResultsPage() {
                     </button>
 
                     {totalScanned > 0 && (
-                        <button
-                            onClick={handleDownload}
-                            disabled={isGenerating}
-                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/20 active:scale-95 transition-all disabled:opacity-50"
-                        >
-                            {isGenerating ? (
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                            ) : (
-                                <FileDown className="w-5 h-5" />
-                            )}
-                            {isGenerating ? 'Preparing Report...' : 'Download Item Analysis'}
-                        </button>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                             <div className="flex bg-slate-200 dark:bg-slate-800 p-1 rounded-xl">
+                                <button
+                                    onClick={() => setViewMode('summary')}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'summary' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                >
+                                    <List className="w-4 h-4" /> Summary
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('detailed')}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'detailed' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                >
+                                    <LayoutGrid className="w-4 h-4" /> Detailed
+                                </button>
+                            </div>
+
+                            <button
+                                onClick={handleDownload}
+                                disabled={isGenerating}
+                                className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/20 active:scale-95 transition-all disabled:opacity-50"
+                            >
+                                {isGenerating ? (
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                ) : (
+                                    <FileDown className="w-5 h-5" />
+                                )}
+                                {isGenerating ? 'Preparing Report...' : 'Download Item Analysis'}
+                            </button>
+                        </div>
                     )}
                 </div>
 
@@ -187,31 +205,90 @@ export default function ExamResultsPage() {
                     </div>
                 </div>
 
-                {/* RESULTS TABLE - Dark Mode Styled */}
-                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                    <div className="p-6 border-b border-slate-100 dark:border-slate-800 font-bold text-slate-900 dark:text-white">
-                        {filterSectionId === 'all' ? 'All Results' : sections?.find(s => s.id === filterSectionId)?.sectionName}
-                    </div>
-                    <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {filteredResults.length === 0 && <p className="p-8 text-center text-slate-400 dark:text-slate-600">No results found.</p>}
-                        {filteredResults.map(res => {
-                            const student = students?.find(s => s.id === res.studentId);
-                            return (
-                                <div key={res.id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center">
-                                            <UserCheck className="w-5 h-5 text-slate-400" />
+                {viewMode === 'summary' ? (
+                    /* SUMMARY RESULTS LIST */
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 font-bold text-slate-900 dark:text-white">
+                            {filterSectionId === 'all' ? 'All Results' : sections?.find(s => s.id === filterSectionId)?.sectionName}
+                        </div>
+                        <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                            {filteredResults.length === 0 && <p className="p-8 text-center text-slate-400 dark:text-slate-600">No results found.</p>}
+                            {filteredResults.map(res => {
+                                const student = students?.find(s => s.id === res.studentId);
+                                return (
+                                    <div key={res.id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center">
+                                                <UserCheck className="w-5 h-5 text-slate-400" />
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-slate-900 dark:text-white">{student?.fullName || "Unknown Student"}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="font-bold text-slate-900 dark:text-white">{student?.fullName || "Unknown Student"}</p>
-                                        </div>
+                                        <p className="font-black text-lg text-slate-900 dark:text-white">{res.score} <span className="text-sm text-slate-400 dark:text-slate-500">/ {res.total}</span></p>
                                     </div>
-                                    <p className="font-black text-lg text-slate-900 dark:text-white">{res.score} <span className="text-sm text-slate-400 dark:text-slate-500">/ {res.total}</span></p>
-                                </div>
-                            );
-                        })}
+                                );
+                            })}
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    /* DETAILED RESULTS TABLE */
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 font-bold text-slate-900 dark:text-white">
+                            {filterSectionId === 'all' ? 'Detailed Breakdown' : sections?.find(s => s.id === filterSectionId)?.sectionName + ' - Detailed'}
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead className="bg-slate-50 dark:bg-slate-800/50">
+                                    <tr>
+                                        <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest sticky left-0 bg-slate-50 dark:bg-slate-800 z-10">Student</th>
+                                        <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Score</th>
+                                        {Array.from({ length: exam.itemCount }).map((_, i) => (
+                                            <th key={i} className="p-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center min-w-[40px]">
+                                                Q{i + 1}
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                    {filteredResults.map(res => {
+                                        const student = students?.find(s => s.id === res.studentId);
+                                        return (
+                                            <tr key={res.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                                <td className="p-4 font-bold text-slate-900 dark:text-white sticky left-0 bg-white dark:bg-slate-900 z-10 whitespace-nowrap border-r border-slate-100 dark:border-slate-800 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
+                                                    {student?.fullName || "Unknown"}
+                                                </td>
+                                                <td className="p-4 font-black text-center text-slate-900 dark:text-white">
+                                                    {res.score}
+                                                </td>
+                                                {Array.from({ length: exam.itemCount }).map((_, i) => {
+                                                    const qNum = (i + 1).toString();
+                                                    const studentAns = res.answers[qNum];
+                                                    const correctAns = exam.answerKey[i];
+                                                    const isCorrect = studentAns === correctAns;
+
+                                                    return (
+                                                        <td key={i} className="p-1 text-center">
+                                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center mx-auto text-[11px] font-bold transition-all ${
+                                                                !studentAns || studentAns === 'BLANK'
+                                                                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-400'
+                                                                    : isCorrect
+                                                                        ? 'bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-500/30'
+                                                                        : 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/30'
+                                                            }`}>
+                                                                {studentAns === 'BLANK' ? '—' : studentAns || '—'}
+                                                            </div>
+                                                        </td>
+                                                    );
+                                                })}
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
