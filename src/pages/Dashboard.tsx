@@ -51,7 +51,7 @@ export default function Dashboard() {
         return Array.from(subjects).filter(Boolean).sort();
     }, [allUserExams, storedSubjects]);
 
-    // 5. Reactive Exam Fetching with Filter
+    // 5. Reactive Exam Fetching with Filter and Status
     const exams = useLiveQuery(
         async () => {
             let results = [];
@@ -69,7 +69,46 @@ export default function Dashboard() {
                 results = results.filter(e => e.subject === selectedSubject);
             }
 
-            return results.reverse(); // Newest first
+            // JOIN DATA FOR STATUS
+            // 1. Get all active sections for mapping
+            const userSections = await db.sections.where('createdBy').equals(userEmail).filter(s => !s.isDeleted).toArray();
+            const sectionIdToGrade = new Map(userSections.map(s => [s.id, s.gradeLevel]));
+            
+            // 2. Count active students per grade level
+            const userStudents = await db.students.where('createdBy').equals(userEmail).filter(s => !s.isDeleted).toArray();
+            const studentsPerGrade = new Map<string, number>();
+            userStudents.forEach(s => {
+                const grade = sectionIdToGrade.get(s.sectionId);
+                if (grade) {
+                    studentsPerGrade.set(grade, (studentsPerGrade.get(grade) || 0) + 1);
+                }
+            });
+
+            // 3. Count scan results per exam
+            const userScans = await db.scanResults.where('createdBy').equals(userEmail).filter(sr => !sr.isDeleted).toArray();
+            const scansPerExam = new Map<string, number>();
+            userScans.forEach(sr => {
+                scansPerExam.set(sr.examId, (scansPerExam.get(sr.examId) || 0) + 1);
+            });
+
+            // 4. Enrich results
+            const enriched = results.map(exam => {
+                const scannedCount = scansPerExam.get(exam.id) || 0;
+                const totalExpected = studentsPerGrade.get(exam.gradeLevel) || 0;
+                
+                let status: 'not_graded' | 'partially_graded' | 'graded' = 'not_graded';
+                if (scannedCount > 0) {
+                    if (totalExpected > 0 && scannedCount >= totalExpected) {
+                        status = 'graded';
+                    } else {
+                        status = 'partially_graded';
+                    }
+                }
+
+                return { ...exam, scannedCount, totalExpected, status };
+            });
+
+            return enriched.reverse(); // Newest first
         },
         [selectedPeriod, selectedGrade, selectedSubject, userEmail]
     );
@@ -85,6 +124,17 @@ export default function Dashboard() {
     }, [showTemplates]);
 
     const activePeriodName = selectedPeriod === 'all' ? 'All Periods' : periods?.find(p => p.id === selectedPeriod)?.name;
+
+    const getStatusConfig = (status: string) => {
+        switch (status) {
+            case 'graded':
+                return { label: 'Graded', classes: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20' };
+            case 'partially_graded':
+                return { label: 'Partially Graded', classes: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-500/20' };
+            default:
+                return { label: 'Not Graded', classes: 'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700' };
+        }
+    };
 
     return (
         <div className="min-h-full flex flex-col font-sans selection:bg-violet-500/30">
@@ -134,7 +184,7 @@ export default function Dashboard() {
 
                 {/* EXAM LIST SECTION WITH INTEGRATED FILTER */}
                 <div className="flex flex-col gap-3">
-                    {/* Filters Row */}
+                    {/* Filters Row ... */}
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 px-1 mb-1">
                         <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 whitespace-nowrap">
                             <FileText className="w-3 h-3" />
@@ -165,7 +215,7 @@ export default function Dashboard() {
                                 </div>
                             </div>
 
-                            {/* Grade and Subject Dropdowns (Row 2 on mobile) */}
+                            {/* Grade and Subject Dropdowns (Row 2 on mobile) ... */}
                             <div className="flex flex-row gap-2 w-full md:w-auto md:order-1">
                                 {/* Grade Dropdown */}
                                 <div className="relative group flex-1 md:flex-none md:w-36">
@@ -215,51 +265,59 @@ export default function Dashboard() {
                         </div>
                     )}
 
-                    {exams?.map((exam) => (
-                        <div
-                            key={exam.id}
-                            className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/50 dark:border-white/5 shadow-sm group hover:ring-2 hover:ring-violet-500/10 transition-all"
-                        >
-                            <button
-                                onClick={() => navigate(`/scan/${exam.id}`)}
-                                className="flex-1 flex items-center gap-4 text-left active:scale-95 transition-transform"
+                    {exams?.map((exam) => {
+                        const status = getStatusConfig(exam.status);
+                        return (
+                            <div
+                                key={exam.id}
+                                className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/50 dark:border-white/5 shadow-sm group hover:ring-2 hover:ring-violet-500/10 transition-all"
                             >
-                                <div className="p-3 bg-violet-50 dark:bg-violet-500/10 rounded-xl group-hover:bg-violet-100 transition-colors">
-                                    <FileText className="w-6 h-6 text-violet-600 dark:text-violet-400" />
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-slate-900 dark:text-white mb-0.5">{exam.title}</h3>
-                                    <p className="text-[13px] font-medium text-slate-500 dark:text-slate-400">
-                                        {exam.gradeLevel} • {exam.subject} • {exam.itemCount} Items
-                                    </p>
-                                </div>
-                            </button>
+                                <button
+                                    onClick={() => navigate(`/scan/${exam.id}`)}
+                                    className="flex-1 flex items-center gap-4 text-left active:scale-95 transition-transform"
+                                >
+                                    <div className="p-3 bg-violet-50 dark:bg-violet-500/10 rounded-xl group-hover:bg-violet-100 transition-colors">
+                                        <FileText className="w-6 h-6 text-violet-600 dark:text-violet-400" />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-0.5">
+                                            <h3 className="font-bold text-slate-900 dark:text-white">{exam.title}</h3>
+                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${status.classes}`}>
+                                                {status.label}
+                                            </span>
+                                        </div>
+                                        <p className="text-[13px] font-medium text-slate-500 dark:text-slate-400">
+                                            {exam.gradeLevel} • {exam.subject} • {exam.itemCount} Items • {exam.scannedCount} Scanned
+                                        </p>
+                                    </div>
+                                </button>
 
-                            <div className="flex items-center gap-1 ml-4">
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        navigate(`/edit/${exam.id}`);
-                                    }}
-                                    className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-all"
-                                    title="Edit Exam"
-                                >
-                                    <Edit3 className="w-5 h-5" />
-                                </button>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        navigate(`/exams/${exam.id}/results`);
-                                    }}
-                                    className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-xl transition-all"
-                                    title="View Results"
-                                >
-                                    <BarChart3 className="w-5 h-5" />
-                                </button>
-                                <ChevronRight className="w-5 h-5 text-slate-300 dark:text-slate-600 ml-1" />
+                                <div className="flex items-center gap-1 ml-4">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate(`/edit/${exam.id}`);
+                                        }}
+                                        className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-all"
+                                        title="Edit Exam"
+                                    >
+                                        <Edit3 className="w-5 h-5" />
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate(`/exams/${exam.id}/results`);
+                                        }}
+                                        className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-xl transition-all"
+                                        title="View Results"
+                                    >
+                                        <BarChart3 className="w-5 h-5" />
+                                    </button>
+                                    <ChevronRight className="w-5 h-5 text-slate-300 dark:text-slate-600 ml-1" />
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
 
             </main>

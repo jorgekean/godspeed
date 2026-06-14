@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSync } from '../contexts/SyncContext';
 import { useNavigate } from 'react-router-dom';
-import { UserCircle, ShieldCheck, LogOut, Star, Lock, Database, FileText, Loader2, Mail, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { UserCircle, ShieldCheck, LogOut, Star, Lock, Database, FileText, Loader2, Mail, RefreshCw, AlertCircle, CheckCircle2, X } from 'lucide-react';
 
 export default function AccountPage() {
     const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -208,24 +208,24 @@ export default function AccountPage() {
                                 <p className="font-bold text-slate-900 dark:text-white">Last Updated: June 14, 2026</p>
                                 <h4 className="font-bold text-slate-900 dark:text-white">1. Acceptance of Terms</h4>
                                 <p>By creating an account on GodSpeed Grader, you agree to comply with and be bound by these Terms and Conditions. If you do not agree to these terms, please do not use the application.</p>
-                                
+
                                 <h4 className="font-bold text-slate-900 dark:text-white">2. Description of Service</h4>
                                 <p>GodSpeed Grader is a tool designed to help educators scan and grade OMR (Optical Mark Recognition) sheets using mobile camera technology and edge computing.</p>
-                                
+
                                 <h4 className="font-bold text-slate-900 dark:text-white">3. User Responsibilities</h4>
                                 <p>You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You agree to use the service for educational purposes only.</p>
-                                
+
                                 <h4 className="font-bold text-slate-900 dark:text-white">4. Data Privacy</h4>
                                 <p>Your data is processed locally on your device whenever possible. If you enable Cloud Sync, your data is securely stored on our servers to allow access across multiple devices. We do not sell your personal data to third parties.</p>
-                                
+
                                 <h4 className="font-bold text-slate-900 dark:text-white">5. Limitation of Liability</h4>
                                 <p>GodSpeed Grader is provided "as is" without any warranties. We are not responsible for any grading errors, data loss, or system downtime.</p>
-                                
+
                                 <h4 className="font-bold text-slate-900 dark:text-white">6. Changes to Terms</h4>
                                 <p>We reserve the right to modify these terms at any time. Your continued use of the service constitutes acceptance of the new terms.</p>
                             </div>
                             <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-right">
-                                <button 
+                                <button
                                     onClick={() => setIsTermsModalOpen(false)}
                                     className="px-6 py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all"
                                 >
