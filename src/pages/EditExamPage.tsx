@@ -6,8 +6,8 @@ import { db } from '../services/db';
 import { RapidKeyEditor } from '../components/omr/RapidKeyEditor';
 import { useAuth } from '../contexts/AuthContext';
 
-const GRADE_LEVELS = ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12"];
-const SUBJECTS = ["Math", "Science", "English", "Filipino", "Araling Panlipunan", "MAPEH", "TLE", "Values Education", "Other"];
+const DEFAULT_GRADE_LEVELS = ["Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12", "College 1"];
+const DEFAULT_SUBJECTS = ["Math", "Science", "English"];
 
 export default function EditExam() {
     const navigate = useNavigate();
@@ -23,6 +23,20 @@ export default function EditExam() {
     }, [examId, userEmail]);
     
     const periods = useLiveQuery(() => db.periods.filter(p => !p.isDeleted && p.createdBy === userEmail).sortBy('startDate'), [userEmail]);
+    const storedSubjects = useLiveQuery(() => db.subjects
+        .filter(s => s.createdBy === userEmail && !s.isDeleted)
+        .sortBy('sortOrder'), [userEmail]);
+    const storedGradeLevels = useLiveQuery(() => db.gradeLevels
+        .filter(g => g.createdBy === userEmail && !g.isDeleted)
+        .sortBy('sortOrder'), [userEmail]);
+    
+    const activeSubjects = storedSubjects && storedSubjects.length > 0 
+        ? storedSubjects.map(s => s.title) 
+        : DEFAULT_SUBJECTS;
+
+    const activeGradeLevels = storedGradeLevels && storedGradeLevels.length > 0 
+        ? storedGradeLevels.map(g => g.title) 
+        : DEFAULT_GRADE_LEVELS;
 
     // States
     const [title, setTitle] = useState('');
@@ -170,7 +184,7 @@ export default function EditExam() {
                                 className="w-full bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all shadow-sm appearance-none"
                             >
                                 <option value="" disabled>Select Grade Level</option>
-                                {GRADE_LEVELS.map(grade => (
+                                {activeGradeLevels.map(grade => (
                                     <option key={grade} value={grade}>{grade}</option>
                                 ))}
                             </select>
@@ -184,7 +198,7 @@ export default function EditExam() {
                                 className="w-full bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all shadow-sm appearance-none"
                             >
                                 <option value="" disabled>Select Subject</option>
-                                {SUBJECTS.map(subj => (
+                                {activeSubjects.map(subj => (
                                     <option key={subj} value={subj}>{subj}</option>
                                 ))}
                             </select>

@@ -26,44 +26,28 @@ interface SidebarProps {
     onClose: () => void;
 }
 
-const rootpath = '/godspeed';
-// 2. Our grouped navigation structure (Phase 1 Refined)
 const navGroups = [
     {
         title: 'Core',
         links: [
-            { name: 'Dashboard', path: `${rootpath}/`, icon: LayoutDashboard },
-            // { name: 'My Profile', path: '/profile', icon: UserCircle },
+            { name: 'Dashboard', path: '/', icon: LayoutDashboard },
         ]
     },
     {
-        title: 'Academic Control', // Merged Setup & Roster for a tighter flow
+        title: 'Academic Control',
         links: [
-            { name: 'Academic Terms', path: `${rootpath}/terms`, icon: CalendarDays },
-            { name: 'Subject Registry', path: `${rootpath}/subjects`, icon: BookOpen },
-            { name: 'Student Roster', path: `${rootpath}/students`, icon: GraduationCap },
+            { name: 'Sections', path: '/sections', icon: Package },
+            { name: 'Students', path: '/students', icon: GraduationCap },
+            { name: 'Periods', path: '/periods', icon: CalendarDays },
+            { name: 'Subjects', path: '/subjects', icon: BookOpen },
+            { name: 'Grade Levels', path: '/grades', icon: ClipboardList },
         ]
     },
     {
-        title: 'Grading Engine', // The "Workhorse" of the app
+        title: 'Settings',
         links: [
-            { name: 'Assessments', path: `${rootpath}/assessments`, icon: ClipboardList },
-            { name: 'Class Gradebook', path: `${rootpath}/gradebook`, icon: Table2 },
-            { name: 'Print Cards', path: `${rootpath}/print/bulk-sf9`, icon: Printer },
-        ]
-    },
-    {
-        title: 'Monitoring',
-        links: [
-            { name: 'Performance', path: `${rootpath}/performance`, icon: BarChart3 },
-            { name: 'Audit Logs', path: `${rootpath}/audit`, icon: ShieldCheck },
-            { name: 'Settings', path: `${rootpath}/settings`, icon: Settings },
-        ]
-    },
-    {
-        title: 'Resources',
-        links: [
-            { name: 'Help & Guide', path: `${rootpath}/help`, icon: HelpCircle },
+            { name: 'My Account', path: '/account', icon: Settings },
+            { name: 'Help & Guide', path: '/help', icon: HelpCircle },
         ]
     }
 ];

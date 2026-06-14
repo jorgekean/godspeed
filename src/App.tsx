@@ -16,6 +16,8 @@ import EditExam from './pages/EditExamPage'
 import SectionsPage from './pages/SectionPage'
 import StudentsPage from './pages/StudentsPage'
 import PeriodsPage from './pages/PeriodsPage'
+import SubjectsPage from './pages/SubjectsPage'
+import GradeLevelsPage from './pages/GradeLevelsPage'
 import LandingPage from './pages/LandingPage'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { SyncProvider } from './contexts/SyncContext'
@@ -58,6 +60,8 @@ function App() {
                   <Route path="/sections" element={<SectionsPage />} />
                   <Route path="/students" element={<StudentsPage />} />
                   <Route path="/periods" element={<PeriodsPage />} />
+                  <Route path="/subjects" element={<SubjectsPage />} />
+                  <Route path="/grades" element={<GradeLevelsPage />} />
                   <Route path="/account" element={<AccountPage />} />
                   {/* Help & Workflow guide */}
                   <Route path="/help" element={<Help />} />

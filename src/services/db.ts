@@ -59,12 +59,19 @@ export interface Exam {
 // 6. The Subject Registry (NEW)
 export interface Subject {
     id: string;
-    code: string;
     title: string;
-    gradeLevel: number;
-    wwWeight: number;
-    ptWeight: number;
-    qaWeight: number;
+    sortOrder: number;    // NEW: For preserving order
+    createdBy: string;
+    updatedAt: number;
+    isSynced: boolean;
+    isDeleted: boolean;
+}
+
+// 7. The Grade Levels Registry (NEW)
+export interface GradeLevel {
+    id: string;
+    title: string;
+    sortOrder: number;    // NEW: For preserving order
     createdBy: string;
     updatedAt: number;
     isSynced: boolean;
@@ -100,6 +107,7 @@ export class GodspeedDatabase extends Dexie {
     exams!: Table<Exam>;
     scanResults!: Table<ScanResult>;
     subjects!: Table<Subject>;
+    gradeLevels!: Table<GradeLevel>;
 
     // Legacy Aliases
     get assessments() { return this.exams; }
@@ -110,13 +118,14 @@ export class GodspeedDatabase extends Dexie {
         super('GodspeedGraderDBV2');
 
         // Schema versioning
-        this.version(9).stores({
+        this.version(12).stores({
             sections: 'id, gradeLevel, sectionName, [gradeLevel+sectionName], createdAt, createdBy, isSynced, updatedAt',
             students: 'id, sectionId, fullName, studentNo, createdBy, isSynced, updatedAt',
             periods: 'id, name, createdBy, isSynced, updatedAt, createdAt, startDate',
             exams: 'id, periodId, gradeLevel, subject, createdAt, createdBy, isSynced, updatedAt',
             scanResults: 'id, examId, studentId, sectionId, periodId, [examId+studentId], scannedAt, createdBy, isSynced, updatedAt',
-            subjects: 'id, code, title, gradeLevel, createdBy, isSynced, updatedAt'
+            subjects: 'id, title, sortOrder, createdBy, isSynced, updatedAt',
+            gradeLevels: 'id, title, sortOrder, createdBy, isSynced, updatedAt'
         });
 
         // Add hooks for sync fields

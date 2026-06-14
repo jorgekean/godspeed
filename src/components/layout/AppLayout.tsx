@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { Users, FolderKanban, LayoutDashboard, LogOut, UserCircle, Lock, User, RefreshCw, AlertCircle, Zap, CalendarDays, Settings2, ChevronUp } from 'lucide-react';
+import { Users, FolderKanban, LayoutDashboard, LogOut, UserCircle, Lock, User, RefreshCw, AlertCircle, Zap, CalendarDays, Settings2, ChevronUp, BookOpen, GraduationCap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSync } from '../../contexts/SyncContext';
 import { toast } from 'sonner';
@@ -19,6 +19,8 @@ export default function AppLayout() {
         if (path.startsWith('/sections')) return 'Sections';
         if (path.startsWith('/students')) return 'Students';
         if (path.startsWith('/periods')) return 'Periods';
+        if (path.startsWith('/subjects')) return 'Subjects';
+        if (path.startsWith('/grades')) return 'Grade Levels';
         if (path.startsWith('/account')) return 'Account';
         if (path.startsWith('/create')) return 'Create Exam';
         if (path.startsWith('/edit')) return 'Edit Exam';
@@ -31,6 +33,8 @@ export default function AppLayout() {
         if (path.startsWith('/sections')) return 'Manage your classes and advisory groups.';
         if (path.startsWith('/students')) return 'Manage your student rosters.';
         if (path.startsWith('/periods')) return 'Manage your grading periods.';
+        if (path.startsWith('/subjects')) return 'Manage your subjects.';
+        if (path.startsWith('/grades')) return 'Manage your grade levels.';
         if (path.startsWith('/account')) return 'Manage your profile and settings.';
         return 'Grade exams in a flash.';
     };
@@ -41,6 +45,8 @@ export default function AppLayout() {
     const navItems = [
         { path: '/', label: 'Overview', icon: LayoutDashboard },
         { path: '/periods', label: 'Periods', icon: CalendarDays },
+        { path: '/grades', label: 'Grade Levels', icon: GraduationCap },
+        { path: '/subjects', label: 'Subjects', icon: BookOpen },
         { path: '/sections', label: 'Sections', icon: FolderKanban },
         { path: '/students', label: 'Students', icon: Users },
         { path: '/account', label: 'Account', icon: User },
@@ -56,6 +62,8 @@ export default function AppLayout() {
         { path: '/sections', label: 'Sections', icon: FolderKanban },
         { path: '/students', label: 'Students', icon: Users },
         { path: '/periods', label: 'Periods', icon: CalendarDays },
+        { path: '/grades', label: 'Grade Levels', icon: GraduationCap },
+        { path: '/subjects', label: 'Subjects', icon: BookOpen },
     ];
 
     const handleLogout = async () => {

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { db, type Section, type Student, type Exam, type ScanResult, type Period } from './db';
+import { db, type Section, type Student, type Exam, type ScanResult, type Period, type Subject, type GradeLevel } from './db';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://godspeedgrader-api.com/api';
 
@@ -9,6 +9,8 @@ export interface SyncBatch {
     exams: Exam[];
     scanResults: ScanResult[];
     periods: Period[];
+    subjects: Subject[];
+    gradeLevels: GradeLevel[];
 }
 
 export interface SyncResponse {
@@ -17,6 +19,8 @@ export interface SyncResponse {
     exams: Exam[];
     scanResults: ScanResult[];
     periods: Period[];
+    subjects: Subject[];
+    gradeLevels: GradeLevel[];
     serverTimestamp: number;
 }
 
@@ -41,13 +45,17 @@ export const syncService = {
         const unsyncedExams = await db.exams.filter(e => e.isSynced === false && e.createdBy === userEmail).toArray();
         const unsyncedScanResults = await db.scanResults.filter(sr => sr.isSynced === false && sr.createdBy === userEmail).toArray();
         const unsyncedPeriods = await db.periods.filter(p => p.isSynced === false && p.createdBy === userEmail).toArray();
+        const unsyncedSubjects = await db.subjects.filter(s => s.isSynced === false && s.createdBy === userEmail).toArray();
+        const unsyncedGradeLevels = await db.gradeLevels.filter(g => g.isSynced === false && g.createdBy === userEmail).toArray();
 
         if (
             unsyncedSections.length === 0 &&
             unsyncedStudents.length === 0 &&
             unsyncedExams.length === 0 &&
             unsyncedScanResults.length === 0 &&
-            unsyncedPeriods.length === 0
+            unsyncedPeriods.length === 0 &&
+            unsyncedSubjects.length === 0 &&
+            unsyncedGradeLevels.length === 0
         ) {
             return;
         }
@@ -57,7 +65,9 @@ export const syncService = {
             students: unsyncedStudents,
             exams: unsyncedExams,
             scanResults: unsyncedScanResults,
-            periods: unsyncedPeriods
+            periods: unsyncedPeriods,
+            subjects: unsyncedSubjects,
+            gradeLevels: unsyncedGradeLevels
         };
 
         await axios.post(`${API_BASE_URL}/sync`, batch, { headers });
@@ -68,10 +78,12 @@ export const syncService = {
             students: unsyncedStudents.map(s => s.id),
             exams: unsyncedExams.map(e => e.id),
             scanResults: unsyncedScanResults.map(sr => sr.id),
-            periods: unsyncedPeriods.map(p => p.id)
+            periods: unsyncedPeriods.map(p => p.id),
+            subjects: unsyncedSubjects.map(s => s.id),
+            gradeLevels: unsyncedGradeLevels.map(g => g.id)
         };
 
-        await db.transaction('rw', [db.sections, db.students, db.exams, db.scanResults, db.periods], async () => {
+        await db.transaction('rw', [db.sections, db.students, db.exams, db.scanResults, db.periods, db.subjects, db.gradeLevels], async () => {
             for (const id of ids.sections) {
                 await db.sections.update(id, { isSynced: true });
             }
@@ -90,6 +102,14 @@ export const syncService = {
 
             for (const id of ids.periods) {
                 await db.periods.update(id, { isSynced: true });
+            }
+
+            for (const id of ids.subjects) {
+                await db.subjects.update(id, { isSynced: true });
+            }
+
+            for (const id of ids.gradeLevels) {
+                await db.gradeLevels.update(id, { isSynced: true });
             }
         });
     },
@@ -122,9 +142,11 @@ export const syncService = {
         const exams: Exam[] = normalize(payload.exams || []);
         const scanResults: ScanResult[] = normalize(payload.scanResults || []);
         const periods: Period[] = normalize(payload.periods || []);
+        const subjects: Subject[] = normalize(payload.subjects || []);
+        const gradeLevels: GradeLevel[] = normalize(payload.gradeLevels || []);
         const serverTimestamp: number = payload.serverTimestamp || Date.now();
 
-        await db.transaction('rw', [db.sections, db.students, db.exams, db.scanResults, db.periods], async () => {
+        await db.transaction('rw', [db.sections, db.students, db.exams, db.scanResults, db.periods, db.subjects, db.gradeLevels], async () => {
             const merge = async (table: any, items: any[]) => {
                 if (!items || !Array.isArray(items)) return;
 
@@ -142,6 +164,8 @@ export const syncService = {
             await merge(db.exams, exams);
             await merge(db.scanResults, scanResults);
             await merge(db.periods, periods);
+            await merge(db.subjects, subjects);
+            await merge(db.gradeLevels, gradeLevels);
         });
 
         return serverTimestamp;

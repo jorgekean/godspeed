@@ -136,15 +136,19 @@ const MultiStudentDocument = ({ students, examType }: { students: any[], examTyp
     </Document>
 );
 
-const GRADE_LEVELS = ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12"];
+const DEFAULT_GRADE_LEVELS = ["Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12", "College 1"];
 
 export default function SectionsPage() {
     const { currentUser } = useAuth();
-
     const userEmail = currentUser?.email!;
-    const sections = useLiveQuery(() =>
-        db.sections.filter(s => s.createdBy === userEmail && !s.isDeleted).toArray(), [userEmail]
-    );
+    const sections = useLiveQuery(() => db.sections.filter(s => s.createdBy === userEmail && !s.isDeleted).toArray(), [userEmail]);
+    const storedGradeLevels = useLiveQuery(() => db.gradeLevels
+        .filter(g => g.createdBy === userEmail && !g.isDeleted)
+        .sortBy('sortOrder'), [userEmail]);
+
+    const activeGradeLevels = storedGradeLevels && storedGradeLevels.length > 0 
+        ? storedGradeLevels.map(g => g.title) 
+        : DEFAULT_GRADE_LEVELS;
 
     // 2. Modal & Form State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -432,7 +436,7 @@ export default function SectionsPage() {
                                     className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all appearance-none"
                                 >
                                     <option value="" disabled>Select Grade Level</option>
-                                    {GRADE_LEVELS.map(grade => (
+                                    {activeGradeLevels.map(grade => (
                                         <option key={grade} value={grade}>{grade}</option>
                                     ))}
                                 </select>

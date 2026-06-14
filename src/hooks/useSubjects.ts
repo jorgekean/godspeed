@@ -11,7 +11,9 @@ export function useSubjects() {
         setIsLoading(true);
         try {
             const userEmail = currentUser?.email!;
-            const data = await db.subjects.filter(s => s.createdBy === userEmail).toArray();
+            const data = await db.subjects
+                .filter(s => s.createdBy === userEmail && !s.isDeleted)
+                .sortBy('sortOrder');
             setSubjects(data);
         } catch (error) {
             console.error("Failed to fetch subjects", error);
