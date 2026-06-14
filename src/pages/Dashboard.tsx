@@ -2,13 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Period } from '../services/db';
-import { Plus, ChevronRight, FileText, HelpCircle, Edit3, BarChart3, ChevronDown } from 'lucide-react';
+import { Plus, ChevronRight, FileText, HelpCircle, Edit3, BarChart3, ChevronDown, Camera } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Dashboard() {
     const navigate = useNavigate();
     const { currentUser } = useAuth();
-    
+
     // 1. Fetch Periods
     const userEmail = currentUser?.email as string;
     const periods = useLiveQuery(() => db.periods.filter(p => !p.isDeleted && p.createdBy === userEmail).sortBy('startDate'), [userEmail]);
@@ -16,7 +16,7 @@ export default function Dashboard() {
     const storedGradeLevels = useLiveQuery(() => db.gradeLevels.filter(g => !g.isDeleted && g.createdBy === userEmail).toArray(), [userEmail]);
     const storedSubjects = useLiveQuery(() => db.subjects.filter(s => !s.isDeleted && s.createdBy === userEmail).toArray(), [userEmail]);
     const allUserExams = useLiveQuery(() => db.exams.filter(e => !e.isDeleted && e.createdBy === userEmail).toArray(), [userEmail]);
-    
+
     // 2. State for Filter
     const [selectedPeriod, setSelectedPeriod] = useState<string>('all');
     const [selectedGrade, setSelectedGrade] = useState<string>('all');
@@ -27,7 +27,7 @@ export default function Dashboard() {
     // Aggregate unique active grade levels from Sections, Registry, and Exams
     const activeGradeLevels = useMemo(() => {
         const grades = new Set<string>();
-        
+
         // From Registry
         if (storedGradeLevels) storedGradeLevels.forEach(g => grades.add(g.title));
         // From Sections
@@ -63,7 +63,7 @@ export default function Dashboard() {
             if (selectedGrade !== 'all') {
                 results = results.filter(e => e.gradeLevel === selectedGrade);
             }
-            
+
             if (selectedSubject !== 'all') {
                 results = results.filter(e => e.subject === selectedSubject);
             }
@@ -72,7 +72,7 @@ export default function Dashboard() {
             // 1. Get all active sections for mapping
             const userSections = await db.sections.where('createdBy').equals(userEmail).filter(s => !s.isDeleted).toArray();
             const sectionIdToGrade = new Map(userSections.map(s => [s.id, s.gradeLevel]));
-            
+
             // 2. Count active students per grade level
             const userStudents = await db.students.where('createdBy').equals(userEmail).filter(s => !s.isDeleted).toArray();
             const studentsPerGrade = new Map<string, number>();
@@ -94,7 +94,7 @@ export default function Dashboard() {
             const enriched = results.map(exam => {
                 const scannedCount = scansPerExam.get(exam.id) || 0;
                 const totalExpected = studentsPerGrade.get(exam.gradeLevel) || 0;
-                
+
                 let status: 'not_graded' | 'partially_graded' | 'graded' = 'not_graded';
                 if (scannedCount > 0) {
                     if (totalExpected > 0 && scannedCount >= totalExpected) {
@@ -130,22 +130,13 @@ export default function Dashboard() {
             <main className="flex-1 w-full max-w-5xl mx-auto px-4 md:px-8 py-6 flex flex-col gap-4">
 
                 {/* PRIMARY ACTIONS */}
-                <div className="flex gap-3">
-                    <button
-                        onClick={() => navigate('/create')}
-                        className="flex-1 flex items-center justify-center gap-2 p-4 bg-violet-600 hover:bg-violet-500 text-white rounded-2xl shadow-lg shadow-violet-500/20 active:scale-95 transition-all font-bold"
-                    >
-                        <Plus className="w-5 h-5" />
-                        <span>Create New Exam</span>
-                    </button>
-
-                    <button
-                        onClick={() => navigate('/help')}
-                        className="px-6 flex items-center justify-center rounded-2xl border bg-white dark:bg-slate-900 border-slate-200/50 dark:border-white/5 text-slate-500 shadow-sm hover:text-violet-600 active:scale-95 transition-all"
-                    >
-                        <HelpCircle className="w-5 h-5" />
-                    </button>
-                </div>
+                <button
+                    onClick={() => navigate('/create')}
+                    className="w-full flex items-center justify-center gap-2 p-4 bg-violet-600 hover:bg-violet-500 text-white rounded-2xl shadow-lg shadow-violet-500/20 active:scale-95 transition-all font-bold"
+                >
+                    <Plus className="w-5 h-5" />
+                    <span>Create New Exam</span>
+                </button>
 
                 <div className="h-2" /> {/* Spacing */}
 
@@ -200,7 +191,7 @@ export default function Dashboard() {
                                         <ChevronDown className="w-4 h-4" />
                                     </div>
                                 </div>
-                                
+
                                 {/* Subject Dropdown */}
                                 <div className="relative group flex-1 md:flex-none md:w-40">
                                     <select

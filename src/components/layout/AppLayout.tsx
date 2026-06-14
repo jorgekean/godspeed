@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { Users, FolderKanban, LayoutDashboard, LogOut, UserCircle, Lock, User, RefreshCw, AlertCircle, Zap, CalendarDays, Settings2, ChevronUp, BookOpen, GraduationCap, MessageSquare, Mail, Printer } from 'lucide-react';
+import { Users, FolderKanban, LayoutDashboard, LogOut, UserCircle, Lock, User, RefreshCw, AlertCircle, Zap, CalendarDays, Settings2, ChevronUp, BookOpen, GraduationCap, MessageSquare, Mail, Printer, Camera } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSync } from '../../contexts/SyncContext';
 import { toast } from 'sonner';
@@ -22,6 +22,7 @@ export default function AppLayout() {
         if (path.startsWith('/subjects')) return 'Subjects';
         if (path.startsWith('/grades')) return 'Grade Levels';
         if (path.startsWith('/templates')) return 'Answer Sheets';
+        if (path === '/scan') return 'Instant Scan';
         if (path.startsWith('/account')) return 'Account';
         if (path.startsWith('/create')) return 'Create Exam';
         if (path.startsWith('/edit')) return 'Edit Exam';
@@ -46,6 +47,7 @@ export default function AppLayout() {
 
     const navItems = [
         { path: '/', label: 'Overview', icon: LayoutDashboard },
+        { path: '/scan', label: 'Instant Scan', icon: Camera },
         { path: '/templates', label: 'Answer Sheets', icon: Printer },
         { path: '/periods', label: 'Periods', icon: CalendarDays },
         { path: '/grades', label: 'Grade Levels', icon: GraduationCap },
@@ -57,12 +59,13 @@ export default function AppLayout() {
 
     const mobileMainItems = [
         { path: '/', label: 'Home', icon: LayoutDashboard },
+        { path: '/templates', label: 'Sheets', icon: Printer },
+        { path: '/scan', label: 'Scan', icon: Camera, isPrimary: true },
         { path: '/manage', label: 'Manage', icon: Settings2, isAction: true },
         { path: '/account', label: 'Account', icon: User },
     ];
 
     const manageSubItems = [
-        { path: '/templates', label: 'Answer Sheets', icon: Printer },
         { path: '/sections', label: 'Sections', icon: FolderKanban },
         { path: '/students', label: 'Students', icon: Users },
         { path: '/periods', label: 'Periods', icon: CalendarDays },
@@ -120,7 +123,7 @@ export default function AppLayout() {
                 {/* USER PROFILE & FOOTER SECTION */}
                 <div className="p-4 m-4 mt-auto flex flex-col gap-2">
                     {/* Support & Feedback Button */}
-                    <a 
+                    <a
                         href="mailto:contact@godspeedgrader.com"
                         className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-500/10 hover:text-violet-600 dark:hover:text-violet-400 transition-all font-bold text-sm group"
                     >
@@ -233,9 +236,9 @@ export default function AppLayout() {
                                     <span className="font-bold">{item.label}</span>
                                 </NavLink>
                             ))}
-                            
+
                             {/* Mobile Support Link */}
-                            <a 
+                            <a
                                 href="mailto:contact@godspeedgrader.com"
                                 className="flex items-center gap-4 px-4 py-4 rounded-2xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
                             >
@@ -258,44 +261,65 @@ export default function AppLayout() {
                         {mobileMainItems.map((item) => {
                             const isActive = item.isAction ? (isManageActive || isManageMenuOpen) : location.pathname.startsWith(item.path);
 
+                            // 1. Primary "Scan" Button (Big and Centered)
+                            if (item.isPrimary) {
+                                return (
+                                    <NavLink
+                                        key={item.path}
+                                        to={item.path}
+                                        className={({ isActive }) =>
+                                            `flex flex-col items-center justify-center -mt-8 w-16 h-16 rounded-full transition-all shadow-lg active:scale-90 ${isActive
+                                                ? 'bg-violet-600 text-white shadow-violet-500/40'
+                                                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 shadow-black/10'
+                                            }`
+                                        }
+                                    >
+                                        <item.icon className="w-8 h-8" />
+                                        <span className="text-[9px] font-black uppercase tracking-tighter mt-0.5">{item.label}</span>
+                                    </NavLink>
+                                );
+                            }
+
+                            // 2. "Manage" Action Button
                             if (item.isAction) {
                                 return (
                                     <button
                                         key={item.label}
                                         onClick={() => setIsManageMenuOpen(!isManageMenuOpen)}
-                                        className={`flex flex-col items-center justify-center w-16 h-14 rounded-xl transition-all relative ${isActive
+                                        className={`flex flex-col items-center justify-center w-14 h-12 rounded-xl transition-all relative ${isActive
                                             ? 'text-violet-600 dark:text-violet-400'
                                             : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
                                             }`}
                                     >
                                         <div className="relative">
-                                            {isManageMenuOpen ? <ChevronUp className="w-6 h-6 mb-1 animate-bounce" /> : <item.icon className={`w-6 h-6 mb-1 ${isActive ? 'fill-violet-500/20' : ''}`} />}
+                                            {isManageMenuOpen ? <ChevronUp className="w-6 h-6 mb-0.5 animate-bounce" /> : <item.icon className={`w-5 h-5 mb-0.5 ${isActive ? 'fill-violet-500/20' : ''}`} />}
                                         </div>
-                                        <span className="text-[10px] font-semibold">{item.label}</span>
+                                        <span className="text-[9px] font-semibold">{item.label}</span>
                                     </button>
                                 );
                             }
 
+                            // 3. Standard Nav Links
                             return (
                                 <NavLink
                                     key={item.path}
                                     to={item.path}
                                     className={() =>
-                                        `flex flex-col items-center justify-center w-16 h-14 rounded-xl transition-all ${isActive
+                                        `flex flex-col items-center justify-center w-14 h-12 rounded-xl transition-all ${isActive
                                             ? 'text-violet-600 dark:text-violet-400'
                                             : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
                                         }`
                                     }
                                 >
                                     <div className="relative">
-                                        <item.icon className={`w-6 h-6 mb-1 ${isActive ? 'fill-violet-500/20' : ''}`} />
+                                        <item.icon className={`w-5 h-5 mb-0.5 ${isActive ? 'fill-violet-500/20' : ''}`} />
                                         {currentUser && item.path === '/account' && syncStatus === 'syncing' && (
-                                            <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full animate-pulse border-2 border-white dark:border-slate-900 flex items-center justify-center">
-                                                <RefreshCw className="w-2 h-2 text-white animate-spin" />
+                                            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse border-2 border-white dark:border-slate-900 flex items-center justify-center">
+                                                <RefreshCw className="w-1.5 h-1.5 text-white animate-spin" />
                                             </span>
                                         )}
                                     </div>
-                                    <span className="text-[10px] font-semibold">{item.label}</span>
+                                    <span className="text-[9px] font-semibold">{item.label}</span>
                                 </NavLink>
                             );
                         })}

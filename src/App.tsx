@@ -19,6 +19,7 @@ import PeriodsPage from './pages/PeriodsPage'
 import SubjectsPage from './pages/SubjectsPage'
 import GradeLevelsPage from './pages/GradeLevelsPage'
 import TemplatesPage from './pages/TemplatesPage'
+import GlobalScannerPage from './pages/GlobalScannerPage'
 import LandingPage from './pages/LandingPage'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { SyncProvider } from './contexts/SyncContext'
@@ -82,6 +83,7 @@ function App() {
 
                 {/* The scanner view, utilizing dynamic routing to fetch the correct exam key */}
                 <Route path="/scan/:examId" element={<ProtectedRoute><SmartScannerPage /></ProtectedRoute>} />
+                <Route path="/scan" element={<ProtectedRoute><GlobalScannerPage /></ProtectedRoute>} />
 
                 {/* Catch-all for 404s */}
                 <Route path="*" element={<NotFound />} />
