@@ -2,8 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Period } from '../services/db';
-import { Plus, ChevronRight, FileText, X, HelpCircle, Printer, Edit3, BarChart3, ChevronDown } from 'lucide-react';
-import { OMRTemplateGenerator } from '../components/omr/OMRTemplate';
+import { Plus, ChevronRight, FileText, HelpCircle, Edit3, BarChart3, ChevronDown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Dashboard() {
@@ -113,16 +112,6 @@ export default function Dashboard() {
         [selectedPeriod, selectedGrade, selectedSubject, userEmail]
     );
 
-    // 6. Lazy load from localStorage
-    const [showTemplates, setShowTemplates] = useState(() => {
-        const saved = localStorage.getItem('godspeed_dashboard_templates');
-        return saved !== null ? JSON.parse(saved) : true;
-    });
-
-    useEffect(() => {
-        localStorage.setItem('godspeed_dashboard_templates', JSON.stringify(showTemplates));
-    }, [showTemplates]);
-
     const activePeriodName = selectedPeriod === 'all' ? 'All Periods' : periods?.find(p => p.id === selectedPeriod)?.name;
 
     const getStatusConfig = (status: string) => {
@@ -157,28 +146,6 @@ export default function Dashboard() {
                         <HelpCircle className="w-5 h-5" />
                     </button>
                 </div>
-
-                {/* Sub Actions (Templates) */}
-                <button
-                    onClick={() => setShowTemplates(!showTemplates)}
-                    className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border active:scale-95 transition-all text-xs font-bold uppercase tracking-wider ${showTemplates ? 'bg-slate-200 dark:bg-slate-800 border-transparent text-slate-900 dark:text-white' : 'bg-white dark:bg-slate-900 border-slate-200/50 dark:border-white/5 text-slate-500 shadow-sm hover:text-violet-600'}`}
-                >
-                    <Printer className="w-4 h-4" />
-                    {showTemplates ? 'Hide Bubble Sheet Templates' : 'Print Bubble Sheet Templates'}
-                </button>
-
-                {/* Templates Dropdown Card */}
-                {showTemplates && (
-                    <div className="relative bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-[24px] shadow-sm border border-slate-200/50 dark:border-white/5 animate-in fade-in slide-in-from-top-4 duration-200 z-10 overflow-hidden">
-                        <button
-                            onClick={() => setShowTemplates(false)}
-                            className="absolute top-4 right-4 p-2 bg-slate-50 dark:bg-slate-800 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors z-20 shadow-sm"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
-                        <OMRTemplateGenerator />
-                    </div>
-                )}
 
                 <div className="h-2" /> {/* Spacing */}
 

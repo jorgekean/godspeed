@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { Users, FolderKanban, LayoutDashboard, LogOut, UserCircle, Lock, User, RefreshCw, AlertCircle, Zap, CalendarDays, Settings2, ChevronUp, BookOpen, GraduationCap, MessageSquare, Mail } from 'lucide-react';
+import { Users, FolderKanban, LayoutDashboard, LogOut, UserCircle, Lock, User, RefreshCw, AlertCircle, Zap, CalendarDays, Settings2, ChevronUp, BookOpen, GraduationCap, MessageSquare, Mail, Printer } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSync } from '../../contexts/SyncContext';
 import { toast } from 'sonner';
@@ -21,6 +21,7 @@ export default function AppLayout() {
         if (path.startsWith('/periods')) return 'Periods';
         if (path.startsWith('/subjects')) return 'Subjects';
         if (path.startsWith('/grades')) return 'Grade Levels';
+        if (path.startsWith('/templates')) return 'Answer Sheets';
         if (path.startsWith('/account')) return 'Account';
         if (path.startsWith('/create')) return 'Create Exam';
         if (path.startsWith('/edit')) return 'Edit Exam';
@@ -35,6 +36,7 @@ export default function AppLayout() {
         if (path.startsWith('/periods')) return 'Manage your grading periods.';
         if (path.startsWith('/subjects')) return 'Manage your subjects.';
         if (path.startsWith('/grades')) return 'Manage your grade levels.';
+        if (path.startsWith('/templates')) return 'Download and print empty bubble sheet templates.';
         if (path.startsWith('/account')) return 'Manage your profile and settings.';
         return 'Grade exams in a flash.';
     };
@@ -44,6 +46,7 @@ export default function AppLayout() {
 
     const navItems = [
         { path: '/', label: 'Overview', icon: LayoutDashboard },
+        { path: '/templates', label: 'Answer Sheets', icon: Printer },
         { path: '/periods', label: 'Periods', icon: CalendarDays },
         { path: '/grades', label: 'Grade Levels', icon: GraduationCap },
         { path: '/subjects', label: 'Subjects', icon: BookOpen },
@@ -59,6 +62,7 @@ export default function AppLayout() {
     ];
 
     const manageSubItems = [
+        { path: '/templates', label: 'Answer Sheets', icon: Printer },
         { path: '/sections', label: 'Sections', icon: FolderKanban },
         { path: '/students', label: 'Students', icon: Users },
         { path: '/periods', label: 'Periods', icon: CalendarDays },
