@@ -37,13 +37,22 @@ export default function LandingPage() {
     }, [searchParams]);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [agreedToTerms, setAgreedToTerms] = useState(false);
 
     // Loading & Error States
     const [isLoading, setIsLoading] = useState(false);
     const [authError, setAuthError] = useState('');
 
+    const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
+
     const handleAuthSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!isLoginMode && !agreedToTerms) {
+            setAuthError('You must agree to the Terms and Conditions to create an account.');
+            return;
+        }
+
         setAuthError('');
         setIsLoading(true);
 
@@ -182,7 +191,7 @@ export default function LandingPage() {
             <section className="bg-slate-100 py-24 px-6">
                 <div className="max-w-6xl mx-auto">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-5xl font-black tracking-tight text-slate-900 mb-4">Simple pricing for Filipino educators.</h2>
+                        <h2 className="text-3xl md:text-5xl font-black tracking-tight text-slate-900 mb-4">Simple pricing for all educators.</h2>
                         <p className="text-slate-500 font-medium max-w-2xl mx-auto text-lg">Serverless, local-first architecture keeps Godspeed free forever. Upgrade only when you need cloud peace of mind.</p>
                     </div>
 
@@ -318,6 +327,22 @@ export default function LandingPage() {
                                     />
                                 </div>
 
+                                {!isLoginMode && (
+                                    <div className="flex items-start gap-3 px-1 py-2 animate-in fade-in duration-300">
+                                        <input
+                                            id="terms"
+                                            type="checkbox"
+                                            required
+                                            checked={agreedToTerms}
+                                            onChange={(e) => setAgreedToTerms(e.target.checked)}
+                                            className="mt-1 w-4 h-4 text-violet-600 border-slate-300 rounded focus:ring-violet-500 transition-all cursor-pointer"
+                                        />
+                                        <label htmlFor="terms" className="text-sm text-slate-500 leading-tight">
+                                            I agree to the <button type="button" onClick={() => setIsTermsModalOpen(true)} className="text-violet-600 font-bold hover:underline">Terms and Conditions</button> and Privacy Policy.
+                                        </label>
+                                    </div>
+                                )}
+
                                 <button
                                     type="submit"
                                     disabled={isLoading}
@@ -336,6 +361,48 @@ export default function LandingPage() {
                                     {isLoginMode ? 'Sign Up' : 'Sign In'}
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* TERMS MODAL */}
+            {isTermsModalOpen && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
+                    <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden relative animate-in zoom-in-95 duration-200">
+                        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                            <h3 className="text-xl font-bold text-slate-900">Terms and Conditions</h3>
+                            <button onClick={() => setIsTermsModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 bg-slate-50 rounded-full transition-colors">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="p-8 max-h-[60vh] overflow-y-auto text-slate-600 space-y-4 text-sm leading-relaxed">
+                            <p className="font-bold text-slate-900">Last Updated: June 14, 2026</p>
+                            <h4 className="font-bold text-slate-900">1. Acceptance of Terms</h4>
+                            <p>By creating an account on GodSpeed Grader, you agree to comply with and be bound by these Terms and Conditions. If you do not agree to these terms, please do not use the application.</p>
+
+                            <h4 className="font-bold text-slate-900">2. Description of Service</h4>
+                            <p>GodSpeed Grader is a tool designed to help educators scan and grade OMR (Optical Mark Recognition) sheets using mobile camera technology and edge computing.</p>
+
+                            <h4 className="font-bold text-slate-900">3. User Responsibilities</h4>
+                            <p>You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You agree to use the service for educational purposes only.</p>
+
+                            <h4 className="font-bold text-slate-900">4. Data Privacy</h4>
+                            <p>Your data is processed locally on your device whenever possible. If you enable Cloud Sync, your data is securely stored on our servers to allow access across multiple devices. We do not sell your personal data to third parties.</p>
+
+                            <h4 className="font-bold text-slate-900">5. Limitation of Liability</h4>
+                            <p>GodSpeed Grader is provided "as is" without any warranties. We are not responsible for any grading errors, data loss, or system downtime.</p>
+
+                            <h4 className="font-bold text-slate-900">6. Changes to Terms</h4>
+                            <p>We reserve the right to modify these terms at any time. Your continued use of the service constitutes acceptance of the new terms.</p>
+                        </div>
+                        <div className="p-6 border-t border-slate-100 bg-slate-50 text-right">
+                            <button
+                                onClick={() => setIsTermsModalOpen(false)}
+                                className="px-6 py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all"
+                            >
+                                Got it
+                            </button>
                         </div>
                     </div>
                 </div>
