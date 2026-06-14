@@ -126,10 +126,10 @@ self.onmessage = function (e) {
             colStarts = [520]; // 1 Column moved to the right
             startY = 180; rowHeight = 35; bubbleSpacing = 45; bubbleSize = 30;
 
-            // Identification Grids (Updated for 4-digit alignment)
+            // Identification Grids (Aligned with gridSpacingX: 24 in OMRTemplate.tsx)
             idGrids = [
-                { name: 'examCode', digits: 4, startX: 100, startY: 180 + 18 + 5, spacingX: 23, spacingY: 22, bubbleSize: 18 },
-                { name: 'studentNo', digits: 8, startX: 100, startY: 460 + 18 + 5, spacingX: 23, spacingY: 22, bubbleSize: 18 }
+                { name: 'examCode', digits: 4, startX: 100, startY: 180 + 18 + 5, spacingX: 24, spacingY: 22, bubbleSize: 18 },
+                { name: 'studentNo', digits: 8, startX: 100, startY: 460 + 18 + 5, spacingX: 24, spacingY: 22, bubbleSize: 18 }
             ];
         } else {
             numQuestions = 50;
@@ -138,8 +138,8 @@ self.onmessage = function (e) {
 
             // Identification Grids
             idGrids = [
-                { name: 'examCode', digits: 4, startX: 60, startY: 160 + 18 + 5, spacingX: 23, spacingY: 22, bubbleSize: 18 },
-                { name: 'studentNo', digits: 8, startX: 60, startY: 440 + 18 + 5, spacingX: 23, spacingY: 22, bubbleSize: 18 }
+                { name: 'examCode', digits: 4, startX: 60, startY: 160 + 18 + 5, spacingX: 24, spacingY: 22, bubbleSize: 18 },
+                { name: 'studentNo', digits: 8, startX: 60, startY: 440 + 18 + 5, spacingX: 24, spacingY: 22, bubbleSize: 18 }
             ];
         }
 

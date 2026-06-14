@@ -168,7 +168,7 @@ export default function GlobalScannerPage() {
                     )}
                 </div>
 
-                <div className="relative w-full flex-1 min-h-[400px] bg-black rounded-[32px] overflow-hidden shadow-2xl border-4 md:border-[6px] border-slate-200 dark:border-slate-900">
+                <div className="relative w-full flex flex-col h-[75vh] min-h-[500px] max-h-[720px] bg-black rounded-[28px] sm:rounded-[32px] overflow-hidden shadow-2xl shadow-black/40 dark:shadow-violet-900/10 border-4 md:border-[6px] border-slate-200 dark:border-slate-900">
                     <OMRScanner
                         ref={scannerRef}
                         correctAnswers={[]}
