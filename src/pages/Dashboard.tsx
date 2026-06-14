@@ -108,7 +108,7 @@ export default function Dashboard() {
                 return { ...exam, scannedCount, totalExpected, status };
             });
 
-            return enriched.reverse(); // Newest first
+            return enriched.sort((a, b) => b.createdAt - a.createdAt);
         },
         [selectedPeriod, selectedGrade, selectedSubject, userEmail]
     );
