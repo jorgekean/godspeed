@@ -16,7 +16,7 @@ const ThemeContext = createContext<ThemeProviderState | undefined>(undefined);
 
 export function ThemeProvider({ children, defaultTheme = 'system' }: ThemeProviderProps) {
     const [theme, setTheme] = useState<Theme>(
-        () => (localStorage.getItem('grid-nabix-theme') as Theme) || defaultTheme
+        () => (localStorage.getItem('godspeedgrader-theme') as Theme) || defaultTheme
     );
 
     useEffect(() => {
@@ -37,7 +37,7 @@ export function ThemeProvider({ children, defaultTheme = 'system' }: ThemeProvid
     const value = {
         theme,
         setTheme: (theme: Theme) => {
-            localStorage.setItem('grid-nabix-theme', theme);
+            localStorage.setItem('godspeedgrader-theme', theme);
             setTheme(theme);
         },
     };

@@ -24,7 +24,7 @@ export interface SyncResponse {
     serverTimestamp: number;
 }
 
-const LAST_SYNC_KEY = 'godspeed_last_sync_timestamp';
+const LAST_SYNC_KEY = '$godspeed_last_sync_timestamp';
 
 export const syncService = {
     getLastSyncTimestamp(): number {
@@ -126,13 +126,13 @@ export const syncService = {
             return items.map(item => {
                 const normalized = { ...item };
                 const dateFields = ['createdAt', 'updatedAt', 'startDate', 'endDate', 'scannedAt'];
-                
+
                 dateFields.forEach(field => {
                     if (normalized[field] && typeof normalized[field] === 'string') {
                         normalized[field] = new Date(normalized[field]).getTime();
                     }
                 });
-                
+
                 return normalized;
             });
         };
