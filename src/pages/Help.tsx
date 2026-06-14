@@ -217,12 +217,21 @@ const Help = () => {
                 </section>
 
                 {/* Still Need Help */}
-                <section className="bg-linear-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 rounded-2xl border border-blue-200/50 dark:border-blue-800/30 p-6 text-center">
-                    <HelpCircle className="w-12 h-12 text-blue-600 dark:text-blue-400 mx-auto mb-3" />
-                    <h3 className="text-lg font-bold text-blue-900 dark:text-blue-100 mb-2">Still Need Help?</h3>
-                    <p className="text-sm text-blue-800 dark:text-blue-200">
-                        Try scanning again with better lighting, or check that all corners of the sheet are aligned in the blue box.
+                <section className="bg-linear-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 rounded-3xl border border-blue-200/50 dark:border-blue-800/30 p-8 text-center">
+                    <div className="w-16 h-16 bg-blue-100 dark:bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <HelpCircle className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <h3 className="text-xl font-bold text-blue-900 dark:text-blue-100 mb-2">Still Need Help?</h3>
+                    <p className="text-sm text-blue-800/70 dark:text-blue-200/70 mb-6 max-w-sm mx-auto">
+                        Our team is ready to assist you. Send us an email and we'll get back to you as soon as possible.
                     </p>
+                    <a 
+                        href="mailto:contact@godspeedgrader.com"
+                        className="inline-flex items-center gap-2 px-8 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/20 transition-all active:scale-95"
+                    >
+                        <Mail className="w-5 h-5" />
+                        Email Support
+                    </a>
                 </section>
 
             </main>

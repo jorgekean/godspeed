@@ -280,14 +280,21 @@ export default function Dashboard() {
                                         <FileText className="w-6 h-6 text-violet-600 dark:text-violet-400" />
                                     </div>
                                     <div>
-                                        <div className="flex items-center gap-2 mb-0.5">
-                                            <h3 className="font-bold text-slate-900 dark:text-white">{exam.title}</h3>
-                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${status.classes}`}>
-                                                {status.label}
-                                            </span>
-                                        </div>
-                                        <p className="text-[13px] font-medium text-slate-500 dark:text-slate-400">
-                                            {exam.gradeLevel} • {exam.subject} • {exam.itemCount} Items • {exam.scannedCount} Scanned
+                                        <h3 className="font-bold text-slate-900 dark:text-white leading-tight mb-0.5">{exam.title}</h3>
+                                        <p className="text-[12px] font-medium text-slate-500 dark:text-slate-400 flex items-center flex-wrap gap-x-1">
+                                            <span>{exam.gradeLevel}</span>
+                                            <span className="opacity-30">•</span>
+                                            <span>{exam.subject}</span>
+                                            <span className="opacity-30">•</span>
+                                            <span>{exam.itemCount} Items</span>
+                                            <span className="opacity-30">•</span>
+                                            {exam.status === 'graded' ? (
+                                                <span className="text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider text-[10px]">Graded</span>
+                                            ) : (
+                                                <span className={`${exam.scannedCount > 0 ? 'text-violet-600 dark:text-violet-400' : ''} font-bold`}>
+                                                    {exam.scannedCount} Scanned
+                                                </span>
+                                            )}
                                         </p>
                                     </div>
                                 </button>

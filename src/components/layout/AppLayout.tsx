@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { Users, FolderKanban, LayoutDashboard, LogOut, UserCircle, Lock, User, RefreshCw, AlertCircle, Zap, CalendarDays, Settings2, ChevronUp, BookOpen, GraduationCap } from 'lucide-react';
+import { Users, FolderKanban, LayoutDashboard, LogOut, UserCircle, Lock, User, RefreshCw, AlertCircle, Zap, CalendarDays, Settings2, ChevronUp, BookOpen, GraduationCap, MessageSquare, Mail } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSync } from '../../contexts/SyncContext';
 import { toast } from 'sonner';
@@ -112,44 +112,55 @@ export default function AppLayout() {
                     })}
                 </nav>
 
-                {/* USER PROFILE SECTION */}
-                <div className="p-4 m-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/50 dark:border-white/5">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 bg-violet-100 dark:bg-violet-500/20 rounded-full flex items-center justify-center shrink-0">
-                            <UserCircle className="w-6 h-6 text-violet-600 dark:text-violet-400" />
-                        </div>
-                        <div className="overflow-hidden">
-                            <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                                {currentUser?.email}
-                            </p>
-                            <p className="text-xs font-medium text-slate-500 truncate">
-                                Free Account
-                            </p>
-                        </div>
-                    </div>
-
-                    {currentUser && syncStatus !== 'idle' && (
-                        <div className={`mb-3 flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider ${syncStatus === 'syncing' ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400'}`}>
-                            {syncStatus === 'syncing' ? (
-                                <>
-                                    <RefreshCw className="w-3 h-3 animate-spin" />
-                                    Syncing Cloud Data
-                                </>
-                            ) : (
-                                <>
-                                    <AlertCircle className="w-3 h-3" />
-                                    Sync Error
-                                </>
-                            )}
-                        </div>
-                    )}
-
-                    <button
-                        onClick={handleLogout}
-                        className="w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-colors"
+                {/* USER PROFILE & FOOTER SECTION */}
+                <div className="p-4 m-4 mt-auto flex flex-col gap-2">
+                    {/* Support & Feedback Button */}
+                    <a 
+                        href="mailto:contact@godspeedgrader.com"
+                        className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-500/10 hover:text-violet-600 dark:hover:text-violet-400 transition-all font-bold text-sm group"
                     >
-                        <LogOut className="w-4 h-4" /> Sign Out
-                    </button>
+                        <MessageSquare className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                        <span>Support & Feedback</span>
+                    </a>
+
+                    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/50 dark:border-white/5 p-4">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="w-10 h-10 bg-violet-100 dark:bg-violet-500/20 rounded-full flex items-center justify-center shrink-0">
+                                <UserCircle className="w-6 h-6 text-violet-600 dark:text-violet-400" />
+                            </div>
+                            <div className="overflow-hidden">
+                                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                                    {currentUser?.email}
+                                </p>
+                                <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">
+                                    Free Account
+                                </p>
+                            </div>
+                        </div>
+
+                        {currentUser && syncStatus !== 'idle' && (
+                            <div className={`mb-3 flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider ${syncStatus === 'syncing' ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400'}`}>
+                                {syncStatus === 'syncing' ? (
+                                    <>
+                                        <RefreshCw className="w-3 h-3 animate-spin" />
+                                        Syncing...
+                                    </>
+                                ) : (
+                                    <>
+                                        <AlertCircle className="w-3 h-3" />
+                                        Sync Error
+                                    </>
+                                )}
+                            </div>
+                        )}
+
+                        <button
+                            onClick={handleLogout}
+                            className="w-full flex items-center justify-center gap-2 py-2 text-sm font-bold text-slate-400 hover:text-red-600 transition-colors"
+                        >
+                            <LogOut className="w-4 h-4" /> Sign Out
+                        </button>
+                    </div>
                 </div>
             </aside>
 
@@ -216,6 +227,17 @@ export default function AppLayout() {
                                     <span className="font-bold">{item.label}</span>
                                 </NavLink>
                             ))}
+                            
+                            {/* Mobile Support Link */}
+                            <a 
+                                href="mailto:contact@godspeedgrader.com"
+                                className="flex items-center gap-4 px-4 py-4 rounded-2xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                            >
+                                <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                                    <MessageSquare className="w-5 h-5" />
+                                </div>
+                                <span className="font-bold">Support & Feedback</span>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -272,7 +294,6 @@ export default function AppLayout() {
                     })}
                 </div>
             </nav>
-
         </div>
     );
 }

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSync } from '../contexts/SyncContext';
 import { useNavigate } from 'react-router-dom';
-import { UserCircle, ShieldCheck, LogOut, Star, Lock, Database, FileText, Loader2, Mail, RefreshCw, AlertCircle, CheckCircle2, X } from 'lucide-react';
+import { UserCircle, ShieldCheck, LogOut, Star, Lock, Database, FileText, Loader2, Mail, RefreshCw, AlertCircle, CheckCircle2, X, MessageSquare } from 'lucide-react';
 
 export default function AccountPage() {
     const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -353,6 +353,30 @@ export default function AccountPage() {
                                     <span className="line-through decoration-rose-500 opacity-50">₱399/year</span>
                                     <span className="text-emerald-600">FREE NOW</span>
                                 </button>
+                            </div>
+                        </div>
+
+                        {/* SUPPORT CARD */}
+                        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/50 dark:border-white/5 p-6 md:p-8 shadow-sm">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                <div className="flex items-start gap-4">
+                                    <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center shrink-0">
+                                        <Mail className="w-6 h-6 text-slate-600 dark:text-slate-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Help & Feedback</h3>
+                                        <p className="text-sm text-slate-500 font-medium max-w-sm">
+                                            Found a bug or have a suggestion? We'd love to hear from you.
+                                        </p>
+                                    </div>
+                                </div>
+                                <a
+                                    href="mailto:contact@godspeedgrader.com"
+                                    className="w-full md:w-auto px-6 py-3.5 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 font-bold rounded-xl transition-all flex items-center justify-center gap-2"
+                                >
+                                    <MessageSquare className="w-5 h-5" />
+                                    Contact Support
+                                </a>
                             </div>
                         </div>
                     </>

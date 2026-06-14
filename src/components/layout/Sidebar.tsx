@@ -14,6 +14,7 @@ import {
     X,
     Printer,
     HelpCircle,
+    MessageSquare,
     RefreshCw,
     AlertCircle,
     WifiOff
@@ -48,6 +49,7 @@ const navGroups = [
         links: [
             { name: 'My Account', path: '/account', icon: Settings },
             { name: 'Help & Guide', path: '/help', icon: HelpCircle },
+            { name: 'Send Feedback', path: 'mailto:contact@godspeedgrader.com', icon: MessageSquare, isExternal: true },
         ]
     }
 ];
@@ -120,6 +122,21 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
                         {group.links.map((link) => {
                             const Icon = link.icon;
+                            const isMailto = link.path.startsWith('mailto:');
+                            
+                            if (isMailto) {
+                                return (
+                                    <a
+                                        key={link.name}
+                                        href={link.path}
+                                        className="group flex items-center px-3 py-2.5 rounded-xl font-medium transition-all duration-200 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-gray-100"
+                                    >
+                                        <Icon className="w-5 h-5 mr-3 transition-transform duration-200 group-hover:scale-110" />
+                                        {link.name}
+                                    </a>
+                                );
+                            }
+
                             return (
                                 <NavLink
                                     key={link.name}
