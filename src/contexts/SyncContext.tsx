@@ -116,7 +116,7 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 // Periodic sync is now PUSH ONLY to save costs
                 triggerPush();
             }
-        }, 1 * 60 * 1000);//
+        }, 0.5 * 60 * 1000);// 30 secs
 
         return () => {
             clearInterval(interval);

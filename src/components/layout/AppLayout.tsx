@@ -76,6 +76,7 @@ export default function AppLayout() {
     };
 
     const isManageActive = manageSubItems.some(item => location.pathname.startsWith(item.path));
+    const isScannerPage = location.pathname.startsWith('/scan');
 
     return (
         <div className="flex h-[100dvh] bg-slate-100 dark:bg-slate-950 font-sans overflow-hidden">
@@ -192,8 +193,9 @@ export default function AppLayout() {
                     </div>
                 </header>
 
-                <div className="pb-24 md:pb-0 min-h-full">
+                <div className={`flex-1 min-h-full ${isScannerPage ? 'pb-0' : 'pb-24 pb-safe-bottom'} md:pb-0`}>
                     <Outlet />
+                    {!isScannerPage && <div className="h-12 md:hidden" />} {/* Extra spacer for general pages */}
                 </div>
             </main>
 
@@ -250,54 +252,56 @@ export default function AppLayout() {
             {/* ========================================== */}
             {/* MOBILE BOTTOM NAV */}
             {/* ========================================== */}
-            <nav className="md:hidden fixed bottom-0 w-full z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-slate-200/50 dark:border-white/5 pb-safe">
-                <div className="flex items-center justify-around px-2 py-2">
-                    {mobileMainItems.map((item) => {
-                        const isActive = item.isAction ? (isManageActive || isManageMenuOpen) : location.pathname.startsWith(item.path);
+            {!isScannerPage && (
+                <nav className="md:hidden fixed bottom-0 w-full z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-slate-200/50 dark:border-white/5 pb-safe">
+                    <div className="flex items-center justify-around px-2 py-2">
+                        {mobileMainItems.map((item) => {
+                            const isActive = item.isAction ? (isManageActive || isManageMenuOpen) : location.pathname.startsWith(item.path);
 
-                        if (item.isAction) {
+                            if (item.isAction) {
+                                return (
+                                    <button
+                                        key={item.label}
+                                        onClick={() => setIsManageMenuOpen(!isManageMenuOpen)}
+                                        className={`flex flex-col items-center justify-center w-16 h-14 rounded-xl transition-all relative ${isActive
+                                            ? 'text-violet-600 dark:text-violet-400'
+                                            : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                                            }`}
+                                    >
+                                        <div className="relative">
+                                            {isManageMenuOpen ? <ChevronUp className="w-6 h-6 mb-1 animate-bounce" /> : <item.icon className={`w-6 h-6 mb-1 ${isActive ? 'fill-violet-500/20' : ''}`} />}
+                                        </div>
+                                        <span className="text-[10px] font-semibold">{item.label}</span>
+                                    </button>
+                                );
+                            }
+
                             return (
-                                <button
-                                    key={item.label}
-                                    onClick={() => setIsManageMenuOpen(!isManageMenuOpen)}
-                                    className={`flex flex-col items-center justify-center w-16 h-14 rounded-xl transition-all relative ${isActive
-                                        ? 'text-violet-600 dark:text-violet-400'
-                                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                                        }`}
+                                <NavLink
+                                    key={item.path}
+                                    to={item.path}
+                                    className={() =>
+                                        `flex flex-col items-center justify-center w-16 h-14 rounded-xl transition-all ${isActive
+                                            ? 'text-violet-600 dark:text-violet-400'
+                                            : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                                        }`
+                                    }
                                 >
                                     <div className="relative">
-                                        {isManageMenuOpen ? <ChevronUp className="w-6 h-6 mb-1 animate-bounce" /> : <item.icon className={`w-6 h-6 mb-1 ${isActive ? 'fill-violet-500/20' : ''}`} />}
+                                        <item.icon className={`w-6 h-6 mb-1 ${isActive ? 'fill-violet-500/20' : ''}`} />
+                                        {currentUser && item.path === '/account' && syncStatus === 'syncing' && (
+                                            <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full animate-pulse border-2 border-white dark:border-slate-900 flex items-center justify-center">
+                                                <RefreshCw className="w-2 h-2 text-white animate-spin" />
+                                            </span>
+                                        )}
                                     </div>
                                     <span className="text-[10px] font-semibold">{item.label}</span>
-                                </button>
+                                </NavLink>
                             );
-                        }
-
-                        return (
-                            <NavLink
-                                key={item.path}
-                                to={item.path}
-                                className={() =>
-                                    `flex flex-col items-center justify-center w-16 h-14 rounded-xl transition-all ${isActive
-                                        ? 'text-violet-600 dark:text-violet-400'
-                                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                                    }`
-                                }
-                            >
-                                <div className="relative">
-                                    <item.icon className={`w-6 h-6 mb-1 ${isActive ? 'fill-violet-500/20' : ''}`} />
-                                    {currentUser && item.path === '/account' && syncStatus === 'syncing' && (
-                                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full animate-pulse border-2 border-white dark:border-slate-900 flex items-center justify-center">
-                                            <RefreshCw className="w-2 h-2 text-white animate-spin" />
-                                        </span>
-                                    )}
-                                </div>
-                                <span className="text-[10px] font-semibold">{item.label}</span>
-                            </NavLink>
-                        );
-                    })}
-                </div>
-            </nav>
+                        })}
+                    </div>
+                </nav>
+            )}
         </div>
     );
 }

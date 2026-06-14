@@ -15,6 +15,17 @@
   --color-primary-950: var(--primary-950);
 }
 
+/* Safe Area Utilities */
+@utility pt-safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+@utility pb-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 /* Tailwind v4 dark mode strategy */
 @custom-variant dark (&:is(.dark *));
 
