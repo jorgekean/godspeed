@@ -61,7 +61,7 @@ const PreFilledPage = ({ studentName, studentNo, examType }: { studentName: stri
             {Array.from({ length: 10 }).map((_, row) => (
                 <Text key={`ec-row-label-${row}`} style={[styles.questionNumber, { top: examCodeY + gridBubbleSize + 10 + (row * gridSpacingY), left: gridStartX - 15, fontSize: 8 }]}>{row}</Text>
             ))}
-            {Array.from({ length: 2 }).map((_, col) => (
+            {Array.from({ length: 4 }).map((_, col) => (
                 <React.Fragment key={`ec-col-${col}`}>
                     <View style={{ position: 'absolute', top: examCodeY, left: gridStartX + (col * gridSpacingX), width: gridBubbleSize, height: gridBubbleSize, borderWidth: 1, borderColor: '#000' }} />
                     {Array.from({ length: 10 }).map((_, row) => (

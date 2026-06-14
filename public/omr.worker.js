@@ -128,7 +128,7 @@ self.onmessage = function (e) {
 
             // Identification Grids
             idGrids = [
-                { name: 'examCode', digits: 2, startX: 100, startY: 180 + 18 + 5, spacingX: 24, spacingY: 22, bubbleSize: 18 },
+                { name: 'examCode', digits: 4, startX: 100, startY: 180 + 18 + 5, spacingX: 24, spacingY: 22, bubbleSize: 18 },
                 { name: 'studentNo', digits: 8, startX: 100, startY: 460 + 18 + 5, spacingX: 24, spacingY: 22, bubbleSize: 18 }
             ];
         } else {
@@ -138,7 +138,7 @@ self.onmessage = function (e) {
 
             // Identification Grids
             idGrids = [
-                { name: 'examCode', digits: 2, startX: 60, startY: 160 + 18 + 5, spacingX: 24, spacingY: 22, bubbleSize: 18 },
+                { name: 'examCode', digits: 4, startX: 60, startY: 160 + 18 + 5, spacingX: 24, spacingY: 22, bubbleSize: 18 },
                 { name: 'studentNo', digits: 8, startX: 60, startY: 440 + 18 + 5, spacingX: 24, spacingY: 22, bubbleSize: 18 }
             ];
         }

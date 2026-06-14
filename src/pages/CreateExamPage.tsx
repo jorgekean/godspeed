@@ -5,6 +5,8 @@ import { db } from '../services/db';
 import { AnswerKeyManager } from '../components/omr/AnswerKeyManager';
 import { useAuth } from '../contexts/AuthContext';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { getNextExamCode, isExamCodeDuplicate } from '../utils/examUtils';
+import { toast } from 'sonner';
 
 export default function CreateExam() {
     const navigate = useNavigate();
@@ -24,10 +26,20 @@ export default function CreateExam() {
 
     // States
     const [title, setTitle] = useState('');
+    const [examCode, setExamCode] = useState('0001');
     const [gradeLevel, setGradeLevel] = useState(''); 
     const [subject, setSubject] = useState('');       
     const [periodId, setPeriodId] = useState('');
     const [answerKey, setAnswerKey] = useState(' '.repeat(20));
+
+    // Auto-generate exam code
+    useEffect(() => {
+        const generateCode = async () => {
+            const nextCode = await getNextExamCode(userEmail);
+            setExamCode(nextCode);
+        };
+        generateCode();
+    }, [userEmail]);
 
     // Custom entry states
     const [customGrade, setCustomGrade] = useState('');
@@ -109,6 +121,13 @@ export default function CreateExam() {
     const handleSave = async () => {
         if (!isReady) return;
 
+        // Validation: Check for duplicate exam code
+        const isDuplicate = await isExamCodeDuplicate(userEmail, examCode);
+        if (isDuplicate) {
+            toast.error(`Exam Code "${examCode}" is already in use. Please use a unique 4-digit code.`);
+            return;
+        }
+
         let finalGradeLevel = gradeLevel;
         let finalSubject = subject;
 
@@ -135,6 +154,7 @@ export default function CreateExam() {
         await db.exams.add({
             id: crypto.randomUUID(),
             title: title.trim(),
+            examCode: examCode,
             periodId: periodId,
             gradeLevel: finalGradeLevel,
             subject: finalSubject,
@@ -178,15 +198,27 @@ export default function CreateExam() {
             <main className="flex-1 w-full max-w-2xl mx-auto px-4 py-6 flex flex-col gap-6">
 
                 <div className="space-y-4">
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Exam Title</label>
-                        <input
-                            type="text"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="e.g. Pop Quiz (Chapter 3)"
-                            className="w-full bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all shadow-sm font-bold"
-                        />
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                        <div className="sm:col-span-3 space-y-2">
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Exam Title</label>
+                            <input
+                                type="text"
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                placeholder="e.g. Pop Quiz (Chapter 3)"
+                                className="w-full bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all shadow-sm font-bold"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Exam Code</label>
+                            <input
+                                type="text"
+                                value={examCode}
+                                onChange={(e) => setExamCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))}
+                                placeholder="0001"
+                                className="w-full bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all shadow-sm font-mono font-bold text-center"
+                            />
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

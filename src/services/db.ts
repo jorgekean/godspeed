@@ -44,6 +44,7 @@ export interface Exam {
     gradeLevel: string;  // e.g., "Grade 9" (Matches Section.gradeLevel)
     subject: string;     // e.g., "Science"
     title: string;       // e.g., "Midterm Exam"
+    examCode?: string;    // NEW: 4-digit OMR code
     category?: 'WW' | 'PT' | 'QA'; // NEW: For K-12 grading
     maxScore?: number;    // NEW: Overrides itemCount if set
     itemCount: number;
