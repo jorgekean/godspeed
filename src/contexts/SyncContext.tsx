@@ -18,8 +18,17 @@ const SyncContext = createContext<SyncContextType | undefined>(undefined);
 export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { currentUser, token } = useAuth(); // Use your custom auth state
     const [status, setStatus] = useState<SyncStatus>('idle');
-    const [lastSyncTimestamp, setLastSyncTimestamp] = useState<number>(syncService.getLastSyncTimestamp());
+    const [lastSyncTimestamp, setLastSyncTimestamp] = useState<number>(0);
     const [error, setError] = useState<string | null>(null);
+
+    // Update lastSyncTimestamp when user changes
+    useEffect(() => {
+        if (currentUser?.email) {
+            setLastSyncTimestamp(syncService.getLastSyncTimestamp(currentUser.email));
+        } else {
+            setLastSyncTimestamp(0);
+        }
+    }, [currentUser]);
 
     // 2. Use a ref to track sync progress without triggering re-renders
     const isSyncingRef = useRef(false);
@@ -41,7 +50,7 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // 3. Pass the token and email to your sync service
             await syncService.syncData(token, currentUser.email);
 
-            const newTimestamp = syncService.getLastSyncTimestamp();
+            const newTimestamp = syncService.getLastSyncTimestamp(currentUser.email);
             setLastSyncTimestamp(newTimestamp);
             setStatus('idle');
         } catch (err: any) {
@@ -63,7 +72,7 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } finally {
             isSyncingRef.current = false;
         }
-    }, [token]);
+    }, [token, currentUser]);
 
     const triggerPush = useCallback(async () => {
         if (!navigator.onLine || !token || !currentUser || isSyncingRef.current) return;
@@ -77,7 +86,7 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } finally {
             isSyncingRef.current = false;
         }
-    }, [token]);
+    }, [token, currentUser]);
 
     // Handle online/offline status
     useEffect(() => {

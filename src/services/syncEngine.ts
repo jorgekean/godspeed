@@ -24,16 +24,20 @@ export interface SyncResponse {
     serverTimestamp: number;
 }
 
-const LAST_SYNC_KEY = '$godspeed_last_sync_timestamp';
+const LAST_SYNC_KEY_BASE = 'godspeed_last_sync_timestamp';
+
+const getSyncKey = (userEmail: string) => `${LAST_SYNC_KEY_BASE}_${userEmail}`;
 
 export const syncService = {
-    getLastSyncTimestamp(): number {
-        const val = localStorage.getItem(LAST_SYNC_KEY);
+    getLastSyncTimestamp(userEmail: string): number {
+        const key = getSyncKey(userEmail);
+        const val = localStorage.getItem(key);
         return val ? parseInt(val, 10) : 0;
     },
 
-    setLastSyncTimestamp(timestamp: number) {
-        localStorage.setItem(LAST_SYNC_KEY, timestamp.toString());
+    setLastSyncTimestamp(timestamp: number, userEmail: string) {
+        const key = getSyncKey(userEmail);
+        localStorage.setItem(key, timestamp.toString());
     },
 
     async pushChanges(token: string, userEmail: string): Promise<void> {
@@ -114,9 +118,9 @@ export const syncService = {
         });
     },
 
-    async pullChanges(token: string): Promise<number> {
+    async pullChanges(token: string, userEmail: string): Promise<number> {
         const headers = { Authorization: `Bearer ${token}` };
-        const since = this.getLastSyncTimestamp();
+        const since = this.getLastSyncTimestamp(userEmail);
 
         const response = await axios.get(`${API_BASE_URL}/sync?since=${since}`, { headers });
         const payload = response.data.data || response.data;
@@ -174,8 +178,8 @@ export const syncService = {
     async syncData(token: string, userEmail: string): Promise<void> {
         try {
             await this.pushChanges(token, userEmail);
-            const serverTimestamp = await this.pullChanges(token);
-            this.setLastSyncTimestamp(serverTimestamp);
+            const serverTimestamp = await this.pullChanges(token, userEmail);
+            this.setLastSyncTimestamp(serverTimestamp, userEmail);
         } catch (error) {
             console.error('Sync failed:', error);
             throw error;
