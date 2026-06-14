@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, BookOpen, AlertCircle, Lightbulb, Shield, HelpCircle, X } from 'lucide-react';
+import { ChevronDown, BookOpen, AlertCircle, Lightbulb, Shield, HelpCircle, X, Mail } from 'lucide-react';
 
 const Help = () => {
     const navigate = useNavigate();
@@ -225,7 +225,7 @@ const Help = () => {
                     <p className="text-sm text-blue-800/70 dark:text-blue-200/70 mb-6 max-w-sm mx-auto">
                         Our team is ready to assist you. Send us an email and we'll get back to you as soon as possible.
                     </p>
-                    <a 
+                    <a
                         href="mailto:contact@godspeedgrader.com"
                         className="inline-flex items-center gap-2 px-8 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/20 transition-all active:scale-95"
                     >

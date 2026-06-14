@@ -27,7 +27,7 @@ export default function CreateExam() {
     const [gradeLevel, setGradeLevel] = useState(''); 
     const [subject, setSubject] = useState('');       
     const [periodId, setPeriodId] = useState('');
-    const [answerKey, setAnswerKey] = useState('');
+    const [answerKey, setAnswerKey] = useState(' '.repeat(20));
 
     // Custom entry states
     const [customGrade, setCustomGrade] = useState('');
