@@ -111,19 +111,19 @@ export const AnswerKeyManager: React.FC<AnswerKeyManagerProps> = ({
                             const currentComp = competencyMap[(i + 1).toString()] || '';
                             
                             return (
-                                <div key={i} className="p-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                <div key={i} className="p-3 sm:p-4 flex items-center gap-2 sm:gap-4 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                                     {/* Item Number */}
-                                    <div className="w-10 h-10 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-xl text-xs font-black text-slate-400 shrink-0">
+                                    <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-black text-slate-400 shrink-0">
                                         {i + 1}
                                     </div>
 
                                     {/* Bubbles */}
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                                         {['A', 'B', 'C', 'D'].map((letter) => (
                                             <button
                                                 key={letter}
                                                 onClick={() => handleAnswerSelect(i, letter)}
-                                                className={`w-10 h-10 rounded-full border-2 font-bold text-sm transition-all flex items-center justify-center active:scale-90 ${
+                                                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 font-bold text-xs sm:text-sm transition-all flex items-center justify-center active:scale-90 ${
                                                     currentAnswer === letter
                                                         ? 'bg-violet-600 border-violet-600 text-white shadow-lg shadow-violet-500/30'
                                                         : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:border-violet-300 dark:hover:border-violet-700'
@@ -137,7 +137,7 @@ export const AnswerKeyManager: React.FC<AnswerKeyManagerProps> = ({
                                     {/* Competency Dropdown */}
                                     <div className="flex-1 min-w-0">
                                         {addingCompForItem === i ? (
-                                            <div className="flex gap-2 animate-in slide-in-from-right-2">
+                                            <div className="flex gap-1 sm:gap-2 animate-in slide-in-from-right-2">
                                                 <input
                                                     type="text"
                                                     autoFocus
@@ -145,26 +145,26 @@ export const AnswerKeyManager: React.FC<AnswerKeyManagerProps> = ({
                                                     onChange={(e) => setNewCompName(e.target.value)}
                                                     onKeyDown={(e) => e.key === 'Enter' && handleAddNewCompetency()}
                                                     placeholder="New topic..."
-                                                    className="flex-1 bg-slate-100 dark:bg-slate-800 border-none rounded-xl px-4 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
+                                                    className="flex-1 min-w-0 bg-slate-100 dark:bg-slate-800 border-none rounded-lg sm:rounded-xl px-2 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-bold outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
                                                 />
-                                                <button onClick={handleAddNewCompetency} className="p-2 bg-emerald-500 text-white rounded-xl shadow-sm active:scale-95"><Check className="w-4 h-4" /></button>
-                                                <button onClick={() => setAddingCompForItem(null)} className="p-2 bg-slate-200 dark:bg-slate-700 text-slate-500 rounded-xl active:scale-95"><X className="w-4 h-4" /></button>
+                                                <button onClick={handleAddNewCompetency} className="p-1.5 sm:p-2 bg-emerald-500 text-white rounded-lg sm:rounded-xl shadow-sm active:scale-95 shrink-0"><Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></button>
+                                                <button onClick={() => setAddingCompForItem(null)} className="p-1.5 sm:p-2 bg-slate-200 dark:bg-slate-700 text-slate-500 rounded-lg sm:rounded-xl active:scale-95 shrink-0"><X className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></button>
                                             </div>
                                         ) : (
                                             <div className="relative group">
                                                 <select
                                                     value={currentComp}
                                                     onChange={(e) => handleCompetencyChange(i, e.target.value)}
-                                                    className="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-xl pl-10 pr-10 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-300 appearance-none outline-none focus:ring-2 focus:ring-violet-500/20 cursor-pointer"
+                                                    className="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-lg sm:rounded-xl pl-8 sm:pl-10 pr-6 sm:pr-10 py-2 sm:py-2.5 text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-300 appearance-none outline-none focus:ring-2 focus:ring-violet-500/20 cursor-pointer truncate"
                                                 >
-                                                    <option value="">No Competency Tag</option>
+                                                    <option value="">No Tag</option>
                                                     {competencyList.map(comp => (
                                                         <option key={comp} value={comp}>{comp}</option>
                                                     ))}
-                                                    <option value="NEW" className="text-violet-600 font-bold">+ Add New Topic...</option>
+                                                    <option value="NEW" className="text-violet-600 font-bold">+ New Topic...</option>
                                                 </select>
-                                                <Tag className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 group-focus-within:text-violet-500 transition-colors" />
-                                                <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none transition-transform group-focus-within:rotate-180" />
+                                                <Tag className="absolute left-2.5 sm:left-3.5 top-1/2 -translate-y-1/2 w-3 sm:w-3.5 h-3 sm:h-3.5 text-slate-400 group-focus-within:text-violet-500 transition-colors" />
+                                                <ChevronDown className="absolute right-2 sm:right-3.5 top-1/2 -translate-y-1/2 w-3 sm:w-3.5 h-3 sm:h-3.5 text-slate-400 pointer-events-none transition-transform group-focus-within:rotate-180" />
                                             </div>
                                         )}
                                     </div>
