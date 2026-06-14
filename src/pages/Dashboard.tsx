@@ -14,57 +14,42 @@ export default function Dashboard() {
     const userEmail = currentUser?.email as string;
     const periods = useLiveQuery(() => db.periods.filter(p => !p.isDeleted && p.createdBy === userEmail).sortBy('startDate'), [userEmail]);
     const sections = useLiveQuery(() => db.sections.filter(s => !s.isDeleted && s.createdBy === userEmail).toArray(), [userEmail]);
+    const storedGradeLevels = useLiveQuery(() => db.gradeLevels.filter(g => !g.isDeleted && g.createdBy === userEmail).toArray(), [userEmail]);
+    const storedSubjects = useLiveQuery(() => db.subjects.filter(s => !s.isDeleted && s.createdBy === userEmail).toArray(), [userEmail]);
+    const allUserExams = useLiveQuery(() => db.exams.filter(e => !e.isDeleted && e.createdBy === userEmail).toArray(), [userEmail]);
     
     // 2. State for Filter
     const [selectedPeriod, setSelectedPeriod] = useState<string>('all');
     const [selectedGrade, setSelectedGrade] = useState<string>('all');
     const [selectedSubject, setSelectedSubject] = useState<string>('all');
 
-    // 3. Helper: Robust selection logic
-    const bestPeriodId = useMemo(() => {
-        if (!periods || periods.length === 0) return 'all';
-        const now = Date.now();
+    // ... (bestPeriodId logic)
 
-        // 1. Try to find the ongoing one
-        const ongoing = periods.find(p => now >= p.startDate && now <= p.endDate);
-        if (ongoing) return ongoing.id;
-
-        // 2. Try to find the NEXT closest upcoming period
-        const upcoming = [...periods]
-            .filter(p => p.startDate > now)
-            .sort((a, b) => a.startDate - b.startDate);
-        if (upcoming.length > 0) return upcoming[0].id;
-
-        // 3. Fallback to the most RECENT past period
-        const past = [...periods]
-            .filter(p => p.endDate < now)
-            .sort((a, b) => b.endDate - a.endDate);
-        if (past.length > 0) return past[0].id;
-
-        return 'all';
-    }, [periods]);
-
-    // 4. Auto-set filter to best period on load
-    useEffect(() => {
-        if (periods && periods.length > 0 && selectedPeriod === 'all') {
-            setSelectedPeriod(bestPeriodId);
-        }
-    }, [periods, bestPeriodId, selectedPeriod]);
-
-    // NEW: Extract unique active grade levels from the user's sections
+    // Aggregate unique active grade levels from Sections, Registry, and Exams
     const activeGradeLevels = useMemo(() => {
-        if (!sections) return [];
-        const grades = new Set(sections.map(s => s.gradeLevel));
-        return Array.from(grades).sort(); // Sort alphabetically/numerically
-    }, [sections]);
+        const grades = new Set<string>();
+        
+        // From Registry
+        if (storedGradeLevels) storedGradeLevels.forEach(g => grades.add(g.title));
+        // From Sections
+        if (sections) sections.forEach(s => grades.add(s.gradeLevel));
+        // From Exams
+        if (allUserExams) allUserExams.forEach(e => grades.add(e.gradeLevel));
 
-    // Fetch all exams once to extract active subjects globally
-    const allUserExams = useLiveQuery(() => db.exams.filter(e => !e.isDeleted && e.createdBy === userEmail).toArray(), [userEmail]);
+        return Array.from(grades).filter(Boolean).sort();
+    }, [sections, storedGradeLevels, allUserExams]);
+
+    // Aggregate unique active subjects from Registry and Exams
     const activeSubjects = useMemo(() => {
-        if (!allUserExams) return [];
-        const subjects = new Set(allUserExams.map(e => e.subject));
-        return Array.from(subjects).sort();
-    }, [allUserExams]);
+        const subjects = new Set<string>();
+
+        // From Registry
+        if (storedSubjects) storedSubjects.forEach(s => subjects.add(s.title));
+        // From Exams
+        if (allUserExams) allUserExams.forEach(e => subjects.add(e.subject));
+
+        return Array.from(subjects).filter(Boolean).sort();
+    }, [allUserExams, storedSubjects]);
 
     // 5. Reactive Exam Fetching with Filter
     const exams = useLiveQuery(
