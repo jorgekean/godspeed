@@ -7,11 +7,13 @@ import { AnswerKeyManager } from '../components/omr/AnswerKeyManager';
 import { useAuth } from '../contexts/AuthContext';
 import { getNextExamCode, isExamCodeDuplicate } from '../utils/examUtils';
 import { toast } from 'sonner';
+import { useConfirm } from '../contexts/ConfirmContext';
 
 export default function EditExam() {
     const navigate = useNavigate();
     const { examId } = useParams();
     const { currentUser } = useAuth();
+    const confirm = useConfirm();
 
     // Fetch the existing exam
     const userEmail = currentUser?.email!;
@@ -20,7 +22,7 @@ export default function EditExam() {
         if (e && e.createdBy === userEmail) return e;
         return null;
     }, [examId, userEmail]);
-    
+
     const periods = useLiveQuery(() => db.periods.filter(p => !p.isDeleted && p.createdBy === userEmail).sortBy('startDate'), [userEmail]);
     const storedSubjects = useLiveQuery(() => db.subjects
         .filter(s => s.createdBy === userEmail && !s.isDeleted)
@@ -28,7 +30,7 @@ export default function EditExam() {
     const storedGradeLevels = useLiveQuery(() => db.gradeLevels
         .filter(g => g.createdBy === userEmail && !g.isDeleted)
         .sortBy('title'), [userEmail]);
-    
+
     const activeSubjects = storedSubjects || [];
     const activeGradeLevels = storedGradeLevels || [];
 
@@ -63,7 +65,7 @@ export default function EditExam() {
             setSubject(exam.subject);
             setPeriodId(exam.periodId || '');
             setAnswerKey(exam.answerKey);
-            
+
             if (exam.competencyMap) {
                 setCompetencyMap(exam.competencyMap);
                 const uniqueComps = Array.from(new Set(Object.values(exam.competencyMap)));
@@ -118,6 +120,26 @@ export default function EditExam() {
         setPeriodId(id);
         setIsPeriodModalOpen(false);
         setNewPeriodName(''); setNewPeriodStart(''); setNewPeriodEnd('');
+    };
+
+    const handleDelete = async () => {
+        const confirmed = await confirm({
+            title: 'Delete Exam?',
+            description: 'Are you sure you want to delete this exam? This action will also hide all associated scan results.',
+            confirmText: 'Delete',
+            cancelText: 'Keep',
+            intent: 'danger'
+        });
+
+        if (confirmed && examId) {
+            await db.exams.update(examId, {
+                isDeleted: true,
+                updatedAt: Date.now(),
+                isSynced: false
+            });
+            toast.success('Exam deleted successfully');
+            navigate('/');
+        }
     };
 
     const handleUpdate = async () => {
@@ -186,11 +208,11 @@ export default function EditExam() {
         );
     }
 
-    const isReady = title.trim().length > 0 && 
-                    (gradeLevel !== '' && (gradeLevel !== 'CUSTOM' || customGrade.trim() !== '')) && 
-                    (subject !== '' && (subject !== 'CUSTOM' || customSubject.trim() !== '')) && 
-                    periodId !== '' && 
-                    answerKey.replace(/ /g, '').length > 0;
+    const isReady = title.trim().length > 0 &&
+        (gradeLevel !== '' && (gradeLevel !== 'CUSTOM' || customGrade.trim() !== '')) &&
+        (subject !== '' && (subject !== 'CUSTOM' || customSubject.trim() !== '')) &&
+        periodId !== '' &&
+        answerKey.replace(/ /g, '').length > 0;
 
     return (
         <div className="min-h-screen flex flex-col bg-slate-100 dark:bg-slate-950 font-sans">
@@ -200,7 +222,13 @@ export default function EditExam() {
                         <ArrowLeft className="w-6 h-6" />
                     </button>
                     <h1 className="text-lg font-bold text-slate-900 dark:text-white">Edit Exam</h1>
-                    <div className="w-10" />
+                    <button
+                        onClick={handleDelete}
+                        className="p-2 -mr-2 text-red-400 hover:text-red-600 transition-colors rounded-full"
+                        title="Delete Exam"
+                    >
+                        <Trash2 className="w-6 h-6" />
+                    </button>
                 </div>
             </header>
 
