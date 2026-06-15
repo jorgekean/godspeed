@@ -283,15 +283,21 @@ export const OMRScanner = forwardRef<OMRScannerRef, OMRScannerProps>(
         
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         if (ctx) {
-            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const physicalSheetType = (correctAnswers && correctAnswers.length > 20) ? '50' : '20';
-            
-            workerRef.current?.postMessage({ 
-                imageData, 
-                examType: physicalSheetType,
-                sessionId: scanSessionId 
-            }, [imageData.data.buffer]);
+        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        // Determine sheet type: 
+        // - If we have specific correct answers, use that count.
+        // - If not (Global mode), use 'auto' to let the worker detect.
+        const physicalSheetType = (correctAnswers && correctAnswers.length > 0) 
+            ? (correctAnswers.length > 20 ? '50' : '20') 
+            : 'auto';
+
+        workerRef.current?.postMessage({ 
+            imageData, 
+            examType: physicalSheetType,
+            sessionId: scanSessionId 
+        }, [imageData.data.buffer]);
         } else {
             setIsWorkerBusy(false);
             setIsProcessing(false);

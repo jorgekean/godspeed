@@ -131,13 +131,13 @@ const Document20Item = ({ studentNo }: { studentNo?: string }) => {
 const Document50Item = ({ studentNo }: { studentNo?: string }) => {
     const choicesMap = ['A', 'B', 'C', 'D'];
     const colStarts = [340, 580]; // Shifted right to make room for ID grids
-    const startY = 160;
+    const startY = 180;
     const rowHeight = 28; const bubbleSpacing = 35; const bubbleSize = 24;
 
-    // Grid config for Student Info (copied from Document20Item)
-    const gridStartX = 60;
-    const examCodeY = 160;
-    const studentNoY = 440;
+    // Grid config for Student Info (Standardized with 20-item)
+    const gridStartX = 100;
+    const examCodeY = 180;
+    const studentNoY = 460;
     const gridBubbleSize = 18;
     const gridSpacingX = 24;
     const gridSpacingY = 22;
