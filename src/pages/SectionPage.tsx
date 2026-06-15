@@ -20,6 +20,15 @@ const styles = StyleSheet.create({
     headerText: { position: 'absolute', fontFamily: 'Helvetica' },
     questionNumber: { position: 'absolute', fontFamily: 'Helvetica-Bold', color: '#000000' },
     bubble: { position: 'absolute', borderRadius: 15, borderWidth: 1.5, borderColor: '#B4B4B4', justifyContent: 'center', alignItems: 'center' },
+    footer: {
+        position: 'absolute',
+        bottom: 15,
+        left: 0,
+        right: 0,
+        textAlign: 'center',
+        fontSize: 8,
+        color: '#475569'
+    }
 });
 
 // A pure functional representation of the pre-filled sheet logic
@@ -51,7 +60,7 @@ const PreFilledPage = ({ studentName, studentNo, examType }: { studentName: stri
             <View style={styles.markerBottomRight} />
 
             <Text style={[styles.title, { top: 60, fontSize: 24 }]}>{examType}-Item Answer Sheet</Text>
-            
+
             {/* PRE-FILLED NAME */}
             <Text style={[styles.headerText, { top: 110, left: 100, fontSize: 14 }]}>Name: {studentName}</Text>
             <Text style={[styles.headerText, { top: 110, left: 500, fontSize: 14 }]}>Score: _______________</Text>
@@ -83,11 +92,11 @@ const PreFilledPage = ({ studentName, studentNo, examType }: { studentName: stri
                     {Array.from({ length: 10 }).map((_, row) => {
                         const isFilled = paddedStudentNo && paddedStudentNo[col] === row.toString();
                         return (
-                            <View key={`sn-q${col}-${row}`} style={[styles.bubble, { 
-                                top: studentNoY + gridBubbleSize + 5 + (row * gridSpacingY), 
-                                left: gridStartX + (col * gridSpacingX), 
-                                width: gridBubbleSize, 
-                                height: gridBubbleSize, 
+                            <View key={`sn-q${col}-${row}`} style={[styles.bubble, {
+                                top: studentNoY + gridBubbleSize + 5 + (row * gridSpacingY),
+                                left: gridStartX + (col * gridSpacingX),
+                                width: gridBubbleSize,
+                                height: gridBubbleSize,
                                 borderRadius: 9,
                                 backgroundColor: isFilled ? '#000000' : 'transparent',
                                 borderColor: isFilled ? '#000000' : '#B4B4B4'
@@ -124,6 +133,16 @@ const PreFilledPage = ({ studentName, studentNo, examType }: { studentName: stri
                     </React.Fragment>
                 );
             })}
+
+            <Text style={{
+                position: 'absolute',
+                bottom: 15,
+                left: 0,
+                right: 0,
+                textAlign: 'center',
+                fontSize: 8,
+                color: '#475569'
+            }}>godspeedgrader.com by NabiX SDS</Text>
         </Page>
     );
 };
@@ -146,8 +165,8 @@ export default function SectionsPage() {
         .filter(g => g.createdBy === userEmail && !g.isDeleted)
         .sortBy('sortOrder'), [userEmail]);
 
-    const activeGradeLevels = storedGradeLevels && storedGradeLevels.length > 0 
-        ? storedGradeLevels.map(g => g.title) 
+    const activeGradeLevels = storedGradeLevels && storedGradeLevels.length > 0
+        ? storedGradeLevels.map(g => g.title)
         : DEFAULT_GRADE_LEVELS;
 
     // 2. Modal & Form State
@@ -194,12 +213,12 @@ export default function SectionsPage() {
 
     const handleDownload = async (type: '20' | '50') => {
         if (!printStudents || printStudents.length === 0) return;
-        
+
         setIsGenerating(type);
         try {
             const currentSectionName = sections?.find(s => s.id === printSectionId)?.sectionName || 'Section';
             const fileName = `Prefilled_${type}Items_${currentSectionName}.pdf`;
-            
+
             const blob = await pdf(<MultiStudentDocument students={printStudents} examType={type} />).toBlob();
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
@@ -350,16 +369,15 @@ export default function SectionsPage() {
                                     </p>
 
                                     <div className="flex flex-col gap-3">
-                                        <button 
+                                        <button
                                             disabled={isGenerating !== null}
                                             onClick={() => handleDownload('20')}
-                                            className={`w-full flex items-center justify-center gap-2 py-3 font-bold rounded-xl transition-all shadow-md ${
-                                                isGenerating === '20' 
-                                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-wait shadow-none' 
-                                                : isGenerating === '50'
-                                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed'
-                                                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20'
-                                            }`}
+                                            className={`w-full flex items-center justify-center gap-2 py-3 font-bold rounded-xl transition-all shadow-md ${isGenerating === '20'
+                                                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-wait shadow-none'
+                                                    : isGenerating === '50'
+                                                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed'
+                                                        : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20'
+                                                }`}
                                         >
                                             {isGenerating === '20' ? (
                                                 <>
@@ -374,16 +392,15 @@ export default function SectionsPage() {
                                             )}
                                         </button>
 
-                                        <button 
+                                        <button
                                             disabled={isGenerating !== null}
                                             onClick={() => handleDownload('50')}
-                                            className={`w-full flex items-center justify-center gap-2 py-3 font-bold rounded-xl transition-all shadow-md ${
-                                                isGenerating === '50' 
-                                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-wait shadow-none' 
-                                                : isGenerating === '20'
-                                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed'
-                                                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20'
-                                            }`}
+                                            className={`w-full flex items-center justify-center gap-2 py-3 font-bold rounded-xl transition-all shadow-md ${isGenerating === '50'
+                                                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-wait shadow-none'
+                                                    : isGenerating === '20'
+                                                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed'
+                                                        : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20'
+                                                }`}
                                         >
                                             {isGenerating === '50' ? (
                                                 <>

@@ -16,7 +16,16 @@ const styles = StyleSheet.create({
     questionNumber: { position: 'absolute', fontFamily: 'Helvetica-Bold', color: '#000000' },
 
     bubble: { position: 'absolute', borderRadius: 15, borderWidth: 1.5, borderColor: '#B4B4B4', justifyContent: 'center', alignItems: 'center' },
-    bubbleText: { fontFamily: 'Helvetica', color: '#B4B4B4' }
+    bubbleText: { fontFamily: 'Helvetica', color: '#B4B4B4' },
+    footer: {
+        position: 'absolute',
+        bottom: 15,
+        left: 0,
+        right: 0,
+        textAlign: 'center',
+        fontSize: 8,
+        color: '#475569'
+    }
 });
 
 const SheetBase = ({ children, title }: { children: React.ReactNode, title: string }) => (
@@ -32,6 +41,8 @@ const SheetBase = ({ children, title }: { children: React.ReactNode, title: stri
             <Text style={[styles.headerText, { top: 110, left: 500, fontSize: 14 }]}>Score: _______________</Text>
 
             {children}
+
+            <Text style={styles.footer}>godspeedgrader.com by NabiX SDS</Text>
         </Page>
     </Document>
 );
@@ -83,11 +94,11 @@ const Document20Item = ({ studentNo }: { studentNo?: string }) => {
                     {Array.from({ length: 10 }).map((_, row) => {
                         const isFilled = paddedStudentNo && paddedStudentNo[col] === row.toString();
                         return (
-                            <View key={`sn-q${col}-${row}`} style={[styles.bubble, { 
-                                top: studentNoY + gridBubbleSize + 5 + (row * gridSpacingY), 
-                                left: gridStartX + (col * gridSpacingX), 
-                                width: gridBubbleSize, 
-                                height: gridBubbleSize, 
+                            <View key={`sn-q${col}-${row}`} style={[styles.bubble, {
+                                top: studentNoY + gridBubbleSize + 5 + (row * gridSpacingY),
+                                left: gridStartX + (col * gridSpacingX),
+                                width: gridBubbleSize,
+                                height: gridBubbleSize,
                                 borderRadius: 9,
                                 backgroundColor: isFilled ? '#000000' : 'transparent',
                                 borderColor: isFilled ? '#000000' : '#B4B4B4'
@@ -163,11 +174,11 @@ const Document50Item = ({ studentNo }: { studentNo?: string }) => {
                     {Array.from({ length: 10 }).map((_, row) => {
                         const isFilled = paddedStudentNo && paddedStudentNo[col] === row.toString();
                         return (
-                            <View key={`sn-q${col}-${row}`} style={[styles.bubble, { 
-                                top: studentNoY + gridBubbleSize + 5 + (row * gridSpacingY), 
-                                left: gridStartX + (col * gridSpacingX), 
-                                width: gridBubbleSize, 
-                                height: gridBubbleSize, 
+                            <View key={`sn-q${col}-${row}`} style={[styles.bubble, {
+                                top: studentNoY + gridBubbleSize + 5 + (row * gridSpacingY),
+                                left: gridStartX + (col * gridSpacingX),
+                                width: gridBubbleSize,
+                                height: gridBubbleSize,
                                 borderRadius: 9,
                                 backgroundColor: isFilled ? '#000000' : 'transparent',
                                 borderColor: isFilled ? '#000000' : '#B4B4B4'
@@ -236,16 +247,15 @@ export function OMRTemplateGenerator() {
             <p className="text-slate-500 text-sm mb-4">Print on standard A4 or Letter paper. Do not scale to fit.</p>
 
             <div className="flex flex-col sm:flex-row gap-3">
-                <button 
-                    disabled={isGenerating !== null} 
-                    onClick={() => handleDownload('20')} 
-                    className={`flex-1 py-3 px-4 font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
-                        isGenerating === '20' 
-                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-wait' 
-                        : isGenerating === '50'
-                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed'
-                        : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md'
-                    }`}
+                <button
+                    disabled={isGenerating !== null}
+                    onClick={() => handleDownload('20')}
+                    className={`flex-1 py-3 px-4 font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${isGenerating === '20'
+                            ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-wait'
+                            : isGenerating === '50'
+                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed'
+                                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md'
+                        }`}
                 >
                     {isGenerating === '20' ? (
                         <>
@@ -260,16 +270,15 @@ export function OMRTemplateGenerator() {
                     )}
                 </button>
 
-                <button 
-                    disabled={isGenerating !== null} 
-                    onClick={() => handleDownload('50')} 
-                    className={`flex-1 py-3 px-4 font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
-                        isGenerating === '50' 
-                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-wait' 
-                        : isGenerating === '20'
-                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed'
-                        : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md'
-                    }`}
+                <button
+                    disabled={isGenerating !== null}
+                    onClick={() => handleDownload('50')}
+                    className={`flex-1 py-3 px-4 font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${isGenerating === '50'
+                            ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-wait'
+                            : isGenerating === '20'
+                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed'
+                                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md'
+                        }`}
                 >
                     {isGenerating === '50' ? (
                         <>

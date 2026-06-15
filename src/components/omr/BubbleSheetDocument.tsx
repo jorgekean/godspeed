@@ -41,7 +41,16 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center'
     },
-    bubbleText: { fontSize: 8, color: '#94a3b8' } // Light gray so it doesn't confuse the scanner!
+    bubbleText: { fontSize: 8, color: '#94a3b8' }, // Light gray so it doesn't confuse the scanner!
+    footer: {
+        position: 'absolute',
+        bottom: 15,
+        left: 0,
+        right: 0,
+        textAlign: 'center',
+        fontSize: 8,
+        color: '#475569'
+    }
 });
 
 interface Props {
@@ -116,6 +125,9 @@ export const BubbleSheetDocument = ({ assessmentId, title, totalItems = 20 }: Pr
                         {col2.map(num => <QuestionRow key={num} num={num} />)}
                     </View>
                 </View>
+
+                {/* 5. FOOTER */}
+                <Text style={styles.footer}>godspeedgrader.com by NabiX SDS</Text>
 
             </Page>
         </Document>
