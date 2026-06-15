@@ -207,7 +207,7 @@ export default function LandingPage() {
                                 <div className="mt-4"><span className="text-4xl font-black text-slate-900">Free</span></div>
                             </div>
                             <ul className="space-y-4 mb-8 flex-1">
-                                <li className="flex items-center gap-3 text-slate-900 font-bold"><Check className="w-5 h-5 text-violet-500 shrink-0" /> Unlimited Scans</li>
+                                <li className="flex items-center gap-3 text-slate-900 font-bold"><Check className="w-5 h-5 text-violet-500 shrink-0" /> 100 scans per month</li>
                                 <li className="flex items-center gap-3 text-slate-600 font-medium"><Check className="w-5 h-5 text-violet-500 shrink-0" /> Create unlimited Sections</li>
                                 <li className="flex items-center gap-3 text-slate-600 font-medium"><Check className="w-5 h-5 text-violet-500 shrink-0" /> Excel Roster Import</li>
                                 <li className="flex items-center gap-3 text-slate-400 font-medium text-sm mt-4 p-3 bg-slate-50 rounded-lg">
@@ -227,23 +227,25 @@ export default function LandingPage() {
                                 </h3>
                                 <p className="text-slate-400 text-sm">Peace of mind & deep analytics.</p>
                                 <div className="mt-4 flex flex-col">
-                                    <div className="flex items-end gap-2">
-                                        <span className="text-4xl font-black text-white line-through decoration-rose-500 opacity-50">399</span>
-                                        <span className="text-3xl font-black text-emerald-400">FREE</span>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-4xl font-black text-white line-through decoration-rose-500 opacity-50">₱499</span>
+                                        <span className="text-2xl font-bold text-emerald-400 bg-emerald-400/10 px-3 py-1 rounded-full">FREE</span>
                                     </div>
-                                    <div className="mt-1 inline-block bg-emerald-950/50 border border-emerald-800/50 rounded-md px-2 py-1 w-fit">
-                                        <span className="text-emerald-400 text-[10px] font-bold tracking-widest uppercase">Limited Time Offer</span>
+                                    <div className="mt-1">
+                                        <span className="text-slate-400 text-sm font-medium">For a limited time</span>
                                     </div>
                                 </div>
                             </div>
                             <ul className="space-y-4 mb-8 flex-1">
                                 <li className="flex items-center gap-3 text-slate-300 font-medium"><Check className="w-5 h-5 text-cyan-400 shrink-0" /> Everything in Free</li>
+                                <li className="flex items-center gap-3 text-white font-bold"><Check className="w-5 h-5 text-cyan-400 shrink-0" /> Unlimited Scans</li>
+                                <li className="flex items-center gap-3 text-white font-bold"><Check className="w-5 h-5 text-cyan-400 shrink-0" /> Instant Scan</li>
                                 <li className="flex items-center gap-3 text-white font-bold"><Check className="w-5 h-5 text-cyan-400 shrink-0" /> Secure Cloud Auto-Sync</li>
-                                <li className="flex items-center gap-3 text-slate-300 font-medium"><Check className="w-5 h-5 text-cyan-400 shrink-0" /> DepEd Item Analysis Export</li>
+                                <li className="flex items-center gap-3 text-slate-300 font-medium"><Check className="w-5 h-5 text-cyan-400 shrink-0" /> Item Analysis Report</li>
                                 <li className="flex items-center gap-3 text-slate-300 font-medium"><Check className="w-5 h-5 text-cyan-400 shrink-0" /> Sync across Phone & Laptop</li>
                             </ul>
                             <button onClick={() => openModal('signup')} className="w-full py-3.5 bg-white hover:bg-slate-200 text-slate-900 font-bold rounded-xl transition-colors">
-                                Claim Free Premium
+                                Get Premium
                             </button>
                         </div>
                     </div>

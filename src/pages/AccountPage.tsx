@@ -348,10 +348,10 @@ export default function AccountPage() {
 
                                 <button
                                     onClick={() => alert("Good news! All premium features are currently UNLOCKED and FREE for all registered accounts for a limited time. No subscription is needed right now!")}
-                                    className="w-full sm:w-auto px-8 py-3.5 bg-white text-slate-900 hover:bg-slate-100 font-bold rounded-xl active:scale-95 transition-all flex items-center justify-center gap-2"
+                                    className="w-full sm:w-auto px-8 py-3.5 bg-white text-slate-900 hover:bg-slate-100 font-bold rounded-xl active:scale-95 transition-all flex items-center justify-center gap-3"
                                 >
-                                    <span className="line-through decoration-rose-500 opacity-50">₱399/year</span>
-                                    <span className="text-emerald-600">FREE NOW</span>
+                                    <span className="line-through decoration-rose-500 opacity-60">₱499/year</span>
+                                    <span className="text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-full text-sm">FREE NOW</span>
                                 </button>
                             </div>
                         </div>
