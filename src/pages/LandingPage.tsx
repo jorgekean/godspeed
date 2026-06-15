@@ -228,7 +228,7 @@ export default function LandingPage() {
                                 <p className="text-slate-400 text-sm">Peace of mind & deep analytics.</p>
                                 <div className="mt-4 flex flex-col">
                                     <div className="flex items-end gap-2">
-                                        <span className="text-4xl font-black text-white line-through decoration-rose-500 opacity-50">499</span>
+                                        <span className="text-4xl font-black text-white line-through decoration-rose-500 opacity-50">399</span>
                                         <span className="text-3xl font-black text-emerald-400">FREE</span>
                                     </div>
                                     <div className="mt-1 inline-block bg-emerald-950/50 border border-emerald-800/50 rounded-md px-2 py-1 w-fit">

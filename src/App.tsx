@@ -26,6 +26,7 @@ import { SyncProvider } from './contexts/SyncContext'
 import AccountPage from './pages/AccountPage'
 import ExamResultsPage from './pages/ExamResultsPage'
 import SmartScannerPage from './pages/SmartScannerPage'
+import NoticesPage from './pages/NoticesPage'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { currentUser, isLoading } = useAuth();
@@ -68,6 +69,7 @@ function App() {
                   <Route path="/account" element={<AccountPage />} />
                   {/* Help & Workflow guide */}
                   <Route path="/help" element={<Help />} />
+                  <Route path="/notices" element={<NoticesPage />} />
                 </Route>
 
                 {/* ========================================== */}

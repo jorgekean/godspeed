@@ -4,6 +4,7 @@ import { Users, FolderKanban, LayoutDashboard, LogOut, UserCircle, Lock, User, R
 import { useAuth } from '../../contexts/AuthContext';
 import { useSync } from '../../contexts/SyncContext';
 import { toast } from 'sonner';
+import NoticesModal from './NoticesModal';
 
 export default function AppLayout() {
     const { currentUser, logout } = useAuth();
@@ -13,6 +14,7 @@ export default function AppLayout() {
 
     // NEW: State for mobile Manage menu
     const [isManageMenuOpen, setIsManageMenuOpen] = useState(false);
+    const [isNoticesModalOpen, setIsNoticesModalOpen] = useState(false);
 
     const getPageTitle = (path: string) => {
         if (path === '/') return 'Dashboard';
@@ -169,8 +171,15 @@ export default function AppLayout() {
                             <LogOut className="w-4 h-4" /> Sign Out
                         </button>
                     </div>
+                    <div className="text-center mt-2">
+                        <button onClick={() => setIsNoticesModalOpen(true)} className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                            Third-Party Notices
+                        </button>
+                    </div>
                 </div>
             </aside>
+
+            <NoticesModal isOpen={isNoticesModalOpen} onClose={() => setIsNoticesModalOpen(false)} />
 
             {/* ========================================== */}
             {/* MAIN CONTENT AREA */}
@@ -247,6 +256,20 @@ export default function AppLayout() {
                                 </div>
                                 <span className="font-bold">Support & Feedback</span>
                             </a>
+
+                            {/* Mobile Third-Party Notices Link */}
+                            <button
+                                onClick={() => {
+                                    setIsManageMenuOpen(false);
+                                    setIsNoticesModalOpen(true);
+                                }}
+                                className="flex items-center gap-4 px-4 py-4 rounded-2xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                            >
+                                <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                                    <AlertCircle className="w-5 h-5" />
+                                </div>
+                                <span className="font-bold">Third-Party Notices</span>
+                            </button>
                         </div>
                     </div>
                 </div>
