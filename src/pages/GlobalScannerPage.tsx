@@ -117,7 +117,8 @@ export default function GlobalScannerPage() {
                 total: matchedExam.itemCount,
                 studentName: studentName,
                 examTitle: matchedExam.title,
-                correctAnswers: matchedExam.answerKey
+                correctAnswers: matchedExam.answerKey,
+                isSaved: !!studentId
             });
 
         } catch (err) {

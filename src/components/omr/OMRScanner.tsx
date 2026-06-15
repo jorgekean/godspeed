@@ -16,7 +16,8 @@ export interface OMRScannerRef {
         total: number, 
         studentName?: string, 
         examTitle?: string,
-        correctAnswers?: string 
+        correctAnswers?: string,
+        isSaved?: boolean
     }) => void;
     reset: () => void;
 }
@@ -52,7 +53,8 @@ export const OMRScanner = forwardRef<OMRScannerRef, OMRScannerProps>(
         answers?: Record<string, string>,
         studentName?: string,
         examTitle?: string,
-        correctAnswers?: string
+        correctAnswers?: string,
+        isSaved?: boolean
     } | null>(null);
     const [scanSessionId, setScanSessionId] = useState(0); 
     const autoScanTimeoutRef = useRef<any>(null);
@@ -384,10 +386,14 @@ export const OMRScanner = forwardRef<OMRScannerRef, OMRScannerProps>(
                             )}
                             {lastSuccess && !showDetails && (
                                 <div className="absolute inset-0 z-30 flex flex-col items-center justify-center p-4 pointer-events-auto bg-black/40 backdrop-blur-[2px]">
-                                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xs overflow-hidden border-2 border-green-500 animate-in zoom-in-95 duration-300">
-                                        <div className="bg-green-500 p-4 flex flex-col items-center">
-                                            <div className="bg-white/20 p-2 rounded-full mb-2"><CheckCircle className="w-8 h-8 text-white" /></div>
-                                            <h4 className="text-white font-black text-xl leading-none">Result Saved</h4>
+                                    <div className={`bg-white rounded-3xl shadow-2xl w-full max-w-xs overflow-hidden border-2 ${lastSuccess.isSaved ? 'border-green-500' : 'border-amber-500'} animate-in zoom-in-95 duration-300`}>
+                                        <div className={`${lastSuccess.isSaved ? 'bg-green-500' : 'bg-amber-500'} p-4 flex flex-col items-center`}>
+                                            <div className="bg-white/20 p-2 rounded-full mb-2">
+                                                {lastSuccess.isSaved ? <CheckCircle className="w-8 h-8 text-white" /> : <AlertTriangle className="w-8 h-8 text-white" />}
+                                            </div>
+                                            <h4 className="text-white font-black text-xl leading-none">
+                                                {lastSuccess.isSaved ? 'Result Saved' : 'Scan Complete'}
+                                            </h4>
                                         </div>
                                         <div className="p-6 text-center">
                                             {lastSuccess.examTitle && (
@@ -396,8 +402,13 @@ export const OMRScanner = forwardRef<OMRScannerRef, OMRScannerProps>(
                                                 </div>
                                             )}
                                             <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">
-                                                {lastSuccess.studentName || `Student No: ${lastSuccess.studentNo}`}
+                                                {lastSuccess.studentName || (lastSuccess.studentNo === '?' ? 'Unknown Student' : `Student No: ${lastSuccess.studentNo}`)}
                                             </p>
+                                            {!lastSuccess.isSaved && (
+                                                <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-tight mb-3">
+                                                    Result not saved to records
+                                                </p>
+                                            )}
                                             <div className="text-4xl font-black text-slate-900 mb-6">{lastSuccess.score} <span className="text-lg text-slate-400">/ {lastSuccess.total}</span></div>
                                             <div className="flex flex-col gap-2">
                                                 {allStudentsGraded ? (
