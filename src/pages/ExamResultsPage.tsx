@@ -2,8 +2,9 @@ import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../services/db';
-import { ArrowLeft, BarChart3, TrendingUp, UserCheck, FileDown, Loader2, List, LayoutGrid, Target, Award, AlertCircle } from 'lucide-react';
+import { ArrowLeft, BarChart3, TrendingUp, UserCheck, FileDown, Loader2, List, LayoutGrid, Target, Award, AlertCircle, FileSpreadsheet } from 'lucide-react';
 import { pdf } from '@react-pdf/renderer';
+import { Workbook } from 'exceljs';
 import { ItemAnalysisPDF, type ItemAnalysisData } from '../components/omr/ItemAnalysisPDF';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -25,6 +26,9 @@ export default function ExamResultsPage() {
         return null;
     }, [examId, userEmail]);
 
+    const periods = useLiveQuery(() => db.periods.filter(p => p.createdBy === userEmail && !p.isDeleted).toArray(), [userEmail]);
+    const subjects = useLiveQuery(() => db.subjects.filter(s => s.createdBy === userEmail && !s.isDeleted).toArray(), [userEmail]);
+    const gradeLevels = useLiveQuery(() => db.gradeLevels.filter(g => g.createdBy === userEmail && !g.isDeleted).toArray(), [userEmail]);
     const sections = useLiveQuery(() => db.sections.filter(s => s.createdBy === userEmail && !s.isDeleted).toArray(), [userEmail]);
     const results = useLiveQuery(() => db.scanResults.where('examId').equals(examId as string).filter(r => r.createdBy === userEmail).toArray(), [examId, userEmail]);
     const students = useLiveQuery(() => db.students.filter(s => s.createdBy === userEmail && !s.isDeleted).toArray(), [userEmail]);
@@ -66,6 +70,7 @@ export default function ExamResultsPage() {
                 correctAnswer,
                 competency: compMap[itemNumber.toString()] || `Item ${itemNumber}`,
                 percentPassed: Math.round((correctCount / totalStudents) * 100),
+                correctCount,
                 distractors: {
                     A: Math.round((distractors.A / totalStudents) * 100),
                     B: Math.round((distractors.B / totalStudents) * 100),
@@ -141,6 +146,168 @@ export default function ExamResultsPage() {
         } finally {
             setIsGenerating(false);
         }
+    };
+
+    const handleExportExcel = async () => {
+        if (!exam || filteredResults.length === 0) return;
+
+        const workbook = new Workbook();
+        const sheet = workbook.addWorksheet('Detailed Report');
+
+        const periodName = periods?.find(p => p.id === exam.periodId)?.name || 'N/A';
+        const subjectName = subjects?.find(s => s.id === exam.subject)?.title || exam.subject;
+        const sectionInfo = filterSectionId === 'all' 
+            ? `${exam.gradeLevel} - All Sections`
+            : `${exam.gradeLevel} - ${currentSectionName}`;
+
+        // 1. Add Header Information
+        const headerRows = [
+            ['GRADE & SECTION:', sectionInfo],
+            ['TOTAL TAKERS:', filteredResults.length],
+            ['QUARTER:', periodName],
+            ['SUBJECT:', subjectName],
+            ['TOTAL ITEMS:', exam.itemCount],
+        ];
+
+        headerRows.forEach((row, i) => {
+            const r = sheet.getRow(i + 1);
+            r.getCell(1).value = row[0];
+            r.getCell(1).font = { bold: true, color: { argb: 'FF4F46E5' } }; // Indigo color
+            r.getCell(2).value = row[1];
+            r.getCell(2).font = { bold: true };
+        });
+
+        // 2. Add Table Headers
+        const headerRowIndex = 7;
+        const tableHeaders = ['Student', 'Score', ...Array.from({ length: exam.itemCount }, (_, i) => `Q${i + 1}`)];
+        const headerRow = sheet.getRow(headerRowIndex);
+        
+        tableHeaders.forEach((text, i) => {
+            const cell = headerRow.getCell(i + 1);
+            cell.value = text;
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FF1E293B' } // Slate-800
+            };
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.alignment = { horizontal: 'center' };
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+        });
+
+        // 3. Add Student Data
+        filteredResults.forEach((res, i) => {
+            const student = students?.find(s => s.id === res.studentId);
+            const rowIndex = headerRowIndex + 1 + i;
+            const r = sheet.getRow(rowIndex);
+            
+            r.getCell(1).value = student?.fullName || "Unknown";
+            r.getCell(2).value = res.score;
+            r.getCell(2).font = { bold: true };
+            r.getCell(2).alignment = { horizontal: 'center' };
+
+            for (let q = 0; q < exam.itemCount; q++) {
+                const qNum = (q + 1).toString();
+                const studentAns = res.answers[qNum];
+                const correctAns = exam.answerKey[q];
+                const isCorrect = studentAns === correctAns;
+                const cell = r.getCell(q + 3);
+
+                cell.value = studentAns === 'BLANK' ? '-' : (studentAns || '-');
+                cell.alignment = { horizontal: 'center' };
+                
+                if (studentAns && studentAns !== 'BLANK') {
+                    cell.fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: isCorrect ? 'FFDCFCE7' : 'FFFEE2E2' } // Green-100 or Red-100
+                    };
+                    cell.font = { color: { argb: isCorrect ? 'FF166534' : 'FF991B1B' } }; // Green-800 or Red-800
+                }
+            }
+
+            // Add borders to the row
+            r.eachCell({ includeEmpty: false }, (cell) => {
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' }
+                };
+            });
+        });
+
+        // 4. Add Summary Rows
+        const summaryStartRow = headerRowIndex + 1 + filteredResults.length;
+        
+        // Total Correct Row
+        const totalCorrectRow = sheet.getRow(summaryStartRow);
+        totalCorrectRow.getCell(1).value = 'Total Correct';
+        totalCorrectRow.getCell(1).font = { bold: true };
+        totalCorrectRow.getCell(2).value = `Mean: ${averageScore}`;
+        totalCorrectRow.getCell(2).font = { bold: true };
+        
+        analysisData.forEach((item, i) => {
+            const cell = totalCorrectRow.getCell(i + 3);
+            cell.value = item.correctCount;
+            cell.font = { bold: true };
+            cell.alignment = { horizontal: 'center' };
+        });
+
+        // Item MPS Row
+        const itemMPSRow = sheet.getRow(summaryStartRow + 1);
+        itemMPSRow.getCell(1).value = 'Item MPS (%)';
+        itemMPSRow.getCell(1).font = { bold: true };
+        itemMPSRow.getCell(2).value = `Overall: ${((parseFloat(averageScore.toString()) / exam.itemCount) * 100).toFixed(1)}%`;
+        itemMPSRow.getCell(2).font = { bold: true };
+
+        analysisData.forEach((item, i) => {
+            const cell = itemMPSRow.getCell(i + 3);
+            cell.value = `${item.percentPassed}%`;
+            cell.font = { bold: true, color: { argb: 'FF7C3AED' } }; // Violet-600
+            cell.alignment = { horizontal: 'center' };
+        });
+
+        // Formatting summary rows
+        [totalCorrectRow, itemMPSRow].forEach(r => {
+            r.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+                if (colNumber <= exam.itemCount + 2) {
+                    cell.fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: 'FFF8FAFC' } // Slate-50
+                    };
+                    cell.border = {
+                        top: { style: 'thin' },
+                        left: { style: 'thin' },
+                        bottom: { style: 'thin' },
+                        right: { style: 'thin' }
+                    };
+                }
+            });
+        });
+
+        // 5. Adjust Column Widths
+        sheet.getColumn(1).width = 30; // Student Name
+        sheet.getColumn(2).width = 12; // Score
+        for (let i = 3; i <= exam.itemCount + 2; i++) {
+            sheet.getColumn(i).width = 6;
+        }
+
+        // Generate and download
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Detailed_Report_${exam.title.replace(/\s+/g, '_')}_${currentSectionName}.xlsx`;
+        link.click();
+        URL.revokeObjectURL(url);
     };
 
     return (
@@ -316,8 +483,16 @@ export default function ExamResultsPage() {
                 {viewMode === 'detailed' && (
                     /* DETAILED RESULTS TABLE */
                     <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 font-bold text-slate-900 dark:text-white">
-                            {filterSectionId === 'all' ? 'Detailed Breakdown' : sections?.find(s => s.id === filterSectionId)?.sectionName + ' - Detailed'}
+                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <span className="font-bold text-slate-900 dark:text-white">
+                                {filterSectionId === 'all' ? 'Detailed Breakdown' : sections?.find(s => s.id === filterSectionId)?.sectionName + ' - Detailed'}
+                            </span>
+                            <button
+                                onClick={handleExportExcel}
+                                className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded-xl transition-all active:scale-95"
+                            >
+                                <FileSpreadsheet className="w-4 h-4" /> Export to Excel
+                            </button>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
@@ -366,6 +541,34 @@ export default function ExamResultsPage() {
                                         );
                                     })}
                                 </tbody>
+                                <tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t-2 border-slate-200 dark:border-slate-700">
+                                    <tr>
+                                        <td className="p-4 font-bold text-slate-500 dark:text-slate-400 sticky left-0 bg-slate-50 dark:bg-slate-800 z-10 whitespace-nowrap border-r border-slate-100 dark:border-slate-800">
+                                            Total Correct
+                                        </td>
+                                        <td className="p-4 font-black text-center text-slate-900 dark:text-white bg-slate-100/50 dark:bg-slate-700/50">
+                                            Mean: {averageScore}
+                                        </td>
+                                        {analysisData.map((item, i) => (
+                                            <td key={i} className="p-1 text-center font-bold text-slate-900 dark:text-white">
+                                                {item.correctCount}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                    <tr>
+                                        <td className="p-4 font-bold text-slate-500 dark:text-slate-400 sticky left-0 bg-slate-50 dark:bg-slate-800 z-10 whitespace-nowrap border-r border-slate-100 dark:border-slate-800">
+                                            Item MPS (%)
+                                        </td>
+                                        <td className="p-4 font-black text-center text-slate-900 dark:text-white bg-slate-100/50 dark:bg-slate-700/50">
+                                            Overall: {((parseFloat(averageScore.toString()) / exam.itemCount) * 100).toFixed(1)}%
+                                        </td>
+                                        {analysisData.map((item, i) => (
+                                            <td key={i} className="p-1 text-center font-bold text-violet-600 dark:text-violet-400">
+                                                {item.percentPassed}%
+                                            </td>
+                                        ))}
+                                    </tr>
+                                </tfoot>
                             </table>
                         </div>
                     </div>

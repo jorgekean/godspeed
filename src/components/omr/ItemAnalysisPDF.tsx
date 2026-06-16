@@ -131,6 +131,7 @@ export interface ItemAnalysisData {
     correctAnswer: string;
     competency: string;
     percentPassed: number;
+    correctCount: number;
     distractors: Record<string, number>;
 }
 
