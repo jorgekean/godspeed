@@ -54,7 +54,6 @@ self.onmessage = function (e) {
         thresh = new cv.Mat();
 
         cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
-        // Using 75, 15 to resist desk shadows and gradients
         cv.adaptiveThreshold(blurred, thresh, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 75, 15);
 
         contours = new cv.MatVector();
@@ -77,7 +76,6 @@ self.onmessage = function (e) {
             cnt.delete();
         }
 
-        // Sort by area and grab the 4 largest valid squares
         validSquares.sort((a, b) => b.area - a.area);
         let markers = validSquares.slice(0, 4);
 
@@ -101,8 +99,6 @@ self.onmessage = function (e) {
         const flatHeight = 1000;
 
         rectCorners = cv.matFromArray(4, 1, cv.CV_32FC2, [tl.x, tl.y, tr.x, tr.y, br.x, br.y, bl.x, bl.y]);
-
-        // Exact same target coordinates for both 20-item and 50-item sheets
         dstCorners = cv.matFromArray(4, 1, cv.CV_32FC2, [50, 50, 750, 50, 750, 950, 50, 950]);
 
         transformMatrix = cv.getPerspectiveTransform(rectCorners, dstCorners);
@@ -117,108 +113,120 @@ self.onmessage = function (e) {
         // ==========================================
         // 🚀 PHASE 4: DYNAMIC BUBBLE EVALUATION
         // ==========================================
-        let numQuestions, colStarts, startY, rowHeight, bubbleSpacing, bubbleSize;
-        let idGrids = []; // Store configurations for ID detection
 
-        // Shifted coordinates to match updated OMRTemplate.tsx
-        if (examType === '20') {
-            numQuestions = 20;
-            colStarts = [520]; // 1 Column moved to the right
-            startY = 180; rowHeight = 35; bubbleSpacing = 45; bubbleSize = 30;
+        const CONFIGS = {
+            '20': {
+                numQuestions: 20,
+                colStarts: [520],
+                startY: 180, rowHeight: 35, bubbleSpacing: 45, bubbleSize: 30,
+                idGrids: [
+                    { name: 'examCode', digits: 4, startX: 100, startY: 180 + 18 + 5, spacingX: 24, spacingY: 22, bubbleSize: 18 },
+                    { name: 'studentNo', digits: 8, startX: 100, startY: 460 + 18 + 5, spacingX: 24, spacingY: 22, bubbleSize: 18 }
+                ],
+                blankThreshold: 80,
+                confidenceMargin: 40
+            },
+            '50': {
+                numQuestions: 50,
+                colStarts: [340, 580],
+                startY: 180, rowHeight: 28, bubbleSpacing: 35, bubbleSize: 24,
+                idGrids: [
+                    { name: 'examCode', digits: 4, startX: 100, startY: 180 + 18 + 5, spacingX: 24, spacingY: 22, bubbleSize: 18 },
+                    { name: 'studentNo', digits: 8, startX: 100, startY: 460 + 18 + 5, spacingX: 24, spacingY: 22, bubbleSize: 18 }
+                ],
+                blankThreshold: 50,
+                confidenceMargin: 25
+            }
+        };
 
-            // Identification Grids (Aligned with gridSpacingX: 24 in OMRTemplate.tsx)
-            idGrids = [
-                { name: 'examCode', digits: 4, startX: 100, startY: 180 + 18 + 5, spacingX: 24, spacingY: 22, bubbleSize: 18 },
-                { name: 'studentNo', digits: 8, startX: 100, startY: 460 + 18 + 5, spacingX: 24, spacingY: 22, bubbleSize: 18 }
-            ];
+        // Standard ID Grid Thresholds
+        const ID_BLANK_THRESHOLD = 35;
+
+        function evaluateIdGrids(thresh, idGrids) {
+            let detected = { examCode: "", studentNo: "" };
+            for (const grid of idGrids) {
+                let resultString = "";
+                for (let d = 0; d < grid.digits; d++) {
+                    let digitStats = [];
+                    for (let v = 0; v < 10; v++) {
+                        let x = grid.startX + (d * grid.spacingX);
+                        let y = grid.startY + (v * grid.spacingY);
+                        let roiMargin = 2;
+                        let rect = new cv.Rect(x + roiMargin, y + roiMargin, grid.bubbleSize - (roiMargin * 2), grid.bubbleSize - (roiMargin * 2));
+                        let bubbleROI = thresh.roi(rect);
+                        let filledPixels = cv.countNonZero(bubbleROI);
+                        digitStats.push({ val: v, pixels: filledPixels });
+                        bubbleROI.delete();
+                    }
+                    digitStats.sort((a, b) => b.pixels - a.pixels);
+                    if (digitStats[0].pixels < ID_BLANK_THRESHOLD) {
+                        resultString += "?";
+                    } else {
+                        resultString += digitStats[0].val.toString();
+                    }
+                }
+                detected[grid.name] = resultString;
+            }
+            return detected;
+        }
+
+        let selectedConfig = CONFIGS[examType] || CONFIGS['20'];
+        let detectedIds = { examCode: "", studentNo: "" };
+
+        if (examType === 'auto') {
+            // Check for Exam Code. Since we standardized positions, we can just use any config's idGrids.
+            detectedIds = evaluateIdGrids(warpedThresh, CONFIGS['20'].idGrids);
+            
+            // Heuristic to decide if it's 20 or 50 items if examType is 'auto'
+            // We look at the 1st column position of the 50-item layout (x=340).
+            // In a 20-item layout, this area is blank.
+            let testX = CONFIGS['50'].colStarts[0];
+            let testY = CONFIGS['50'].startY;
+            let activity = 0;
+            for (let i = 0; i < 5; i++) {
+                let rect = new cv.Rect(testX + 5, testY + (i * CONFIGS['50'].rowHeight) + 5, 15, 15);
+                let roi = warpedThresh.roi(rect);
+                activity += cv.countNonZero(roi);
+                roi.delete();
+            }
+            
+            if (activity > 50) {
+                selectedConfig = CONFIGS['50'];
+            } else {
+                selectedConfig = CONFIGS['20'];
+            }
         } else {
-            numQuestions = 50;
-            colStarts = [340, 580]; // 2 Columns moved to the right
-            startY = 160; rowHeight = 28; bubbleSpacing = 35; bubbleSize = 24;
-
-            // Identification Grids
-            idGrids = [
-                { name: 'examCode', digits: 4, startX: 60, startY: 160 + 18 + 5, spacingX: 24, spacingY: 22, bubbleSize: 18 },
-                { name: 'studentNo', digits: 8, startX: 60, startY: 440 + 18 + 5, spacingX: 24, spacingY: 22, bubbleSize: 18 }
-            ];
+            detectedIds = evaluateIdGrids(warpedThresh, selectedConfig.idGrids);
         }
 
         const choicesMap = ['A', 'B', 'C', 'D'];
-        const numChoices = 4;
-
-        // Lower threshold for 50-item test because the bubbles are physically smaller
-        const BLANK_THRESHOLD = examType === '20' ? 80 : 50;
-        const CONFIDENCE_MARGIN = examType === '20' ? 40 : 25;
-
-        // ID Grid Specific Thresholds (smaller bubbles)
-        const ID_BLANK_THRESHOLD = 35;
-        const ID_CONFIDENCE_MARGIN = 20;
-
         let studentAnswers = {};
-        let detectedIds = { examCode: "", studentNo: "" };
 
-        // 1. Evaluate Identification Grids
-        for (const grid of idGrids) {
-            let resultString = "";
-            for (let d = 0; d < grid.digits; d++) {
-                let digitStats = [];
-                for (let v = 0; v < 10; v++) {
-                    let x = grid.startX + (d * grid.spacingX);
-                    let y = grid.startY + (v * grid.spacingY);
-                    
-                    // Small safety margin for ROI
-                    let roiMargin = 2;
-                    let rect = new cv.Rect(x + roiMargin, y + roiMargin, grid.bubbleSize - (roiMargin * 2), grid.bubbleSize - (roiMargin * 2));
-
-                    let bubbleROI = warpedThresh.roi(rect);
-                    let filledPixels = cv.countNonZero(bubbleROI);
-                    digitStats.push({ val: v, pixels: filledPixels });
-                    bubbleROI.delete();
-                }
-
-                digitStats.sort((a, b) => b.pixels - a.pixels);
-
-                if (digitStats[0].pixels < ID_BLANK_THRESHOLD) {
-                    resultString += "?"; // Unknown/Blank
-                } else {
-                    resultString += digitStats[0].val.toString();
-                }
-            }
-            detectedIds[grid.name] = resultString;
-        }
-
-        // 2. Evaluate Question Bubbles
-        for (let q = 0; q < numQuestions; q++) {
+        for (let q = 0; q < selectedConfig.numQuestions; q++) {
             let bubbleStats = [];
-
-            // Calculate column logic dynamically
-            let itemsPerCol = examType === '20' ? 20 : 25;
+            let itemsPerCol = selectedConfig.numQuestions === 20 ? 20 : 25;
             let isCol2 = q >= itemsPerCol;
-            let colX = isCol2 ? colStarts[1] : colStarts[0];
-            let rowY = startY + ((q % itemsPerCol) * rowHeight);
+            let colX = isCol2 ? selectedConfig.colStarts[1] : selectedConfig.colStarts[0];
+            let rowY = selectedConfig.startY + ((q % itemsPerCol) * selectedConfig.rowHeight);
 
-            for (let c = 0; c < numChoices; c++) {
-                let roiMargin = examType === '20' ? 6 : 4;
-                let x = colX + (c * bubbleSpacing) + roiMargin;
+            for (let c = 0; c < 4; c++) {
+                let roiMargin = selectedConfig.numQuestions === 20 ? 6 : 4;
+                let x = colX + (c * selectedConfig.bubbleSpacing) + roiMargin;
                 let y = rowY + roiMargin;
-                let rect = new cv.Rect(x, y, bubbleSize - (roiMargin * 2), bubbleSize - (roiMargin * 2));
-
+                let rect = new cv.Rect(x, y, selectedConfig.bubbleSize - (roiMargin * 2), selectedConfig.bubbleSize - (roiMargin * 2));
                 let bubbleROI = warpedThresh.roi(rect);
                 let filledPixels = cv.countNonZero(bubbleROI);
-
                 bubbleStats.push({ letter: choicesMap[c], pixels: filledPixels });
                 bubbleROI.delete();
             }
 
             bubbleStats.sort((a, b) => b.pixels - a.pixels);
 
-            if (bubbleStats[0].pixels < BLANK_THRESHOLD) {
+            if (bubbleStats[0].pixels < selectedConfig.blankThreshold) {
                 studentAnswers[(q + 1).toString()] = "BLANK";
-            }
-            else if ((bubbleStats[0].pixels - bubbleStats[1].pixels) < CONFIDENCE_MARGIN) {
-                studentAnswers[(q + 1).toString()] = "REVIEW"; // Triggers React fallback UI
-            }
-            else {
+            } else if ((bubbleStats[0].pixels - bubbleStats[1].pixels) < selectedConfig.confidenceMargin) {
+                studentAnswers[(q + 1).toString()] = "REVIEW";
+            } else {
                 studentAnswers[(q + 1).toString()] = bubbleStats[0].letter;
             }
         }
@@ -234,7 +242,6 @@ self.onmessage = function (e) {
     } catch (err) {
         self.postMessage({ error: err.message || "An error occurred during processing.", sessionId });
     } finally {
-        // GUARANTEED MEMORY CLEANUP
         if (src && !src.isDeleted()) src.delete();
         if (gray && !gray.isDeleted()) gray.delete();
         if (blurred && !blurred.isDeleted()) blurred.delete();
