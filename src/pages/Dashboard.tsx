@@ -130,13 +130,22 @@ export default function Dashboard() {
             <main className="flex-1 w-full max-w-5xl mx-auto px-4 md:px-8 py-6 flex flex-col gap-4">
 
                 {/* PRIMARY ACTIONS */}
-                <button
-                    onClick={() => navigate('/create')}
-                    className="w-full flex items-center justify-center gap-2 p-4 bg-violet-600 hover:bg-violet-500 text-white rounded-2xl shadow-lg shadow-violet-500/20 active:scale-95 transition-all font-bold"
-                >
-                    <Plus className="w-5 h-5" />
-                    <span>Create New Exam</span>
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => navigate('/create')}
+                        className="flex-1 flex items-center justify-center gap-2 p-4 bg-violet-600 hover:bg-violet-500 text-white rounded-2xl shadow-lg shadow-violet-500/20 active:scale-95 transition-all font-bold"
+                    >
+                        <Plus className="w-5 h-5" />
+                        <span>Create New Exam</span>
+                    </button>
+                    <button
+                        onClick={() => navigate('/help')}
+                        className="p-4 bg-white dark:bg-slate-900 text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 rounded-2xl border border-slate-200/50 dark:border-white/5 shadow-sm active:scale-95 transition-all"
+                        title="Help & Guide"
+                    >
+                        <HelpCircle className="w-6 h-6" />
+                    </button>
+                </div>
 
                 <div className="h-2" /> {/* Spacing */}
 

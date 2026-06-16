@@ -27,6 +27,7 @@ import AccountPage from './pages/AccountPage'
 import ExamResultsPage from './pages/ExamResultsPage'
 import SmartScannerPage from './pages/SmartScannerPage'
 import NoticesPage from './pages/NoticesPage'
+import UserManualPage from './pages/UserManualPage'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { currentUser, isLoading } = useAuth();
@@ -69,6 +70,7 @@ function App() {
                   <Route path="/account" element={<AccountPage />} />
                   {/* Help & Workflow guide */}
                   <Route path="/help" element={<Help />} />
+                  <Route path="/manual" element={<UserManualPage />} />
                   <Route path="/notices" element={<NoticesPage />} />
                 </Route>
 

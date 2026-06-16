@@ -1,55 +1,70 @@
-📘 GRID: Simple User Guide
-Welcome to GRID! This system helps you track student performance across different subjects and quarters.
+# ⚡ Godspeed Grader: User Manual & Guide
 
-1. Getting Started: The Dashboard
-When you open the system, you will see your main dashboard. Think of this as your digital filing cabinet.
+Welcome to **Godspeed Grader**! This privacy-first, offline OMR scanner is designed to help you grade exams in a flash using your mobile device.
 
-Academic Terms: These are the "Quarters" (1st Quarter, 2nd Quarter, etc.).
-Subjects: Your list of classes (e.g., Math 7, Science 7).
-Sections: The groups of students you teach (e.g., Section "Einstein" or "Newton").
-Note: If a Quarter is marked as "Locked," it means the final grades have been submitted to the Registrar, and no further changes can be made.
+---
 
-2. Finding Your Students
-To see your students, you usually filter by Section.
+## 1. Setting Up Your Workspace
+Before scanning, you need to define your academic structure. On **Desktop**, use the sidebar; on **Mobile**, tap the **Manage** icon in the bottom bar.
 
-Select your Grade Level (e.g., Grade 7).
-Choose the Section (e.g., Einstein).
-You will see the student roster with their names and IDs (LRN).
-3. How Grading Works (The "30-50-20" Rule)
-GRID automatically calculates grades based on the official K-12 standards. You don't need a calculator! Most subjects use this split:
+### A. The Registries (Grade Levels & Subjects)
+*   **Grade Levels:** Navigate to `Grade Levels` to define your levels (e.g., Grade 7, Grade 10).
+*   **Subjects:** Navigate to `Subjects` to list the classes you teach. You can also define the "WW-PT-QA" weights here (e.g., 30-50-20) for automatic grade calculation.
 
-Written Works (30%): Quizzes, long tests, and unit checks.
-Performance Tasks (50%): Projects, group activities, and oral reports.
-Quarterly Assessment (20%): The final exam at the end of the quarter.
-Some subjects like MAPEH or TLE may give more weight to Performance Tasks (60%). The system knows this and handles it for you.
+### B. Periods (Grading Terms)
+*   Navigate to `Periods` to define your quarters or semesters.
+*   **Pro Tip:** Set accurate start/end dates. Godspeed will automatically select the "Ongoing" period for your new exams.
 
-4. Using the Gradebook
-This is where you spend most of your time.
+### C. Sections & Students
+*   **Sections:** Create sections (e.g., "Rizal" or "Einstein") and link them to a Grade Level.
+*   **Students:** Add students manually or use **"Import Paste"**. Copy your roster from Excel and paste it directly into Godspeed.
+*   **Pre-filled Answer Sheets:** Once students are added, go to the `Sections` page and click the **Printer** icon to download PDFs pre-filled with student names and IDs.
 
-Adding a New Activity (Assessment)
-When you give a quiz or a project, you need to "Create an Assessment":
+---
 
-Title: Give it a name (e.g., "Quiz #1" or "Unit 1 Project").
-Category: Choose if it is a WW (Written), PT (Performance), or QA (Exam).
-Max Score: Enter the highest possible points (e.g., 20 or 100).
-Date: Select when it was given.
-Entering Scores
-Once the activity is created, you will see a list of your students:
+## 2. Managing Your Exams
 
-Click the box next to a student's name.
-Type in their score.
-The system saves instantly. You don't need to click a "Save" button for every student.
-5. Checking Student Progress
-You can view a "Performance Summary" for any student (like Juan Dela Cruz). This shows:
+### A. Creating an Exam
+Click **"Create New Exam"** on your Dashboard.
+1.  **Exam Code:** Set a unique 4-digit code (e.g., `0001`). **Crucial:** Students *must* shade this code so the scanner identifies the exam.
+2.  **Answer Key:** Tap the bubbles to set correct answers.
+3.  **Competency Mapping:** Link specific questions to skills (e.g., "Algebraic Expressions") to track student mastery.
 
-Weighted Scores: How much they earned in each category.
-Final Grade: Their current average for that subject for the quarter.
-Warnings: If a student is failing (e.g., below 75%), their grade will often be highlighted so you can provide extra help.
-6. Frequently Asked Questions (FAQ)
-Q: I made a mistake on a score. Can I change it? A: Yes! Simply click on the score in the Gradebook, type the new number, and it will update immediately.
+### B. Printing Templates
+If you don't want pre-filled sheets, use the **Answer Sheets** (Templates) page to print blank 20-item or 50-item templates.
+*   **Printing Tip:** Print at "100%" or "Actual Size". Do not "Fit to Page."
 
-Q: Why is a student missing from my list? A: Check if they are in the correct Section. Students in "Einstein" won't show up in the "Newton" list.
+---
 
-Q: Can I delete an exam if I accidentally created it? A: Yes, there is a "Delete" option within the Assessment settings, but be careful: deleting an assessment also deletes all the scores you entered for it!
+## 3. Dual-Mode Scanning
+Godspeed offers two ways to grade:
 
-Need Help? If you see a technical error, please contact the School IT or the Registrar’s office.
+### 📸 Option 1: Instant Scan (Global)
+*   **Where:** Tap the **Scan** icon in the center of the mobile bottom nav.
+*   **How:** Point at any sheet. Godspeed reads the **Exam Code** and **Student ID** to automatically find the right quiz and record the score.
+*   **Best for:** Grading a mixed stack of papers from different classes.
+
+### 🎯 Option 2: Smart Scanner (Targeted)
+*   **Where:** Tap a specific exam from your Dashboard.
+*   **How:** Select your **Section** first. 
+*   **Auto-Tagging:** If the ID is shaded, it saves automatically.
+*   **Manual Tagging:** If an ID is missing, tap the student's name from the list to link the score.
+*   **Quick Scan:** Grade papers instantly without saving them.
+
+---
+
+## 4. Analyzing Results
+Click the **Bar Chart** icon on any exam to view the **Exam Results Page**.
+
+*   **Summary View:** A list of student scores.
+*   **Mastery View:** See which competencies students mastered.
+*   **Detailed View:** A question-by-question breakdown for every student.
+*   **Exports:** Generate a professional **Item Analysis PDF** or export everything to **Excel**.
+
+---
+
+## 💡 Pro Tips for Perfect Scanning
+*   **Good Lighting:** Scan in well-lit rooms; avoid harsh shadows.
+*   **Steady Hands:** Keep the camera parallel to the paper.
+*   **Dark Shading:** Use a dark pen or pencil. Fill bubbles fully.
+*   **Offline-First:** Your data stays on your device. Sync to the cloud for backup when online.
