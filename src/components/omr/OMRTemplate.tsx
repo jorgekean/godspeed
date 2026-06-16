@@ -28,26 +28,26 @@ const styles = StyleSheet.create({
     }
 });
 
-const SheetBase = ({ children, title }: { children: React.ReactNode, title: string }) => (
-    <Document>
-        <Page size={[800, 1000]} style={styles.page}>
-            <View style={styles.markerTopLeft} />
-            <View style={styles.markerTopRight} />
-            <View style={styles.markerBottomLeft} />
-            <View style={styles.markerBottomRight} />
+export const SheetPage = ({ children, title, studentName }: { children: React.ReactNode, title: string, studentName?: string }) => (
+    <Page size={[800, 1000]} style={styles.page}>
+        <View style={styles.markerTopLeft} />
+        <View style={styles.markerTopRight} />
+        <View style={styles.markerBottomLeft} />
+        <View style={styles.markerBottomRight} />
 
-            <Text style={[styles.title, { top: 60, fontSize: 24 }]}>{title}</Text>
-            <Text style={[styles.headerText, { top: 110, left: 100, fontSize: 14 }]}>Name: _________________________________</Text>
-            <Text style={[styles.headerText, { top: 110, left: 500, fontSize: 14 }]}>Score: _______________</Text>
+        <Text style={[styles.title, { top: 60, fontSize: 24 }]}>{title}</Text>
+        <Text style={[styles.headerText, { top: 110, left: 100, fontSize: 14 }]}>
+            Name: {studentName ? studentName : '_________________________________'}
+        </Text>
+        <Text style={[styles.headerText, { top: 110, left: 500, fontSize: 14 }]}>Score: _______________</Text>
 
-            {children}
+        {children}
 
-            <Text style={styles.footer}>godspeedgrader.com by NabiX SDS</Text>
-        </Page>
-    </Document>
+        <Text style={styles.footer}>godspeedgrader.com by NabiX SDS</Text>
+    </Page>
 );
 
-const Document20Item = ({ studentNo }: { studentNo?: string }) => {
+export const Page20Item = ({ studentNo, studentName }: { studentNo?: string, studentName?: string }) => {
     const choicesMap = ['A', 'B', 'C', 'D'];
     const startX = 520; const startY = 180;
     const rowHeight = 35; const bubbleSpacing = 45; const bubbleSize = 30;
@@ -63,7 +63,7 @@ const Document20Item = ({ studentNo }: { studentNo?: string }) => {
     const paddedStudentNo = studentNo ? studentNo.padStart(8, '0') : '';
 
     return (
-        <SheetBase title="20-Item Answer Sheet">
+        <SheetPage title="20-Item Answer Sheet" studentName={studentName}>
             {/* Exam Code Grid (4 digits) */}
             <Text style={[styles.questionNumber, { top: examCodeY - 15, left: gridStartX, fontSize: 10 }]}>EXAM CODE</Text>
             {/* Row labels for ID grids */}
@@ -124,11 +124,11 @@ const Document20Item = ({ studentNo }: { studentNo?: string }) => {
                     ))}
                 </React.Fragment>
             ))}
-        </SheetBase>
+        </SheetPage>
     );
 };
 
-const Document50Item = ({ studentNo }: { studentNo?: string }) => {
+export const Page50Item = ({ studentNo, studentName }: { studentNo?: string, studentName?: string }) => {
     const choicesMap = ['A', 'B', 'C', 'D'];
     const colStarts = [340, 580]; // Shifted right to make room for ID grids
     const startY = 180;
@@ -145,7 +145,7 @@ const Document50Item = ({ studentNo }: { studentNo?: string }) => {
     const paddedStudentNo = studentNo ? studentNo.padStart(8, '0') : '';
 
     return (
-        <SheetBase title="50-Item Answer Sheet">
+        <SheetPage title="50-Item Answer Sheet" studentName={studentName}>
             {/* Exam Code Grid (4 digits) */}
             <Text style={[styles.questionNumber, { top: examCodeY - 15, left: gridStartX, fontSize: 10 }]}>EXAM CODE</Text>
             {Array.from({ length: 10 }).map((_, row) => (
@@ -213,9 +213,17 @@ const Document50Item = ({ studentNo }: { studentNo?: string }) => {
                     </React.Fragment>
                 );
             })}
-        </SheetBase>
+        </SheetPage>
     );
 };
+
+export const Document20Item = (props: { studentNo?: string, studentName?: string }) => (
+    <Document><Page20Item {...props} /></Document>
+);
+
+export const Document50Item = (props: { studentNo?: string, studentName?: string }) => (
+    <Document><Page50Item {...props} /></Document>
+);
 
 import { Printer, Loader2 } from 'lucide-react';
 
