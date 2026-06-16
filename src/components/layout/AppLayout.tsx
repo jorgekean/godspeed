@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { Users, FolderKanban, LayoutDashboard, LogOut, UserCircle, Lock, User, RefreshCw, AlertCircle, Zap, CalendarDays, Settings2, ChevronUp, BookOpen, GraduationCap, MessageSquare, Mail, Printer, Camera } from 'lucide-react';
+import { Users, FolderKanban, LayoutDashboard, LogOut, UserCircle, Lock, User, RefreshCw, AlertCircle, Zap, CalendarDays, Settings2, ChevronUp, BookOpen, GraduationCap, MessageSquare, Mail, Printer, Camera, FileText } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSync } from '../../contexts/SyncContext';
 import { toast } from 'sonner';
@@ -33,7 +33,7 @@ export default function AppLayout() {
     };
 
     const getPageSub = (path: string) => {
-        if (path === '/') return `Welcome back, ${currentUser?.email}`;
+        if (path === '/') return currentUser ? `Welcome back, ${currentUser?.email}` : 'Grade exams in a flash.';
         if (path.startsWith('/sections')) return 'Manage your classes and advisory groups.';
         if (path.startsWith('/students')) return 'Manage your student rosters.';
         if (path.startsWith('/periods')) return 'Manage your grading periods.';
@@ -41,39 +41,49 @@ export default function AppLayout() {
         if (path.startsWith('/grades')) return 'Manage your grade levels.';
         if (path.startsWith('/templates')) return 'Download and print empty bubble sheet templates.';
         if (path.startsWith('/account')) return 'Manage your profile and settings.';
+        if (path.startsWith('/help')) return 'Learn how to use Godspeed Grader.';
+        if (path.startsWith('/manual')) return 'Deep-dive into features and workflows.';
         return 'Grade exams in a flash.';
     };
 
     const pageTitle = getPageTitle(location.pathname);
     const pageSub = getPageSub(location.pathname);
 
-    const navItems = [
-        { path: '/', label: 'Overview', icon: LayoutDashboard },
-        { path: '/scan', label: 'Instant Scan', icon: Camera },
-        { path: '/templates', label: 'Answer Sheets', icon: Printer },
-        { path: '/periods', label: 'Periods', icon: CalendarDays },
-        { path: '/grades', label: 'Grade Levels', icon: GraduationCap },
-        { path: '/subjects', label: 'Subjects', icon: BookOpen },
-        { path: '/sections', label: 'Sections', icon: FolderKanban },
-        { path: '/students', label: 'Students', icon: Users },
-        { path: '/account', label: 'Account', icon: User },
+    const allNavItems = [
+        { path: '/', label: 'Overview', icon: LayoutDashboard, protected: true },
+        { path: '/scan', label: 'Instant Scan', icon: Camera, protected: true },
+        { path: '/templates', label: 'Answer Sheets', icon: Printer, protected: true },
+        { path: '/help', label: 'Help & Guide', icon: BookOpen },
+        { path: '/manual', label: 'User Manual', icon: FileText },
+        { path: '/periods', label: 'Periods', icon: CalendarDays, protected: true },
+        { path: '/grades', label: 'Grade Levels', icon: GraduationCap, protected: true },
+        { path: '/subjects', label: 'Subjects', icon: BookOpen, protected: true },
+        { path: '/sections', label: 'Sections', icon: FolderKanban, protected: true },
+        { path: '/students', label: 'Students', icon: Users, protected: true },
+        { path: '/account', label: 'Account', icon: User, protected: true },
     ];
+
+    const navItems = allNavItems.filter(item => !item.protected || currentUser);
 
     const mobileMainItems = [
         { path: '/', label: 'Home', icon: LayoutDashboard },
-        { path: '/templates', label: 'Sheets', icon: Printer },
+        { path: '/manual', label: 'Manual', icon: FileText },
         { path: '/scan', label: 'Scan', icon: Camera, isPrimary: true },
         { path: '/manage', label: 'Manage', icon: Settings2, isAction: true },
         { path: '/account', label: 'Account', icon: User },
-    ];
+    ].filter(item => {
+        if (item.path === '/' || item.path === '/manual') return true;
+        return currentUser;
+    });
 
     const manageSubItems = [
-        { path: '/sections', label: 'Sections', icon: FolderKanban },
-        { path: '/students', label: 'Students', icon: Users },
-        { path: '/periods', label: 'Periods', icon: CalendarDays },
-        { path: '/grades', label: 'Grade Levels', icon: GraduationCap },
-        { path: '/subjects', label: 'Subjects', icon: BookOpen },
-    ];
+        { path: '/sections', label: 'Sections', icon: FolderKanban, protected: true },
+        { path: '/students', label: 'Students', icon: Users, protected: true },
+        { path: '/periods', label: 'Periods', icon: CalendarDays, protected: true },
+        { path: '/grades', label: 'Grade Levels', icon: GraduationCap, protected: true },
+        { path: '/subjects', label: 'Subjects', icon: BookOpen, protected: true },
+        { path: '/help', label: 'Help & Guide', icon: BookOpen },
+    ].filter(item => !item.protected || currentUser);
 
     const handleLogout = async () => {
         await logout();
@@ -96,7 +106,7 @@ export default function AppLayout() {
                     </h1>
                 </div>
 
-                <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
+                <nav className="flex-1 px-4 space-y-1 mt-4 overflow-y-auto custom-scrollbar">
                     {navItems.map((item) => {
                         return (
                             <NavLink
@@ -114,7 +124,7 @@ export default function AppLayout() {
                                         <div className="relative">
                                             <item.icon className="w-5 h-5" />
                                         </div>
-                                        {item.label}
+                                        <span className="text-sm">{item.label}</span>
                                     </>
                                 )}
                             </NavLink>
@@ -134,42 +144,57 @@ export default function AppLayout() {
                     </a>
 
                     <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/50 dark:border-white/5 p-4">
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="w-10 h-10 bg-violet-100 dark:bg-violet-500/20 rounded-full flex items-center justify-center shrink-0">
-                                <UserCircle className="w-6 h-6 text-violet-600 dark:text-violet-400" />
-                            </div>
-                            <div className="overflow-hidden">
-                                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                                    {currentUser?.email}
-                                </p>
-                                <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">
-                                    Free Account
-                                </p>
-                            </div>
-                        </div>
+                        {currentUser ? (
+                            <>
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="w-10 h-10 bg-violet-100 dark:bg-violet-500/20 rounded-full flex items-center justify-center shrink-0">
+                                        <UserCircle className="w-6 h-6 text-violet-600 dark:text-violet-400" />
+                                    </div>
+                                    <div className="overflow-hidden">
+                                        <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                                            {currentUser?.email}
+                                        </p>
+                                        <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">
+                                            Free Account
+                                        </p>
+                                    </div>
+                                </div>
 
-                        {currentUser && syncStatus !== 'idle' && (
-                            <div className={`mb-3 flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider ${syncStatus === 'syncing' ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400'}`}>
-                                {syncStatus === 'syncing' ? (
-                                    <>
-                                        <RefreshCw className="w-3 h-3 animate-spin" />
-                                        Syncing...
-                                    </>
-                                ) : (
-                                    <>
-                                        <AlertCircle className="w-3 h-3" />
-                                        Sync Error
-                                    </>
+                                {syncStatus !== 'idle' && (
+                                    <div className={`mb-3 flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider ${syncStatus === 'syncing' ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400'}`}>
+                                        {syncStatus === 'syncing' ? (
+                                            <>
+                                                <RefreshCw className="w-3 h-3 animate-spin" />
+                                                Syncing...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <AlertCircle className="w-3 h-3" />
+                                                Sync Error
+                                            </>
+                                        )}
+                                    </div>
                                 )}
+
+                                <button
+                                    onClick={handleLogout}
+                                    className="w-full flex items-center justify-center gap-2 py-2 text-sm font-bold text-slate-400 hover:text-red-600 transition-colors"
+                                >
+                                    <LogOut className="w-4 h-4" /> Sign Out
+                                </button>
+                            </>
+                        ) : (
+                            <div className="text-center py-2">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Join the Speed</p>
+                                <button
+                                    onClick={() => navigate('/landing?mode=login')}
+                                    className="w-full flex items-center justify-center gap-2 py-3 bg-violet-600 hover:bg-violet-500 text-white rounded-xl font-bold text-sm shadow-lg shadow-violet-500/20 active:scale-95 transition-all"
+                                >
+                                    <Zap className="w-4 h-4 fill-white" />
+                                    Sign In / Register
+                                </button>
                             </div>
                         )}
-
-                        <button
-                            onClick={handleLogout}
-                            className="w-full flex items-center justify-center gap-2 py-2 text-sm font-bold text-slate-400 hover:text-red-600 transition-colors"
-                        >
-                            <LogOut className="w-4 h-4" /> Sign Out
-                        </button>
                     </div>
                     <div className="text-center mt-2">
                         <button onClick={() => setIsNoticesModalOpen(true)} className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">

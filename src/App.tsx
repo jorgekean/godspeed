@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom'
+import { BrowserRouter, Route, Routes, Navigate, Outlet } from 'react-router-dom'
 import './App.css'
 import { ConfirmProvider } from './contexts/ConfirmContext'
 import { ThemeProvider } from './contexts/ThemeContext'
@@ -58,20 +58,23 @@ function App() {
                 {/* ========================================== */}
                 {/* 1. CORE LAYOUT ROUTES (With Bottom Nav / Sidebar) */}
                 {/* ========================================== */}
-                <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-                  {/* The main dashboard listing all exams */}
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/sections" element={<SectionsPage />} />
-                  <Route path="/students" element={<StudentsPage />} />
-                  <Route path="/periods" element={<PeriodsPage />} />
-                  <Route path="/subjects" element={<SubjectsPage />} />
-                  <Route path="/grades" element={<GradeLevelsPage />} />
-                  <Route path="/templates" element={<TemplatesPage />} />
-                  <Route path="/account" element={<AccountPage />} />
-                  {/* Help & Workflow guide */}
+                <Route element={<AppLayout />}>
+                  {/* Publicly accessible documentation */}
                   <Route path="/help" element={<Help />} />
                   <Route path="/manual" element={<UserManualPage />} />
                   <Route path="/notices" element={<NoticesPage />} />
+
+                  {/* Protected core app routes */}
+                  <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/sections" element={<SectionsPage />} />
+                    <Route path="/students" element={<StudentsPage />} />
+                    <Route path="/periods" element={<PeriodsPage />} />
+                    <Route path="/subjects" element={<SubjectsPage />} />
+                    <Route path="/grades" element={<GradeLevelsPage />} />
+                    <Route path="/templates" element={<TemplatesPage />} />
+                    <Route path="/account" element={<AccountPage />} />
+                  </Route>
                 </Route>
 
                 {/* ========================================== */}
