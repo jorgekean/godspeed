@@ -68,12 +68,17 @@ export default function GlobalScannerPage() {
 
             // 2.5 Recalculate accurate score using the matched exam's key
             let accurateScore = 0;
-            const key = matchedExam.answerKey;
-            rawAnswers.forEach((ans, i) => {
-                if (ans !== "BLANK" && ans === key[i]) {
+            const key = matchedExam.answerKey.split(''); // Ensure it's an array of characters
+            
+            // rawAnswers is an array: [detectedQ1, detectedQ2, ...] from OMRScanner
+            for (let i = 0; i < matchedExam.itemCount; i++) {
+                const studentAns = rawAnswers[i];
+                const correctAns = key[i];
+                
+                if (studentAns !== "BLANK" && studentAns !== "REVIEW" && studentAns === correctAns) {
                     accurateScore++;
                 }
-            });
+            }
 
             // 3. Save result if student was identified
             if (studentId) {
