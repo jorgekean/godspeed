@@ -53,14 +53,13 @@ export default function AppLayout() {
         { path: '/', label: 'Overview', icon: LayoutDashboard, protected: true },
         { path: '/scan', label: 'Instant Scan', icon: Camera, protected: true },
         { path: '/templates', label: 'Answer Sheets', icon: Printer, protected: true },
-        { path: '/help', label: 'Help & Guide', icon: BookOpen },
-        { path: '/manual', label: 'User Manual', icon: FileText },
+        // { path: '/help', label: 'Help & Guide', icon: BookOpen },
+        // { path: '/manual', label: 'User Manual', icon: FileText },
         { path: '/periods', label: 'Periods', icon: CalendarDays, protected: true },
         { path: '/grades', label: 'Grade Levels', icon: GraduationCap, protected: true },
         { path: '/subjects', label: 'Subjects', icon: BookOpen, protected: true },
         { path: '/sections', label: 'Sections', icon: FolderKanban, protected: true },
         { path: '/students', label: 'Students', icon: Users, protected: true },
-        { path: '/account', label: 'Account', icon: User, protected: true },
     ];
 
     const navItems = allNavItems.filter(item => !item.protected || currentUser);
@@ -224,8 +223,23 @@ export default function AppLayout() {
                             <h2 className="text-lg font-bold text-slate-900 dark:text-white">{pageTitle}</h2>
                             <p className="text-xs font-medium text-slate-500">{pageSub}</p>
                         </div>
-                        <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-violet-500 via-fuchsia-500 to-cyan-400 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-violet-500/30 shrink-0">
-                            <Zap className="w-5 h-5 md:w-6 md:h-6 text-white fill-white/20" />
+                        <div className="flex items-center gap-3">
+                            {currentUser && (
+                                <NavLink
+                                    to="/account"
+                                    className={({ isActive }) =>
+                                        `hidden md:flex w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl items-center justify-center transition-all ${isActive
+                                            ? 'bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400'
+                                            : 'bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-white shadow-sm border border-slate-200/50 dark:border-white/5'
+                                        }`
+                                    }
+                                >
+                                    <UserCircle className="w-6 h-6 md:w-7 md:h-7" />
+                                </NavLink>
+                            )}
+                            <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-violet-500 via-fuchsia-500 to-cyan-400 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-violet-500/30 shrink-0">
+                                <Zap className="w-5 h-5 md:w-6 md:h-6 text-white fill-white/20" />
+                            </div>
                         </div>
                     </div>
                 </header>
