@@ -23,6 +23,7 @@ export default function SmartScannerPage() {
     const [currentRawAnswers, setCurrentRawAnswers] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [scannedStudentIds, setScannedStudentIds] = useState<Set<string>>(new Set());
+    const scannerRef = React.useRef<any>(null);
 
     // NEW: Initialize scanned student IDs from DB
     React.useEffect(() => {
@@ -82,6 +83,7 @@ export default function SmartScannerPage() {
         setCurrentRawAnswers([]);
         setShowDetails(false);
         setScanMode('scanning');
+        scannerRef.current?.reset();
     }, []);
 
     const handleTagStudent = useCallback(async (studentId: string, studentName: string, scoreOverride?: number, answersOverride?: string[]) => {
@@ -123,16 +125,23 @@ export default function SmartScannerPage() {
             });
         }
 
+        // Update the scanner overlay to show GREEN "Saved" state
+        scannerRef.current?.updateLastResult({
+            isSaved: true,
+            studentName: studentName,
+            score: finalScore
+        });
+
         // Only show toast here if we were in manual tagging mode (not auto-tagged)
         if (scanMode === 'tagging') {
             toast.success(`${studentName} scored ${finalScore}/${exam.itemCount}. Saved! Go to next paper.`, {
                 duration: 3000,
                 icon: <CheckCircle2 className="w-5 h-5 text-green-500" />
             });
+            handleRescan(); // Reset and lower the sheet
         }
 
         setScannedStudentIds(prev => new Set(prev).add(studentId));
-        handleRescan(); // Reset and lower the sheet
     }, [exam, selectedSectionId, currentUser, currentScore, currentRawAnswers, scanMode, handleRescan]);
 
     const handleScanSuccess = useCallback((score: number, rawAnswers: string[], examCode?: string, studentNo?: string) => {
@@ -150,19 +159,31 @@ export default function SmartScannerPage() {
         }
 
         // --- NEW: Auto-Tagging Logic ---
-        if (studentNo && studentNo.indexOf('?') === -1) {
+        if (studentNo && students) {
+            // Normalize detected studentNo: Treat '?' (blanks) as '0'
+            const normalizedDetected = studentNo.replace(/\?/g, '0');
+
+            // Skip auto-tagging if the detected ID is all zeros (effectively empty)
+            if (normalizedDetected === '00000000') {
+                setScanMode('tagging');
+                setSearchQuery('');
+                return;
+            }
+
             // Refined matching: Pad the student's stored ID with leading zeros to 8 digits to match the OMR grid
-            const student = students?.find(s => {
+            const student = students.find(s => {
                 if (!s.studentNo) return false;
                 const paddedStored = s.studentNo.padStart(8, '0');
-                return paddedStored === studentNo;
+                return paddedStored === normalizedDetected;
             });
 
             if (student) {
                 handleTagStudent(student.id, student.fullName, score, rawAnswers);
                 return;
             } else {
-                toast.info(`Student No ${studentNo} (Score: ${score}) not found. Please tag manually.`, { duration: 4000 });
+                // If we detected a non-zero ID but couldn't find a match, show a helpful toast
+                const displayId = studentNo.includes('?') ? normalizedDetected : studentNo;
+                toast.info(`Student No ${displayId} (Score: ${score}) not found. Please tag manually.`, { duration: 4000 });
             }
         }
 
@@ -279,6 +300,7 @@ export default function SmartScannerPage() {
             <main className="flex-1 w-full max-w-5xl mx-auto px-4 md:px-8 py-4 flex flex-col gap-4 relative">
                 <div className={`relative w-full flex flex-col h-[75vh] min-h-[500px] max-h-[720px] bg-black rounded-[28px] sm:rounded-[32px] overflow-hidden shadow-2xl shadow-black/40 dark:shadow-violet-900/10 border-4 md:border-[6px] border-slate-200 dark:border-slate-900 transition-opacity duration-300 ${scanMode === 'tagging' ? 'opacity-40 blur-sm pointer-events-none' : 'opacity-100'}`}>
                     <OMRScanner
+                        ref={scannerRef}
                         correctAnswers={exam.answerKey.split('')}
                         onScanComplete={handleScanSuccess}
                         enabled={scanMode === 'scanning'}
