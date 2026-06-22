@@ -66,12 +66,12 @@ export default function AppLayout() {
 
     const mobileMainItems = [
         { path: '/', label: 'Home', icon: LayoutDashboard },
-        { path: '/manual', label: 'Manual', icon: FileText },
+        { path: '/templates', label: 'Sheets', icon: Printer },
         { path: '/scan', label: 'Scan', icon: Camera, isPrimary: true },
         { path: '/manage', label: 'Manage', icon: Settings2, isAction: true },
         { path: '/account', label: 'Account', icon: User },
     ].filter(item => {
-        if (item.path === '/' || item.path === '/manual') return true;
+        if (item.path === '/' || item.path === '/templates') return true;
         return currentUser;
     });
 
