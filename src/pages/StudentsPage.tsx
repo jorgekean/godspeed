@@ -15,12 +15,21 @@ export default function StudentsPage() {
     const userEmail = currentUser?.email!;
     const sections = useLiveQuery(() => db.sections.filter(s => !s.isDeleted && s.createdBy === userEmail).sortBy('gradeLevel'), [userEmail]);
 
-    const [selectedFilterSection, setSelectedFilterSection] = useState<string>('');
+    const [selectedFilterSection, setSelectedFilterSection] = useState<string>(() => localStorage.getItem('lastSelectedSection') || '');
     const [searchQuery, setSearchQuery] = useState(''); // NEW: Search state
 
     useEffect(() => {
-        if (sections && sections.length > 0 && !selectedFilterSection) {
-            setSelectedFilterSection(sections[0].id);
+        if (selectedFilterSection) {
+            localStorage.setItem('lastSelectedSection', selectedFilterSection);
+        }
+    }, [selectedFilterSection]);
+
+    useEffect(() => {
+        if (sections && sections.length > 0) {
+            // If there's no selected section, or if the stored section was deleted
+            if (!selectedFilterSection || !sections.some(s => s.id === selectedFilterSection)) {
+                setSelectedFilterSection(sections[0].id);
+            }
         }
     }, [sections]);
 
