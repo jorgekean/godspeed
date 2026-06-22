@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Plus, Trash2, Tag, ChevronDown, ChevronUp, X, CalendarDays, Check } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Tag, ChevronDown, ChevronUp, X, CalendarDays, Check, Info } from 'lucide-react';
 import { db } from '../services/db';
 import { AnswerKeyManager } from '../components/omr/AnswerKeyManager';
 import { useAuth } from '../contexts/AuthContext';
@@ -209,8 +209,17 @@ export default function CreateExam() {
                                 className="w-full bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all shadow-sm font-bold"
                             />
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Exam Code</label>
+                        <div className="space-y-2 relative group/tooltip">
+                            <div className="flex items-center gap-1.5 ml-1">
+                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Exam Code</label>
+                                <button type="button" className="focus:outline-none" aria-label="Exam Code Info">
+                                    <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-help" />
+                                </button>
+                            </div>
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tooltip:block group-focus-within/tooltip:block w-48 p-2 bg-slate-800 text-xs text-white rounded-lg shadow-lg text-center z-50 pointer-events-none">
+                                Students will shade this 4-digit code on their answer sheets.
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-800" />
+                            </div>
                             <input
                                 type="text"
                                 value={examCode}
