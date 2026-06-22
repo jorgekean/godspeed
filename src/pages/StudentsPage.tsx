@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../services/db';
-import { Plus, Users, Edit3, Trash2, X, ClipboardPaste, AlertTriangle, FolderKanban, Search, UserPlus } from 'lucide-react';
+import { Plus, Users, Edit3, Trash2, X, ClipboardPaste, AlertTriangle, FolderKanban, Search, UserPlus, TrendingUp } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function StudentsPage() {
     const { currentUser } = useAuth();
+    const navigate = useNavigate();
 
     // ==========================================
     // 1. DATA FETCHING & FILTERING
@@ -242,10 +244,13 @@ export default function StudentsPage() {
                                         <td className="p-4 text-sm font-bold text-slate-900 dark:text-white">{student.fullName}</td>
                                         <td className="p-4 text-right">
                                             <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                                                <button onClick={() => openSingleModal(student)} className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg">
+                                                <button onClick={() => navigate(`/students/${student.id}`)} className="p-1.5 text-slate-400 hover:text-violet-600 rounded-lg" title="View Performance">
+                                                    <TrendingUp className="w-4 h-4" />
+                                                </button>
+                                                <button onClick={() => openSingleModal(student)} className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg" title="Edit Student">
                                                     <Edit3 className="w-4 h-4" />
                                                 </button>
-                                                <button onClick={() => handleDelete(student.id, student.fullName)} className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg">
+                                                <button onClick={() => handleDelete(student.id, student.fullName)} className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg" title="Delete Student">
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
                                             </div>

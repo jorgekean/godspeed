@@ -28,6 +28,7 @@ import ExamResultsPage from './pages/ExamResultsPage'
 import SmartScannerPage from './pages/SmartScannerPage'
 import NoticesPage from './pages/NoticesPage'
 import UserManualPage from './pages/UserManualPage'
+import StudentProfilePage from './pages/StudentProfilePage'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { currentUser, isLoading } = useAuth();
@@ -87,6 +88,7 @@ function App() {
                 <Route path="/edit/:examId" element={<ProtectedRoute><EditExam /></ProtectedRoute>} />
 
                 <Route path="/exams/:examId/results" element={<ProtectedRoute><ExamResultsPage /></ProtectedRoute>} />
+                <Route path="/students/:studentId" element={<ProtectedRoute><StudentProfilePage /></ProtectedRoute>} />
 
                 {/* The scanner view, utilizing dynamic routing to fetch the correct exam key */}
                 <Route path="/scan/:examId" element={<ProtectedRoute><SmartScannerPage /></ProtectedRoute>} />
