@@ -228,7 +228,7 @@ export default function LandingPage() {
                                 <p className="text-slate-400 text-sm">Peace of mind & deep analytics.</p>
                                 <div className="mt-4 flex flex-col">
                                     <div className="flex items-center gap-3">
-                                        <span className="text-4xl font-black text-white line-through decoration-rose-500 opacity-50">₱499</span>
+                                        <span className="text-4xl font-black text-white line-through decoration-rose-500 opacity-50">₱399</span>
                                         <span className="text-2xl font-bold text-emerald-400 bg-emerald-400/10 px-3 py-1 rounded-full">FREE</span>
                                     </div>
                                     <div className="mt-1">
