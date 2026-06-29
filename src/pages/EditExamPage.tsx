@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Loader2, Plus, Trash2, Tag, ChevronDown, ChevronUp, CalendarDays, X, Check, Info } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Plus, Trash2, Tag, ChevronDown, ChevronUp, CalendarDays, X, Check, Info, Folder } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../services/db';
 import { AnswerKeyManager } from '../components/omr/AnswerKeyManager';
@@ -23,13 +23,14 @@ export default function EditExam() {
         return null;
     }, [examId, userEmail]);
 
-    const periods = useLiveQuery(() => db.periods.filter(p => !p.isDeleted && p.createdBy === userEmail).sortBy('startDate'), [userEmail]);
+    const periods = useLiveQuery(() => db.periods.filter(p => !p.isDeleted && p.createdBy === userEmail).sortBy('createdAt'), [userEmail]);
     const storedSubjects = useLiveQuery(() => db.subjects
         .filter(s => s.createdBy === userEmail && !s.isDeleted)
         .sortBy('title'), [userEmail]);
     const storedGradeLevels = useLiveQuery(() => db.gradeLevels
         .filter(g => g.createdBy === userEmail && !g.isDeleted)
         .sortBy('title'), [userEmail]);
+    const sortedPeriods = periods ? [...periods].reverse() : [];
 
     const activeSubjects = storedSubjects || [];
     const activeGradeLevels = storedGradeLevels || [];
@@ -49,8 +50,6 @@ export default function EditExam() {
     // Period Creation Modal State
     const [isPeriodModalOpen, setIsPeriodModalOpen] = useState(false);
     const [newPeriodName, setNewPeriodName] = useState('');
-    const [newPeriodStart, setNewPeriodStart] = useState('');
-    const [newPeriodEnd, setNewPeriodEnd] = useState('');
 
     // Competency States
     const [competencyList, setCompetencyList] = useState<string[]>([]);
@@ -109,17 +108,16 @@ export default function EditExam() {
     };
 
     const handleCreatePeriod = async () => {
-        if (!newPeriodName.trim() || !newPeriodStart || !newPeriodEnd) return;
+        if (!newPeriodName.trim()) return;
         const id = crypto.randomUUID();
         await db.periods.add({
             id, name: newPeriodName.trim(),
-            startDate: new Date(newPeriodStart).getTime(),
-            endDate: new Date(newPeriodEnd).getTime(),
             createdBy: userEmail, createdAt: Date.now(), updatedAt: Date.now(), isSynced: false, isDeleted: false
         });
         setPeriodId(id);
+        localStorage.setItem('last_used_period_id', id);
         setIsPeriodModalOpen(false);
-        setNewPeriodName(''); setNewPeriodStart(''); setNewPeriodEnd('');
+        setNewPeriodName('');
     };
 
     const handleDelete = async () => {
@@ -175,6 +173,7 @@ export default function EditExam() {
 
         const cleanAnswerKey = answerKey.replace(/ /g, '').toUpperCase();
 
+        localStorage.setItem('last_used_period_id', periodId);
         await db.exams.update(examId, {
             title: title.trim(),
             examCode: examCode,
@@ -268,7 +267,7 @@ export default function EditExam() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Grade Level</label>
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Grade/Year Level</label>
                             {gradeLevel === 'CUSTOM' ? (
                                 <div className="flex gap-2">
                                     <div className="relative flex-1">
@@ -292,9 +291,9 @@ export default function EditExam() {
                                         onChange={(e) => setGradeLevel(e.target.value)}
                                         className="w-full bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all shadow-sm appearance-none cursor-pointer font-bold"
                                     >
-                                        <option value="" disabled>Select Grade Level</option>
+                                        <option value="" disabled>Select Grade/Year Level</option>
                                         {activeGradeLevels.map(g => <option key={g.id} value={g.title}>{g.title}</option>)}
-                                        <option value="CUSTOM" className="text-violet-600 font-bold">+ Add New Grade Level...</option>
+                                        <option value="CUSTOM" className="text-violet-600 font-bold">+ Add New Grade/Year Level...</option>
                                     </select>
                                     <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none transition-transform group-focus-within:rotate-180" />
                                 </div>
@@ -337,7 +336,7 @@ export default function EditExam() {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Grading Period</label>
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Grading Folder</label>
                         <div className="relative group">
                             <select
                                 value={periodId}
@@ -346,13 +345,11 @@ export default function EditExam() {
                                 }}
                                 className="w-full bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all shadow-sm appearance-none cursor-pointer font-bold"
                             >
-                                <option value="" disabled>Select Period</option>
-                                {periods?.map(period => {
-                                    const now = Date.now();
-                                    const isCurrent = now >= period.startDate && now <= period.endDate;
-                                    return <option key={period.id} value={period.id}>{period.name} {isCurrent ? '(Ongoing)' : ''}</option>;
+                                <option value="" disabled>Select Folder</option>
+                                {sortedPeriods.map(period => {
+                                    return <option key={period.id} value={period.id}>📁 {period.name}</option>;
                                 })}
-                                <option value="CUSTOM" className="text-violet-600 font-bold">+ Add New Period...</option>
+                                <option value="CUSTOM" className="text-violet-600 font-bold">+ Add New Folder...</option>
                             </select>
                             <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none transition-transform group-focus-within:rotate-180" />
                         </div>
@@ -384,30 +381,20 @@ export default function EditExam() {
                     <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[32px] shadow-2xl border border-slate-200/50 dark:border-white/10 overflow-hidden animate-in zoom-in-95 duration-200">
                         <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-violet-100 dark:bg-violet-500/20 rounded-xl"><CalendarDays className="w-5 h-5 text-violet-600 dark:text-violet-400" /></div>
-                                <h2 className="text-xl font-bold text-slate-900 dark:text-white">New Academic Term</h2>
+                                <div className="p-2 bg-violet-100 dark:bg-violet-500/20 rounded-xl"><Folder className="w-5 h-5 text-violet-600 dark:text-violet-400" /></div>
+                                <h2 className="text-xl font-bold text-slate-900 dark:text-white">New Folder</h2>
                             </div>
                             <button onClick={() => { setIsPeriodModalOpen(false); setPeriodId(''); }} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 bg-slate-50 dark:bg-slate-800 rounded-full transition-colors"><X className="w-5 h-5" /></button>
                         </div>
                         <div className="p-6 space-y-5">
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Period Name</label>
-                                <input type="text" value={newPeriodName} onChange={(e) => setNewPeriodName(e.target.value)} placeholder="e.g. 1st Quarter" className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all" autoFocus />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Start Date</label>
-                                    <input type="date" value={newPeriodStart} onChange={(e) => setNewPeriodStart(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800 rounded-2xl px-4 py-3.5 text-slate-900 dark:text-white focus:outline-none" />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">End Date</label>
-                                    <input type="date" value={newPeriodEnd} onChange={(e) => setNewPeriodEnd(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800 rounded-2xl px-4 py-3.5 text-slate-900 dark:text-white focus:outline-none" />
-                                </div>
+                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Folder Name</label>
+                                <input type="text" value={newPeriodName} onChange={(e) => setNewPeriodName(e.target.value)} placeholder="e.g. 1st Quarter, 1st Period, 1st Sem" className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all" autoFocus />
                             </div>
                         </div>
                         <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex gap-3">
                             <button onClick={() => { setIsPeriodModalOpen(false); setPeriodId(''); }} className="flex-1 py-4 font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl transition-colors">Cancel</button>
-                            <button onClick={handleCreatePeriod} disabled={!newPeriodName.trim() || !newPeriodStart || !newPeriodEnd} className="flex-1 py-4 font-bold bg-violet-600 hover:bg-violet-500 text-white rounded-2xl shadow-lg shadow-violet-500/20 disabled:opacity-50 transition-all">Create Period</button>
+                            <button onClick={handleCreatePeriod} disabled={!newPeriodName.trim()} className="flex-1 py-4 font-bold bg-violet-600 hover:bg-violet-500 text-white rounded-2xl shadow-lg shadow-violet-500/20 disabled:opacity-50 transition-all">Create Folder</button>
                         </div>
                     </div>
                 </div>

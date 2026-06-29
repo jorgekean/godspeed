@@ -9,9 +9,10 @@ export default function Dashboard() {
     const navigate = useNavigate();
     const { currentUser } = useAuth();
 
-    // 1. Fetch Periods
+    // 1. Fetch Periods (Folders)
     const userEmail = currentUser?.email as string;
-    const periods = useLiveQuery(() => db.periods.filter(p => !p.isDeleted && p.createdBy === userEmail).sortBy('startDate'), [userEmail]);
+    const periods = useLiveQuery(() => db.periods.filter(p => !p.isDeleted && p.createdBy === userEmail).sortBy('createdAt'), [userEmail]);
+    const sortedPeriods = periods ? [...periods].reverse() : [];
     const sections = useLiveQuery(() => db.sections.filter(s => !s.isDeleted && s.createdBy === userEmail).toArray(), [userEmail]);
     const storedGradeLevels = useLiveQuery(() => db.gradeLevels.filter(g => !g.isDeleted && g.createdBy === userEmail).toArray(), [userEmail]);
     const storedSubjects = useLiveQuery(() => db.subjects.filter(s => !s.isDeleted && s.createdBy === userEmail).toArray(), [userEmail]);
@@ -112,7 +113,7 @@ export default function Dashboard() {
         [selectedPeriod, selectedGrade, selectedSubject, userEmail]
     );
 
-    const activePeriodName = selectedPeriod === 'all' ? 'All Periods' : periods?.find(p => p.id === selectedPeriod)?.name;
+    const activePeriodName = selectedPeriod === 'all' ? 'All Folders' : periods?.find(p => p.id === selectedPeriod)?.name;
 
     const getStatusConfig = (status: string) => {
         switch (status) {
@@ -166,13 +167,11 @@ export default function Dashboard() {
                                     onChange={(e) => setSelectedPeriod(e.target.value)}
                                     className="w-full bg-slate-200/50 dark:bg-slate-800/50 border-none rounded-xl px-4 py-2 text-[12px] font-bold text-slate-600 dark:text-slate-300 appearance-none focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all cursor-pointer pr-10"
                                 >
-                                    <option value="all">📁 All Periods</option>
-                                    {periods?.map(p => {
-                                        const now = Date.now();
-                                        const isCurrent = now >= p.startDate && now <= p.endDate;
+                                    <option value="all">📁 All Folders</option>
+                                    {sortedPeriods.map(p => {
                                         return (
                                             <option key={p.id} value={p.id}>
-                                                {isCurrent ? '⭐ ' : '📅 '} {p.name} {isCurrent ? '(Current)' : ''}
+                                                📁 {p.name}
                                             </option>
                                         );
                                     })}

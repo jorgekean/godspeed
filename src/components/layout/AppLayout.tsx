@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { Users, FolderKanban, LayoutDashboard, LogOut, UserCircle, Lock, User, RefreshCw, AlertCircle, Zap, CalendarDays, Settings2, ChevronUp, BookOpen, GraduationCap, MessageSquare, Mail, Printer, Camera, FileText } from 'lucide-react';
+import { Users, FolderKanban, LayoutDashboard, LogOut, UserCircle, Lock, User, RefreshCw, AlertCircle, Zap, CalendarDays, Settings2, ChevronUp, BookOpen, GraduationCap, MessageSquare, Mail, Printer, Camera, FileText, Folder } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSync } from '../../contexts/SyncContext';
 import { toast } from 'sonner';
@@ -20,9 +20,9 @@ export default function AppLayout() {
         if (path === '/') return 'Dashboard';
         if (path.startsWith('/sections')) return 'Sections';
         if (path.startsWith('/students')) return 'Students';
-        if (path.startsWith('/periods')) return 'Periods';
+        if (path.startsWith('/periods')) return 'Folders';
         if (path.startsWith('/subjects')) return 'Subjects';
-        if (path.startsWith('/grades')) return 'Grade Levels';
+        if (path.startsWith('/grades')) return 'Grade/Year Levels';
         if (path.startsWith('/templates')) return 'Answer Sheets';
         if (path === '/scan') return 'Instant Scan';
         if (path.startsWith('/account')) return 'Account';
@@ -36,9 +36,9 @@ export default function AppLayout() {
         if (path === '/') return currentUser ? `Welcome back, ${currentUser?.email}` : 'Grade exams in a flash.';
         if (path.startsWith('/sections')) return 'Manage your classes and advisory groups.';
         if (path.startsWith('/students')) return 'Manage your student rosters.';
-        if (path.startsWith('/periods')) return 'Manage your grading periods.';
+        if (path.startsWith('/periods')) return 'Manage your folders.';
         if (path.startsWith('/subjects')) return 'Manage your subjects.';
-        if (path.startsWith('/grades')) return 'Manage your grade levels.';
+        if (path.startsWith('/grades')) return 'Manage your grade/year levels.';
         if (path.startsWith('/templates')) return 'Download and print empty bubble sheet templates.';
         if (path.startsWith('/account')) return 'Manage your profile and settings.';
         if (path.startsWith('/help')) return 'Learn how to use Godspeed Grader.';
@@ -55,9 +55,9 @@ export default function AppLayout() {
         { path: '/templates', label: 'Answer Sheets', icon: Printer, protected: true },
         // { path: '/help', label: 'Help & Guide', icon: BookOpen },
         // { path: '/manual', label: 'User Manual', icon: FileText },
-        { path: '/periods', label: 'Periods', icon: CalendarDays, protected: true },
-        { path: '/grades', label: 'Grade Levels', icon: GraduationCap, protected: true },
-        { path: '/subjects', label: 'Subjects', icon: BookOpen, protected: true },
+        { path: '/periods', label: 'Folders', icon: Folder, protected: true },
+        { path: '/grades', label: 'Grade/Year Levels', icon: GraduationCap, protected: true },
+        { path: '/subjects', label: 'Subjects', icon: BookOpen, protected: true   },
         { path: '/sections', label: 'Sections', icon: FolderKanban, protected: true },
         { path: '/students', label: 'Students', icon: Users, protected: true },
     ];
@@ -76,10 +76,10 @@ export default function AppLayout() {
     });
 
     const manageSubItems = [
-        { path: '/grades', label: 'Grade Levels', icon: GraduationCap, protected: true },
+        { path: '/grades', label: 'Grade/Year Levels', icon: GraduationCap, protected: true },
         { path: '/sections', label: 'Sections', icon: FolderKanban, protected: true },
         { path: '/students', label: 'Students', icon: Users, protected: true },
-        { path: '/periods', label: 'Periods', icon: CalendarDays, protected: true },
+        { path: '/periods', label: 'Folders', icon: Folder, protected: true },
         { path: '/subjects', label: 'Subjects', icon: BookOpen, protected: true },
         { path: '/help', label: 'Help & Guide', icon: BookOpen },
     ].filter(item => !item.protected || currentUser);

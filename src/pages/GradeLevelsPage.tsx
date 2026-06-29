@@ -65,7 +65,7 @@ export default function GradeLevelsPage() {
     };
 
     const handleSeedDefaults = async () => {
-        if (window.confirm("Seed default grade levels (Grade 4-12, College 1)?")) {
+        if (window.confirm("Seed default grade/year levels (Grade 4-12, College 1)?")) {
             const newGrades = DEFAULT_GRADE_LEVELS.map((g, i) => ({
                 id: crypto.randomUUID(),
                 title: g,
@@ -84,8 +84,8 @@ export default function GradeLevelsPage() {
             
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Grade Level Registry</h2>
-                    <p className="text-sm text-slate-500">Manage grade levels available for your exams and sections.</p>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Grade/Year Level Registry</h2>
+                    <p className="text-sm text-slate-500">Manage grade and year levels available for your exams and sections.</p>
                 </div>
                 <div className="flex gap-2">
                     {gradeLevels?.length === 0 && (
@@ -101,7 +101,7 @@ export default function GradeLevelsPage() {
                         className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-xl font-medium shadow-lg shadow-violet-500/20 active:scale-95 transition-all"
                     >
                         <Plus className="w-5 h-5" />
-                        <span>Add Grade Level</span>
+                        <span>Add Grade/Year Level</span>
                     </button>
                 </div>
             </div>
@@ -112,8 +112,8 @@ export default function GradeLevelsPage() {
                     <div className="w-16 h-16 bg-blue-50 dark:bg-blue-500/10 rounded-full flex items-center justify-center mb-4">
                         <GraduationCap className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                     </div>
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">No grade levels yet</h3>
-                    <p className="text-sm text-slate-500 max-w-sm">Create grade levels or seed defaults to start organizing your sections.</p>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">No grade/year levels yet</h3>
+                    <p className="text-sm text-slate-500 max-w-sm">Create grade/year levels or seed defaults to start organizing your sections.</p>
                 </div>
             )}
 
@@ -156,7 +156,7 @@ export default function GradeLevelsPage() {
                     <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[24px] shadow-2xl border border-slate-200/50 dark:border-white/10 overflow-hidden animate-in zoom-in-95 duration-200">
                         <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800">
                             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                                {editingId ? 'Edit Grade Level' : 'Add New Grade Level'}
+                                {editingId ? 'Edit Grade/Year Level' : 'Add New Grade/Year Level'}
                             </h2>
                             <button onClick={handleCloseModal} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 bg-slate-50 dark:bg-slate-800 rounded-full transition-colors">
                                 <X className="w-4 h-4" />
@@ -165,13 +165,13 @@ export default function GradeLevelsPage() {
 
                         <div className="p-5 space-y-4">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Grade Level Title</label>
+                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Grade/Year Level Title</label>
                                 <input
                                     type="text"
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && title.trim() && handleSave()}
-                                    placeholder="e.g. Grade 10, Senior High"
+                                    placeholder="e.g. Grade 10, 1st Year College"
                                     className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
                                     autoFocus
                                 />
@@ -180,7 +180,7 @@ export default function GradeLevelsPage() {
 
                         <div className="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex gap-3">
                             <button onClick={handleCloseModal} className="flex-1 py-3 font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors">Cancel</button>
-                            <button onClick={handleSave} disabled={!title.trim()} className={`flex-1 py-3 font-bold rounded-xl transition-all ${title.trim() ? 'bg-violet-600 hover:bg-violet-500 text-white shadow-md shadow-violet-500/20' : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'}`}>Save Grade Level</button>
+                            <button onClick={handleSave} disabled={!title.trim()} className={`flex-1 py-3 font-bold rounded-xl transition-all ${title.trim() ? 'bg-violet-600 hover:bg-violet-500 text-white shadow-md shadow-violet-500/20' : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'}`}>Save Grade/Year Level</button>
                         </div>
                     </div>
                 </div>

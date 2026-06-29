@@ -312,13 +312,13 @@ export default function SectionsPage() {
 
                         <div className="p-5 space-y-4">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Grade Level</label>
+                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Grade/Year Level</label>
                                 <select
                                     value={gradeLevel}
                                     onChange={(e) => setGradeLevel(e.target.value)}
                                     className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all appearance-none"
                                 >
-                                    <option value="" disabled>Select Grade Level</option>
+                                    <option value="" disabled>Select Grade/Year Level</option>
                                     {activeGradeLevels.map(grade => (
                                         <option key={grade} value={grade}>{grade}</option>
                                     ))}

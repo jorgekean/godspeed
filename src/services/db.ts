@@ -16,8 +16,6 @@ export interface Section {
 export interface Period {
     id: string;
     name: string;      // e.g., "1st Quarter", "2nd Quarter"
-    startDate: number; // NEW
-    endDate: number;   // NEW
     createdAt: number;
     createdBy: string;
     updatedAt: number;
@@ -127,6 +125,10 @@ export class GodspeedDatabase extends Dexie {
             scanResults: 'id, examId, studentId, sectionId, periodId, [examId+studentId], scannedAt, createdBy, isSynced, updatedAt',
             subjects: 'id, title, sortOrder, createdBy, isSynced, updatedAt',
             gradeLevels: 'id, title, sortOrder, createdBy, isSynced, updatedAt'
+        });
+
+        this.version(13).stores({
+            periods: 'id, name, createdBy, isSynced, updatedAt, createdAt'
         });
 
         // Add hooks for sync fields

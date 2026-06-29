@@ -23,7 +23,7 @@ export default function UserManualPage() {
                                 The Registries
                             </h4>
                             <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-2 ml-6 list-disc">
-                                <li><strong>Grade Levels:</strong> Navigate to <code className="bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded text-xs">Grade Levels</code> to define your levels (e.g., Grade 7, Grade 10).</li>
+                                <li><strong>Grade/Year Levels:</strong> Navigate to <code className="bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded text-xs">Grade/Year Levels</code> to define your levels (e.g., Grade 7, Grade 10, 1st Year College).</li>
                                 <li><strong>Subjects:</strong> List the classes you teach. You can define "WW-PT-QA" weights (e.g., 30-50-20) for automatic grade calculation.</li>
                             </ul>
                         </div>
@@ -31,11 +31,11 @@ export default function UserManualPage() {
                         <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                             <h4 className="font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
                                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                                Periods & Sections
+                                Folders & Sections
                             </h4>
                             <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-2 ml-6 list-disc">
-                                <li><strong>Periods:</strong> Define quarters or semesters. Set accurate dates so Godspeed can auto-select the "Ongoing" period.</li>
-                                <li><strong>Sections:</strong> Create sections (e.g., "Newton") and link them to Grade Levels.</li>
+                                <li><strong>Folders:</strong> Create folders (e.g., 1st Quarter, Midterms) to organize your exams and grades.</li>
+                                <li><strong>Sections:</strong> Create sections (e.g., "Newton") and link them to Grade/Year Levels.</li>
                                 <li><strong>Students:</strong> Add manually or use <strong className="text-violet-600">Import Paste</strong> to copy rosters directly from Excel.</li>
                             </ul>
                         </div>
