@@ -217,6 +217,94 @@ export const Page50Item = ({ studentNo, studentName }: { studentNo?: string, stu
     );
 };
 
+export const Page100Item = ({ studentNo, studentName }: { studentNo?: string, studentName?: string }) => {
+    const choicesMap = ['A', 'B', 'C', 'D'];
+    const colStarts = [280, 410, 540, 670]; // 4 columns
+    const startY = 180;
+    const rowHeight = 28; const bubbleSpacing = 24; const bubbleSize = 18;
+
+    // Grid config for Student Info (Shrunk to fit left edge)
+    const gridStartX = 70;
+    const examCodeY = 180;
+    const studentNoY = 460;
+    const gridBubbleSize = 14;
+    const gridSpacingX = 18;
+    const gridSpacingY = 16;
+
+    const paddedStudentNo = studentNo ? studentNo.padStart(8, '0') : '';
+
+    return (
+        <SheetPage title="100-Item Answer Sheet" studentName={studentName}>
+            {/* Exam Code Grid (4 digits) */}
+            <Text style={[styles.questionNumber, { top: examCodeY - 15, left: gridStartX, fontSize: 10 }]}>EXAM CODE</Text>
+            {Array.from({ length: 10 }).map((_, row) => (
+                <Text key={`ec-row-label-${row}`} style={[styles.questionNumber, { top: examCodeY + gridBubbleSize + 6 + (row * gridSpacingY), left: gridStartX - 12, fontSize: 8 }]}>{row}</Text>
+            ))}
+            {Array.from({ length: 4 }).map((_, col) => (
+                <React.Fragment key={`ec-col-${col}`}>
+                    <View style={{ position: 'absolute', top: examCodeY, left: gridStartX + (col * gridSpacingX), width: gridBubbleSize, height: gridBubbleSize, borderWidth: 1, borderColor: '#000' }} />
+                    {Array.from({ length: 10 }).map((_, row) => (
+                        <View key={`ec-q${col}-${row}`} style={[styles.bubble, { top: examCodeY + gridBubbleSize + 4 + (row * gridSpacingY), left: gridStartX + (col * gridSpacingX), width: gridBubbleSize, height: gridBubbleSize, borderRadius: 7 }]} />
+                    ))}
+                </React.Fragment>
+            ))}
+
+            {/* Student Number Grid (8 digits) */}
+            <Text style={[styles.questionNumber, { top: studentNoY - 15, left: gridStartX, fontSize: 10 }]}>STUDENT NO.</Text>
+            {Array.from({ length: 10 }).map((_, row) => (
+                <Text key={`sn-row-label-${row}`} style={[styles.questionNumber, { top: studentNoY + gridBubbleSize + 6 + (row * gridSpacingY), left: gridStartX - 12, fontSize: 8 }]}>{row}</Text>
+            ))}
+            {Array.from({ length: 8 }).map((_, col) => (
+                <React.Fragment key={`sn-col-${col}`}>
+                    <View style={{ position: 'absolute', top: studentNoY, left: gridStartX + (col * gridSpacingX), width: gridBubbleSize, height: gridBubbleSize, borderWidth: 1, borderColor: '#000' }}>
+                        {paddedStudentNo && <Text style={{ fontSize: 8, textAlign: 'center', marginTop: 2 }}>{paddedStudentNo[col]}</Text>}
+                    </View>
+                    {Array.from({ length: 10 }).map((_, row) => {
+                        const isFilled = paddedStudentNo && paddedStudentNo[col] === row.toString();
+                        return (
+                            <View key={`sn-q${col}-${row}`} style={[styles.bubble, {
+                                top: studentNoY + gridBubbleSize + 4 + (row * gridSpacingY),
+                                left: gridStartX + (col * gridSpacingX),
+                                width: gridBubbleSize,
+                                height: gridBubbleSize,
+                                borderRadius: 7,
+                                backgroundColor: isFilled ? '#000000' : 'transparent',
+                                borderColor: isFilled ? '#000000' : '#B4B4B4'
+                            }]} />
+                        )
+                    })}
+                </React.Fragment>
+            ))}
+
+            {/* Column Headers */}
+            {colStarts.map((colX, colIdx) => (
+                <React.Fragment key={`col-header-${colIdx}`}>
+                    {choicesMap.map((letter, cIndex) => (
+                        <Text key={`col${colIdx}-header-${letter}`} style={[styles.questionNumber, { top: startY - 15, left: colX + (cIndex * bubbleSpacing) + 5, fontSize: 10 }]}>{letter}</Text>
+                    ))}
+                </React.Fragment>
+            ))}
+
+            {Array.from({ length: 100 }).map((_, qIndex) => {
+                const colIdx = Math.floor(qIndex / 25);
+                const colX = colStarts[colIdx];
+                const rowY = startY + ((qIndex % 25) * rowHeight);
+
+                return (
+                    <React.Fragment key={`q-${qIndex}`}>
+                        <Text style={[styles.questionNumber, { top: rowY + 4, left: colX - 25, fontSize: 10 }]}>
+                            {qIndex + 1}.
+                        </Text>
+                        {choicesMap.map((letter, cIndex) => (
+                            <View key={`q${qIndex}-${letter}`} style={[styles.bubble, { top: rowY, left: colX + (cIndex * bubbleSpacing), width: bubbleSize, height: bubbleSize }]} />
+                        ))}
+                    </React.Fragment>
+                );
+            })}
+        </SheetPage>
+    );
+};
+
 export const Document20Item = (props: { studentNo?: string, studentName?: string }) => (
     <Document><Page20Item {...props} /></Document>
 );
@@ -225,16 +313,20 @@ export const Document50Item = (props: { studentNo?: string, studentName?: string
     <Document><Page50Item {...props} /></Document>
 );
 
+export const Document100Item = (props: { studentNo?: string, studentName?: string }) => (
+    <Document><Page100Item {...props} /></Document>
+);
+
 import { Printer, Loader2 } from 'lucide-react';
 
 export function OMRTemplateGenerator() {
-    const [isGenerating, setIsGenerating] = React.useState<'20' | '50' | null>(null);
+    const [isGenerating, setIsGenerating] = React.useState<'20' | '50' | '100' | null>(null);
 
-    const handleDownload = async (type: '20' | '50') => {
+    const handleDownload = async (type: '20' | '50' | '100') => {
         setIsGenerating(type);
         try {
             const fileName = `${type}_Item_Sheet_Blank.pdf`;
-            const doc = type === '20' ? <Document20Item /> : <Document50Item />;
+            const doc = type === '20' ? <Document20Item /> : type === '50' ? <Document50Item /> : <Document100Item />;
             const blob = await pdf(doc).toBlob();
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
@@ -260,7 +352,7 @@ export function OMRTemplateGenerator() {
                     onClick={() => handleDownload('20')}
                     className={`flex-1 py-3 px-4 font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${isGenerating === '20'
                             ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-wait'
-                            : isGenerating === '50'
+                            : isGenerating !== null
                                 ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed'
                                 : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md'
                         }`}
@@ -283,7 +375,7 @@ export function OMRTemplateGenerator() {
                     onClick={() => handleDownload('50')}
                     className={`flex-1 py-3 px-4 font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${isGenerating === '50'
                             ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-wait'
-                            : isGenerating === '20'
+                            : isGenerating !== null
                                 ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed'
                                 : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md'
                         }`}
@@ -297,6 +389,29 @@ export function OMRTemplateGenerator() {
                         <>
                             <Printer className="w-5 h-5" />
                             Generate 50-Item Sheet
+                        </>
+                    )}
+                </button>
+
+                <button
+                    disabled={isGenerating !== null}
+                    onClick={() => handleDownload('100')}
+                    className={`flex-1 py-3 px-4 font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${isGenerating === '100'
+                            ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-wait'
+                            : isGenerating !== null
+                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed'
+                                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md'
+                        }`}
+                >
+                    {isGenerating === '100' ? (
+                        <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            Generating...
+                        </>
+                    ) : (
+                        <>
+                            <Printer className="w-5 h-5" />
+                            Generate 100-Item Sheet
                         </>
                     )}
                 </button>

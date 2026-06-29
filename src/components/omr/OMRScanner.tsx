@@ -119,8 +119,8 @@ export const OMRScanner = forwardRef<OMRScannerRef, OMRScannerProps>(
                 const answerKeys = Object.keys(finalAnswers).map(k => parseInt(k, 10));
                 if (answerKeys.length > 0) {
                     const maxDetected = Math.max(...answerKeys);
-                    // Standardize to 20 or 50 based on max detected
-                    totalItems = maxDetected > 20 ? 50 : 20;
+                    // Standardize to 20, 50, or 100 based on max detected
+                    totalItems = maxDetected > 50 ? 100 : maxDetected > 20 ? 50 : 20;
                 }
             }
 
@@ -305,7 +305,7 @@ export const OMRScanner = forwardRef<OMRScannerRef, OMRScannerProps>(
                 // - If we have specific correct answers, use that count.
                 // - If not (Global mode), use 'auto' to let the worker detect.
                 const physicalSheetType = (correctAnswers && correctAnswers.length > 0)
-                    ? (correctAnswers.length > 20 ? '50' : '20')
+                    ? (correctAnswers.length > 50 ? '100' : correctAnswers.length > 20 ? '50' : '20')
                     : 'auto';
 
                 workerRef.current?.postMessage({

@@ -136,6 +136,17 @@ self.onmessage = function (e) {
                 ],
                 blankThreshold: 50,
                 confidenceMargin: 25
+            },
+            '100': {
+                numQuestions: 100,
+                colStarts: [280, 410, 540, 670],
+                startY: 180, rowHeight: 28, bubbleSpacing: 24, bubbleSize: 18,
+                idGrids: [
+                    { name: 'examCode', digits: 4, startX: 70, startY: 198, spacingX: 18, spacingY: 16, bubbleSize: 14 },
+                    { name: 'studentNo', digits: 8, startX: 70, startY: 478, spacingX: 18, spacingY: 16, bubbleSize: 14 }
+                ],
+                blankThreshold: 25,
+                confidenceMargin: 15
             }
         };
 
@@ -145,13 +156,15 @@ self.onmessage = function (e) {
         function evaluateIdGrids(thresh, idGrids) {
             let detected = { examCode: "", studentNo: "" };
             for (const grid of idGrids) {
+                // Adjust ID_BLANK_THRESHOLD based on grid size
+                const currentBlankThreshold = grid.bubbleSize < 18 ? 15 : ID_BLANK_THRESHOLD;
                 let resultString = "";
                 for (let d = 0; d < grid.digits; d++) {
                     let digitStats = [];
                     for (let v = 0; v < 10; v++) {
                         let x = grid.startX + (d * grid.spacingX);
                         let y = grid.startY + (v * grid.spacingY);
-                        let roiMargin = 2;
+                        let roiMargin = grid.bubbleSize < 18 ? 1 : 2;
                         let rect = new cv.Rect(x + roiMargin, y + roiMargin, grid.bubbleSize - (roiMargin * 2), grid.bubbleSize - (roiMargin * 2));
                         let bubbleROI = thresh.roi(rect);
                         let filledPixels = cv.countNonZero(bubbleROI);
@@ -159,7 +172,7 @@ self.onmessage = function (e) {
                         bubbleROI.delete();
                     }
                     digitStats.sort((a, b) => b.pixels - a.pixels);
-                    if (digitStats[0].pixels < ID_BLANK_THRESHOLD) {
+                    if (digitStats[0].pixels < currentBlankThreshold) {
                         resultString += "?";
                     } else {
                         resultString += digitStats[0].val.toString();
@@ -174,27 +187,33 @@ self.onmessage = function (e) {
         let detectedIds = { examCode: "", studentNo: "" };
 
         if (examType === 'auto') {
-            // Check for Exam Code. Since we standardized positions, we can just use any config's idGrids.
-            detectedIds = evaluateIdGrids(warpedThresh, CONFIGS['20'].idGrids);
-            
-            // Heuristic to decide if it's 20 or 50 items if examType is 'auto'
-            // We look at the 1st column position of the 50-item layout (x=340).
-            // In a 20-item layout, this area is blank.
-            let testX = CONFIGS['50'].colStarts[0];
-            let testY = CONFIGS['50'].startY;
-            let activity = 0;
+            // Check for 100-item layout by measuring activity at its unique 1st column (x=280)
+            let activity100 = 0;
             for (let i = 0; i < 5; i++) {
-                let rect = new cv.Rect(testX + 5, testY + (i * CONFIGS['50'].rowHeight) + 5, 15, 15);
+                let rect = new cv.Rect(280 + 5, 180 + (i * 28) + 5, 10, 10);
                 let roi = warpedThresh.roi(rect);
-                activity += cv.countNonZero(roi);
+                activity100 += cv.countNonZero(roi);
+                roi.delete();
+            }
+
+            // Check for 50-item layout by measuring activity at its unique 1st column (x=340)
+            let activity50 = 0;
+            for (let i = 0; i < 5; i++) {
+                let rect = new cv.Rect(340 + 5, 180 + (i * 28) + 5, 15, 15);
+                let roi = warpedThresh.roi(rect);
+                activity50 += cv.countNonZero(roi);
                 roi.delete();
             }
             
-            if (activity > 50) {
+            if (activity100 > 30) {
+                selectedConfig = CONFIGS['100'];
+            } else if (activity50 > 50) {
                 selectedConfig = CONFIGS['50'];
             } else {
                 selectedConfig = CONFIGS['20'];
             }
+            
+            detectedIds = evaluateIdGrids(warpedThresh, selectedConfig.idGrids);
         } else {
             detectedIds = evaluateIdGrids(warpedThresh, selectedConfig.idGrids);
         }
@@ -205,8 +224,8 @@ self.onmessage = function (e) {
         for (let q = 0; q < selectedConfig.numQuestions; q++) {
             let bubbleStats = [];
             let itemsPerCol = selectedConfig.numQuestions === 20 ? 20 : 25;
-            let isCol2 = q >= itemsPerCol;
-            let colX = isCol2 ? selectedConfig.colStarts[1] : selectedConfig.colStarts[0];
+            let colIdx = Math.floor(q / itemsPerCol);
+            let colX = selectedConfig.colStarts[colIdx];
             let rowY = selectedConfig.startY + ((q % itemsPerCol) * selectedConfig.rowHeight);
 
             for (let c = 0; c < 4; c++) {
