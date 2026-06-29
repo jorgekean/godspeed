@@ -345,7 +345,7 @@ export default function EditExam() {
                                 }}
                                 className="w-full bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all shadow-sm appearance-none cursor-pointer font-bold"
                             >
-                                <option value="" disabled>Select Folder</option>
+                                <option value="">Select Folder</option>
                                 {sortedPeriods.map(period => {
                                     return <option key={period.id} value={period.id}>📁 {period.name}</option>;
                                 })}
