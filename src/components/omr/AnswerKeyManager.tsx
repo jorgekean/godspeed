@@ -21,6 +21,14 @@ export const AnswerKeyManager: React.FC<AnswerKeyManagerProps> = ({
     const [newCompName, setNewCompName] = useState('');
     const [addingCompForItem, setAddingCompForItem] = useState<number | null>(null);
 
+    // Local state to allow clearing and free-typing
+    const [itemCountInput, setItemCountInput] = useState(answerKey.length.toString());
+
+    // Sync input value if answerKey length changes externally
+    React.useEffect(() => {
+        setItemCountInput(answerKey.length.toString());
+    }, [answerKey.length]);
+
     // Derived from props
     const itemCount = answerKey.length;
 
@@ -33,6 +41,37 @@ export const AnswerKeyManager: React.FC<AnswerKeyManagerProps> = ({
             newKey = answerKey.substring(0, val);
         }
         setAnswerKey(newKey);
+    };
+
+    const handleInputChange = (val: string) => {
+        setItemCountInput(val);
+        const parsed = parseInt(val);
+        if (!isNaN(parsed)) {
+            const cleanVal = Math.min(100, Math.max(0, parsed));
+            let newKey = answerKey;
+            if (answerKey.length < cleanVal) {
+                newKey = answerKey.padEnd(cleanVal, ' ');
+            } else if (answerKey.length > cleanVal) {
+                newKey = answerKey.substring(0, cleanVal);
+            }
+            setAnswerKey(newKey);
+        } else {
+            setAnswerKey('');
+        }
+    };
+
+    const handleInputBlur = () => {
+        const parsed = parseInt(itemCountInput);
+        if (isNaN(parsed) || parsed < 1) {
+            setItemCountInput('1');
+            handleItemCountChange(1);
+        } else if (parsed > 100) {
+            setItemCountInput('100');
+            handleItemCountChange(100);
+        } else {
+            setItemCountInput(parsed.toString());
+            handleItemCountChange(parsed);
+        }
     };
 
     const handleAnswerSelect = (index: number, letter: string) => {
@@ -83,11 +122,12 @@ export const AnswerKeyManager: React.FC<AnswerKeyManagerProps> = ({
                     <div className="flex-1">
                         <label className="block text-sm font-bold text-slate-900 dark:text-white mb-1 uppercase tracking-wider">Number of Items</label>
                         <input
-                            type="number"
-                            min="1"
-                            max="100"
-                            value={itemCount || ''}
-                            onChange={(e) => handleItemCountChange(parseInt(e.target.value) || 0)}
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={itemCountInput}
+                            onChange={(e) => handleInputChange(e.target.value.replace(/[^0-9]/g, ''))}
+                            onBlur={handleInputBlur}
                             placeholder="e.g. 20"
                             className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-lg font-bold focus:ring-2 focus:ring-violet-500/50 outline-none transition-all text-violet-600 dark:text-violet-400"
                         />
