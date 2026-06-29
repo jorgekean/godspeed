@@ -76,10 +76,10 @@ export default function AppLayout() {
     });
 
     const manageSubItems = [
+        { path: '/grades', label: 'Grade Levels', icon: GraduationCap, protected: true },
         { path: '/sections', label: 'Sections', icon: FolderKanban, protected: true },
         { path: '/students', label: 'Students', icon: Users, protected: true },
         { path: '/periods', label: 'Periods', icon: CalendarDays, protected: true },
-        { path: '/grades', label: 'Grade Levels', icon: GraduationCap, protected: true },
         { path: '/subjects', label: 'Subjects', icon: BookOpen, protected: true },
         { path: '/help', label: 'Help & Guide', icon: BookOpen },
     ].filter(item => !item.protected || currentUser);
