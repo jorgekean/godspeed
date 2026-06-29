@@ -9,15 +9,19 @@ import { pdf, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer
 // Because we modified OMRTemplate.tsx to export Document20Item and Document50Item, we'll redefine a wrapper here for multi-page export
 // For simplicity and avoiding massive PDF rendering freezes, we'll generate one multi-page PDF document.
 
-import { Page20Item, Page50Item } from '../components/omr/OMRTemplate';
+import { Page20Item, Page50Item, Page100Item } from '../components/omr/OMRTemplate';
 
-const MultiStudentDocument = ({ students, examType }: { students: any[], examType: '20' | '50' }) => (
+const MultiStudentDocument = ({ students, examType }: { students: any[], examType: '20' | '50' | '100' }) => (
     <Document>
-        {students.map(s => (
-            examType === '20' 
-                ? <Page20Item key={s.id} studentNo={s.studentNo || '00000000'} />
-                : <Page50Item key={s.id} studentNo={s.studentNo || '00000000'} />
-        ))}
+        {students.map(s => {
+            if (examType === '20') {
+                return <Page20Item key={s.id} studentNo={s.studentNo || '00000000'} studentName={s.fullName} />;
+            } else if (examType === '50') {
+                return <Page50Item key={s.id} studentNo={s.studentNo || '00000000'} studentName={s.fullName} />;
+            } else {
+                return <Page100Item key={s.id} studentNo={s.studentNo || '00000000'} studentName={s.fullName} />;
+            }
+        })}
     </Document>
 );
 
@@ -43,7 +47,7 @@ export default function SectionsPage() {
 
     // --- NEW: Print Modal State ---
     const [printSectionId, setPrintSectionId] = useState<string | null>(null);
-    const [isGenerating, setIsGenerating] = useState<'20' | '50' | null>(null);
+    const [isGenerating, setIsGenerating] = useState<'20' | '50' | '100' | null>(null);
 
     // Fetch students only for the selected print section
     const printStudents = useLiveQuery(
@@ -77,7 +81,7 @@ export default function SectionsPage() {
         setIsGenerating(null);
     };
 
-    const handleDownload = async (type: '20' | '50') => {
+    const handleDownload = async (type: '20' | '50' | '100') => {
         if (!printStudents || printStudents.length === 0) return;
 
         setIsGenerating(type);
@@ -263,7 +267,7 @@ export default function SectionsPage() {
                                             onClick={() => handleDownload('50')}
                                             className={`w-full flex items-center justify-center gap-2 py-3 font-bold rounded-xl transition-all shadow-md ${isGenerating === '50'
                                                     ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-wait shadow-none'
-                                                    : isGenerating === '20'
+                                                    : isGenerating !== null
                                                         ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed'
                                                         : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20'
                                                 }`}
@@ -277,6 +281,29 @@ export default function SectionsPage() {
                                                 <>
                                                     <Printer className="w-5 h-5" />
                                                     Generate 50-Item Sheets
+                                                </>
+                                            )}
+                                        </button>
+
+                                        <button
+                                            disabled={isGenerating !== null}
+                                            onClick={() => handleDownload('100')}
+                                            className={`w-full flex items-center justify-center gap-2 py-3 font-bold rounded-xl transition-all shadow-md ${isGenerating === '100'
+                                                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-wait shadow-none'
+                                                    : isGenerating !== null
+                                                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed'
+                                                        : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20'
+                                                }`}
+                                        >
+                                            {isGenerating === '100' ? (
+                                                <>
+                                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                                    Generating 100-Item...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Printer className="w-5 h-5" />
+                                                    Generate 100-Item Sheets
                                                 </>
                                             )}
                                         </button>

@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../services/db';
-import { Camera, X, CheckCircle2, Search, UserCheck, Zap, ArrowLeft, Loader2, Users, RefreshCcw, ListChecks } from 'lucide-react';
+import { Camera, X, CheckCircle2, Search, UserCheck, Zap, ArrowLeft, Loader2, Users, RefreshCcw, ListChecks, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
 import { OMRScanner } from '../components/omr/OMRScanner';
 import { useAuth } from '../contexts/AuthContext';
@@ -38,19 +38,30 @@ export default function SmartScannerPage() {
     // NEW: Toggle to show the item analysis grid
     const [showDetails, setShowDetails] = useState(false);
 
+    const userEmail = currentUser?.email!;
+
     const exam = useLiveQuery(async () => {
-        const userEmail = currentUser?.email;
         if (!userEmail) return null;
         const e = await db.exams.get(examId as string);
         if (e && e.createdBy === userEmail) return e;
         return null;
-    }, [examId, currentUser]);
+    }, [examId, userEmail]);
 
     const sections = useLiveQuery(() => {
-        const userEmail = currentUser?.email;
         if (!userEmail) return [];
         return db.sections.filter(s => s.createdBy === userEmail && !s.isDeleted).toArray();
-    }, [currentUser]);
+    }, [userEmail]);
+
+    const allStudents = useLiveQuery(() => {
+        if (!userEmail) return [];
+        return db.students.filter(s => s.createdBy === userEmail && !s.isDeleted).toArray();
+    }, [userEmail]);
+
+    const scanResults = useLiveQuery(() => {
+        if (!examId) return [];
+        return db.scanResults.where('examId').equals(examId).filter(r => !r.isDeleted).toArray();
+    }, [examId]);
+
     const students = useLiveQuery(
         () => selectedSectionId ? db.students.where('sectionId').equals(selectedSectionId).toArray() : [],
         [selectedSectionId]
@@ -250,19 +261,58 @@ export default function SmartScannerPage() {
                         <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-800">
                             <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider ml-1">Select Section ({exam.gradeLevel})</h3>
                             {sections.filter(s => s.gradeLevel === exam.gradeLevel).length > 0 ? (
-                                sections.filter(s => s.gradeLevel === exam.gradeLevel).map(section => (
-                                    <button
-                                        key={section.id}
-                                        onClick={() => { setSelectedSectionId(section.id); setScanMode('scanning'); }}
-                                        className="w-full flex items-center p-5 rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-violet-400 transition-all active:scale-[0.98]"
-                                    >
-                                        <Users className="w-6 h-6 text-slate-400 mr-4" />
-                                        <div className="text-left">
-                                            <h4 className="font-bold text-slate-900 dark:text-white">{section.sectionName}</h4>
-                                            <p className="text-xs text-slate-500">{section.gradeLevel}</p>
+                                sections.filter(s => s.gradeLevel === exam.gradeLevel).map(section => {
+                                    const sectionStudents = allStudents ? allStudents.filter(s => s.sectionId === section.id) : [];
+                                    const totalStudents = sectionStudents.length;
+                                    const gradedCount = scanResults ? scanResults.filter(r => r.sectionId === section.id).length : 0;
+                                    const isCompleted = totalStudents > 0 && gradedCount >= totalStudents;
+
+                                    return (
+                                        <div
+                                            key={section.id}
+                                            className="w-full flex items-center justify-between p-5 bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-200 dark:border-slate-800 hover:border-violet-400 transition-all shadow-sm"
+                                        >
+                                            <button
+                                                onClick={() => { setSelectedSectionId(section.id); setScanMode('scanning'); }}
+                                                className="flex-1 flex items-center text-left focus:outline-none animate-in fade-in duration-300"
+                                            >
+                                                <div className={`p-2.5 rounded-xl mr-4 ${isCompleted ? 'bg-emerald-50 dark:bg-emerald-500/10' : 'bg-slate-50 dark:bg-slate-800'}`}>
+                                                    <Users className={`w-5 h-5 ${isCompleted ? 'text-emerald-500' : 'text-slate-550 dark:text-slate-400'}`} />
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                                        {section.sectionName}
+                                                        {isCompleted && (
+                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-md text-[9px] font-black uppercase tracking-widest">
+                                                                100% Graded
+                                                            </span>
+                                                        )}
+                                                    </h4>
+                                                    <p className="text-xs text-slate-500 font-medium">
+                                                        {isCompleted ? 'Completed' : `${gradedCount} / ${totalStudents} Graded`}
+                                                    </p>
+                                                </div>
+                                            </button>
+
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => { setSelectedSectionId(section.id); setScanMode('scanning'); }}
+                                                    className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-xs font-bold transition-all active:scale-95 shadow-sm"
+                                                >
+                                                    {gradedCount > 0 ? 'Resume' : 'Grade'}
+                                                </button>
+                                                {gradedCount > 0 && (
+                                                    <button
+                                                        onClick={() => navigate(`/exams/${exam.id}/results`)}
+                                                        className="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all active:scale-95 border border-slate-200/50 dark:border-slate-700"
+                                                    >
+                                                        Results
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
-                                    </button>
-                                ))
+                                    );
+                                })
                             ) : (
                                 <div className="p-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-center">
                                     <p className="text-sm text-slate-500 dark:text-slate-400">No sections found for {exam.gradeLevel}.</p>
@@ -293,7 +343,13 @@ export default function SmartScannerPage() {
                             {sections?.find(s => s.id === selectedSectionId)?.sectionName}
                         </span>
                     </div>
-                    <div className="w-10" />
+                    <button
+                        onClick={() => navigate(`/exams/${exam.id}/results`)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 shrink-0"
+                    >
+                        <BarChart3 className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Results</span>
+                    </button>
                 </div>
             </header>
 

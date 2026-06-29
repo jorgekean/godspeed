@@ -399,13 +399,13 @@ export const OMRScanner = forwardRef<OMRScannerRef, OMRScannerProps>(
                                 )}
                                 {lastSuccess && !showDetails && (
                                     <div className="absolute inset-0 z-30 flex flex-col items-center justify-center p-4 pointer-events-auto bg-black/40 backdrop-blur-[2px]">
-                                        <div className={`bg-white rounded-3xl shadow-2xl w-full max-w-xs overflow-hidden border-2 ${lastSuccess.isSaved ? 'border-green-500' : 'border-amber-500'} animate-in zoom-in-95 duration-300`}>
-                                            <div className={`${lastSuccess.isSaved ? 'bg-green-500' : 'bg-amber-500'} p-4 flex flex-col items-center`}>
+                                        <div className={`bg-white rounded-3xl shadow-2xl w-full max-w-xs overflow-hidden border-2 ${allStudentsGraded ? 'border-emerald-500' : lastSuccess.isSaved ? 'border-green-500' : 'border-amber-500'} animate-in zoom-in-95 duration-300`}>
+                                            <div className={`${allStudentsGraded ? 'bg-emerald-600' : lastSuccess.isSaved ? 'bg-green-500' : 'bg-amber-500'} p-4 flex flex-col items-center`}>
                                                 <div className="bg-white/20 p-2 rounded-full mb-2">
                                                     {lastSuccess.isSaved ? <CheckCircle className="w-8 h-8 text-white" /> : <AlertTriangle className="w-8 h-8 text-white" />}
                                                 </div>
-                                                <h4 className="text-white font-black text-xl leading-none">
-                                                    {lastSuccess.isSaved ? 'Result Saved' : 'Scan Complete'}
+                                                <h4 className="text-white font-black text-xl leading-none text-center">
+                                                    {allStudentsGraded ? 'Grading Complete!' : lastSuccess.isSaved ? 'Result Saved' : 'Scan Complete'}
                                                 </h4>
                                             </div>
                                             <div className="p-6 text-center">
@@ -437,6 +437,11 @@ export const OMRScanner = forwardRef<OMRScannerRef, OMRScannerProps>(
                                                         <button onClick={() => setShowDetails(true)} className="flex-1 py-2.5 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors">Details</button>
                                                         <button onClick={handleRescan} className="flex-1 py-2.5 bg-red-50 text-red-600 font-bold rounded-xl hover:bg-red-100 transition-colors">Rescan</button>
                                                     </div>
+                                                    {onViewResults && !allStudentsGraded && (
+                                                        <button onClick={onViewResults} className="w-full mt-2 text-xs font-bold text-violet-600 hover:text-violet-700 underline transition-colors">
+                                                            Go to Exam Results
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
