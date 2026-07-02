@@ -6,6 +6,7 @@ import { Camera, X, CheckCircle2, Search, UserCheck, Zap, ArrowLeft, Loader2, Us
 import { toast } from 'sonner';
 import { OMRScanner } from '../components/omr/OMRScanner';
 import { useAuth } from '../contexts/AuthContext';
+import { sortStudents } from '../utils/studentUtils';
 
 type ScanMode = 'setup' | 'scanning' | 'tagging';
 
@@ -80,7 +81,7 @@ export default function SmartScannerPage() {
         return filtered.sort((a, b) => {
             const aScanned = scannedStudentIds.has(a.id);
             const bScanned = scannedStudentIds.has(b.id);
-            if (aScanned === bScanned) return a.fullName.localeCompare(b.fullName);
+            if (aScanned === bScanned) return sortStudents(a, b);
             return aScanned ? 1 : -1;
         });
     }, [students, searchQuery, scannedStudentIds]);

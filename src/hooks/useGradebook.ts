@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db, type Student, type Assessment, type Grade } from '../services/db';
 import { useAuth } from '../contexts/AuthContext';
+import { sortStudents } from '../utils/studentUtils';
 
 export function useGradebook(subjectId: string, sectionId: string, termId: string) {
     const { currentUser } = useAuth();
@@ -19,6 +20,7 @@ export function useGradebook(subjectId: string, sectionId: string, termId: strin
 
             // 1. Fetch Students in the Section
             const studentData = await db.students.where({ sectionId }).filter(s => s.createdBy === userEmail).toArray();
+            studentData.sort(sortStudents);
 
             // 2. Fetch Assessments for this Subject/Term
             // Note: Exam has 'subject' and 'periodId'. 

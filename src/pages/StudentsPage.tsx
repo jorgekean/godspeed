@@ -4,6 +4,7 @@ import { db } from '../services/db';
 import { Plus, Users, Edit3, Trash2, X, ClipboardPaste, AlertTriangle, FolderKanban, Search, UserPlus, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { sortStudents } from '../utils/studentUtils';
 
 export default function StudentsPage() {
     const { currentUser } = useAuth();
@@ -35,9 +36,10 @@ export default function StudentsPage() {
 
     // Fetch students for the selected section
     const students = useLiveQuery(
-        () => {
+        async () => {
             if (!selectedFilterSection) return [];
-            return db.students.where('sectionId').equals(selectedFilterSection).filter(s => s.createdBy === userEmail && !s.isDeleted).toArray();
+            const list = await db.students.where('sectionId').equals(selectedFilterSection).filter(s => s.createdBy === userEmail && !s.isDeleted).toArray();
+            return list.sort(sortStudents);
         },
         [selectedFilterSection, userEmail]
     );
@@ -108,20 +110,59 @@ export default function StudentsPage() {
     const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
     const [pasteData, setPasteData] = useState('');
     const [bulkSectionId, setBulkSectionId] = useState('');
+    const [nextGeneratedId, setNextGeneratedId] = useState<number>(10000000);
+
+    useEffect(() => {
+        if (isBulkModalOpen && userEmail) {
+            db.students
+                .where('createdBy')
+                .equals(userEmail)
+                .filter(s => !s.isDeleted && !!s.studentNo && /^\d{8}$/.test(s.studentNo))
+                .toArray()
+                .then(allStudents => {
+                    let maxVal = 9999999;
+                    for (const s of allStudents) {
+                        const num = parseInt(s.studentNo || '', 10);
+                        if (!isNaN(num) && num >= 10000000 && num <= 99999999) {
+                            if (num > maxVal) {
+                                maxVal = num;
+                            }
+                        }
+                    }
+                    setNextGeneratedId(maxVal + 1);
+                });
+        }
+    }, [isBulkModalOpen, userEmail]);
 
     const parsedBulkData = React.useMemo(() => {
         if (!pasteData.trim()) return [];
+        let currentId = nextGeneratedId;
         return pasteData.split('\n').filter(row => row.trim() !== '').map(row => {
             const columns = row.split('\t').map(col => col.trim());
+            let studentNo = '';
+            let fullName = '';
+
             if (columns.length >= 2) {
-                // Strip non-digits and truncate to max 8 characters
                 const rawId = columns[0].replace(/\D/g, ''); 
                 const validId = rawId.substring(0, 8);
-                return { studentNo: validId, fullName: columns[1] };
+                if (validId && /^\d{1,8}$/.test(validId)) {
+                    studentNo = validId;
+                    fullName = columns[1];
+                } else {
+                    fullName = columns[1] || columns[0];
+                }
+            } else {
+                fullName = columns[0];
             }
-            return { studentNo: '', fullName: columns[0] };
+
+            if (!studentNo) {
+                studentNo = String(currentId);
+                currentId++;
+            }
+
+            return { studentNo, fullName };
         });
-    }, [pasteData]);
+    }, [pasteData, nextGeneratedId]);
 
     const handleSaveBulk = async () => {
         if (parsedBulkData.length === 0 || !bulkSectionId) return;

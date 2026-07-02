@@ -4,6 +4,7 @@ import { db } from '../services/db';
 import { Plus, FolderKanban, Edit3, Trash2, X, Users, Printer, FileText, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { pdf, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import { sortStudents } from '../utils/studentUtils';
 
 // Need to import the generator components from OMRTemplate to wrap them
 // Because we modified OMRTemplate.tsx to export Document20Item and Document50Item, we'll redefine a wrapper here for multi-page export
@@ -51,7 +52,11 @@ export default function SectionsPage() {
 
     // Fetch students only for the selected print section
     const printStudents = useLiveQuery(
-        () => printSectionId ? db.students.where('sectionId').equals(printSectionId).filter(s => !s.isDeleted).toArray() : [],
+        async () => {
+            if (!printSectionId) return [];
+            const list = await db.students.where('sectionId').equals(printSectionId).filter(s => !s.isDeleted).toArray();
+            return list.sort(sortStudents);
+        },
         [printSectionId]
     );
 

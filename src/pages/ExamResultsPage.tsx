@@ -2,11 +2,13 @@ import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../services/db';
-import { ArrowLeft, BarChart3, TrendingUp, UserCheck, FileDown, Loader2, List, LayoutGrid, Target, Award, AlertCircle, FileSpreadsheet } from 'lucide-react';
+import { ArrowLeft, BarChart3, TrendingUp, UserCheck, FileDown, Loader2, List, LayoutGrid, Target, Award, AlertCircle, FileSpreadsheet, Copy } from 'lucide-react';
 import { pdf } from '@react-pdf/renderer';
 import { Workbook } from 'exceljs';
 import { ItemAnalysisPDF, type ItemAnalysisData } from '../components/omr/ItemAnalysisPDF';
 import { useAuth } from '../contexts/AuthContext';
+import { sortStudents } from '../utils/studentUtils';
+import { toast } from 'sonner';
 
 type ViewMode = 'summary' | 'detailed' | 'mastery';
 
@@ -104,11 +106,24 @@ export default function ExamResultsPage() {
         })).sort((a, b) => a.mastery - b.mastery);
     }, [analysisData]);
 
-    if (!exam || !results) return null;
+    const filteredResults = useMemo(() => {
+        if (!results) return [];
+        return filterSectionId === 'all'
+            ? results
+            : results.filter(r => r.sectionId === filterSectionId);
+    }, [results, filterSectionId]);
 
-    const filteredResults = filterSectionId === 'all'
-        ? results
-        : results.filter(r => r.sectionId === filterSectionId);
+    const sortedFilteredResults = useMemo(() => {
+        return [...filteredResults].sort((a, b) => {
+            const studentA = students?.find(s => s.id === a.studentId);
+            const studentB = students?.find(s => s.id === b.studentId);
+            if (!studentA) return 1;
+            if (!studentB) return -1;
+            return sortStudents(studentA, studentB);
+        });
+    }, [filteredResults, students]);
+
+    if (!exam || !results) return null;
 
     const totalScanned = filteredResults.length;
     const averageScore = totalScanned > 0
@@ -201,7 +216,7 @@ export default function ExamResultsPage() {
         });
 
         // 3. Add Student Data
-        filteredResults.forEach((res, i) => {
+        sortedFilteredResults.forEach((res, i) => {
             const student = students?.find(s => s.id === res.studentId);
             const rowIndex = headerRowIndex + 1 + i;
             const r = sheet.getRow(rowIndex);
@@ -310,6 +325,32 @@ export default function ExamResultsPage() {
         URL.revokeObjectURL(url);
     };
 
+    const handleCopyScores = () => {
+        if (!sortedFilteredResults || sortedFilteredResults.length === 0) return;
+        const scoresText = sortedFilteredResults.map(res => res.score).join('\n');
+        navigator.clipboard.writeText(scoresText)
+            .then(() => toast.success('Scores copied to clipboard! Ready to paste in Excel.'))
+            .catch(err => {
+                console.error('Failed to copy scores', err);
+                toast.error('Failed to copy scores.');
+            });
+    };
+
+    const handleCopyStudentNames = () => {
+        if (!sortedFilteredResults || sortedFilteredResults.length === 0) return;
+        const namesText = sortedFilteredResults.map(res => {
+            const student = students?.find(s => s.id === res.studentId);
+            return student?.fullName || 'Unknown';
+        }).join('\n');
+        
+        navigator.clipboard.writeText(namesText)
+            .then(() => toast.success('Student names copied to clipboard! Ready to paste in Excel.'))
+            .catch(err => {
+                console.error('Failed to copy student names', err);
+                toast.error('Failed to copy student names.');
+            });
+    };
+
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 transition-colors">
             <div className="max-w-6xl mx-auto">
@@ -411,7 +452,7 @@ export default function ExamResultsPage() {
                         </div>
                         <div className="divide-y divide-slate-100 dark:divide-slate-800">
                             {filteredResults.length === 0 && <p className="p-8 text-center text-slate-400 dark:text-slate-600">No results found.</p>}
-                            {filteredResults.map(res => {
+                            {sortedFilteredResults.map(res => {
                                 const student = students?.find(s => s.id === res.studentId);
                                 return (
                                     <div key={res.id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
@@ -498,8 +539,30 @@ export default function ExamResultsPage() {
                             <table className="w-full text-left border-collapse">
                                 <thead className="bg-slate-50 dark:bg-slate-800/50">
                                     <tr>
-                                        <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest sticky left-0 bg-slate-50 dark:bg-slate-800 z-10">Student</th>
-                                        <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Score</th>
+                                        <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest sticky left-0 bg-slate-50 dark:bg-slate-800 z-10">
+                                            <div className="flex items-center gap-2">
+                                                <span>Student</span>
+                                                <button
+                                                    onClick={handleCopyStudentNames}
+                                                    title="Copy all names"
+                                                    className="p-1 hover:bg-slate-200 dark:hover:bg-slate-750 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                                                >
+                                                    <Copy className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        </th>
+                                        <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">
+                                            <div className="flex items-center justify-center gap-2">
+                                                <span>Score</span>
+                                                <button
+                                                    onClick={handleCopyScores}
+                                                    title="Copy all scores"
+                                                    className="p-1 hover:bg-slate-200 dark:hover:bg-slate-750 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                                                >
+                                                    <Copy className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        </th>
                                         {Array.from({ length: exam.itemCount }).map((_, i) => (
                                             <th key={i} className="p-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center min-w-[40px]">
                                                 Q{i + 1}
@@ -508,7 +571,7 @@ export default function ExamResultsPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                    {filteredResults.map(res => {
+                                    {sortedFilteredResults.map(res => {
                                         const student = students?.find(s => s.id === res.studentId);
                                         return (
                                             <tr key={res.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
