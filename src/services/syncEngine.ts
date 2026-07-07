@@ -122,7 +122,7 @@ export const syncService = {
         const headers = { Authorization: `Bearer ${token}` };
         const since = this.getLastSyncTimestamp(userEmail);
 
-        const response = await axios.get(`${API_BASE_URL}/sync?since=${since}`, { headers });
+        const response = await axios.get(`${API_BASE_URL}/sync?since=${since}&_t=${Date.now()}`, { headers });
         const payload = response.data.data || response.data;
 
         // Helper to convert ISO strings to timestamps for local DB consistency
