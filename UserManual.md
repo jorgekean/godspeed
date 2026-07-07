@@ -31,7 +31,7 @@ Click **"Create New Exam"** on your Dashboard.
 3.  **Competency Mapping:** Link specific questions to skills (e.g., "Algebraic Expressions") to track student mastery.
 
 ### B. Printing Templates
-If you don't want pre-filled sheets, use the **Answer Sheets** (Templates) page to print blank 20-item or 50-item templates.
+If you don't want pre-filled sheets, use the **Answer Sheets** (Templates) page to print blank 20-item, 50-item, or 100-item templates.
 *   **Printing Tip:** Print at "100%" or "Actual Size". Do not "Fit to Page."
 
 ---

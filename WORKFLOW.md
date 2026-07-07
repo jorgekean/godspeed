@@ -8,7 +8,7 @@
 2. Go to **"Create Exam"** section
 3. Fill in:
    - **Exam Name** (e.g., "Math Quiz - Chapter 5")
-   - **Number of Questions** (Choose 20 items or 50 items)
+   - **Number of Questions** (Choose 20, 50, or 100 items)
    - **Subject** (e.g., Mathematics, Science, English)
 4. Click **"Create"** — Your exam is now ready!
 
@@ -19,7 +19,7 @@
 > ⚠️ **Best Practice**: Use a laptop or desktop computer for this step. Mobile printing can be unreliable.
 
 1. Open GodSpeed Grader on your phone or tablet
-2. Click **"Download 20-Item Sheet"** and **"Download 50-Item Sheet"**
+2. Click **"Generate 20-Item Sheet"**, **"Generate 50-Item Sheet"**, or **"Generate 100-Item Sheet"**
 3. **Save the file** to your computer
 4. **Open the PDF** on your laptop/desktop
 5. Click **"Print"** and make sure:
