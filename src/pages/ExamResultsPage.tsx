@@ -9,6 +9,7 @@ import { ItemAnalysisPDF, type ItemAnalysisData } from '../components/omr/ItemAn
 import { useAuth } from '../contexts/AuthContext';
 import { sortStudents } from '../utils/studentUtils';
 import { toast } from 'sonner';
+import { downloadFile } from '../utils/nativeFile';
 
 type ViewMode = 'summary' | 'detailed' | 'mastery';
 
@@ -150,12 +151,8 @@ export default function ExamResultsPage() {
                 />
             );
             const blob = await pdf(doc).toBlob();
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = fileName;
-            link.click();
-            URL.revokeObjectURL(url);
+            // Platform-aware: native Share sheet on Android, <a download> on web
+            await downloadFile(blob, fileName);
         } catch (error) {
             console.error("Failed to generate PDF", error);
         } finally {
@@ -314,15 +311,12 @@ export default function ExamResultsPage() {
             sheet.getColumn(i).width = 6;
         }
 
-        // Generate and download
+        // Generate and download / share
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `Detailed_Report_${exam.title.replace(/\s+/g, '_')}_${currentSectionName}.xlsx`;
-        link.click();
-        URL.revokeObjectURL(url);
+        const fileName = `Detailed_Report_${exam.title.replace(/\s+/g, '_')}_${currentSectionName}.xlsx`;
+        // Platform-aware: native Share sheet on Android, <a download> on web
+        await downloadFile(blob, fileName);
     };
 
     const handleCopyScores = () => {

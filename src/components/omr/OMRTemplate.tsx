@@ -1,5 +1,6 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, pdf } from '@react-pdf/renderer';
+import { downloadFile } from '../../utils/nativeFile';
 
 const styles = StyleSheet.create({
     page: { backgroundColor: '#FFFFFF', position: 'relative', padding: 0 },
@@ -328,12 +329,8 @@ export function OMRTemplateGenerator() {
             const fileName = `${type}_Item_Sheet_Blank.pdf`;
             const doc = type === '20' ? <Document20Item /> : type === '50' ? <Document50Item /> : <Document100Item />;
             const blob = await pdf(doc).toBlob();
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = fileName;
-            link.click();
-            URL.revokeObjectURL(url);
+            // Platform-aware: native Share sheet on Android, <a download> on web
+            await downloadFile(blob, fileName);
         } catch (error) {
             console.error("Failed to generate PDF", error);
         } finally {

@@ -4,11 +4,16 @@ import react from '@vitejs/plugin-react'
 import basicSsl from '@vitejs/plugin-basic-ssl'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// basicSsl is only needed for browser dev (camera requires HTTPS in browsers).
+// When building for Android (Capacitor), SSL is handled natively — skip it.
+const isAndroidBuild = process.env.CAPACITOR_PLATFORM === 'android';
+
 export default defineConfig({
   plugins: [
     tailwindcss(),
     react(),
-    basicSsl(),
+    // Only include basicSsl for browser dev — not needed in Android builds
+    ...(!isAndroidBuild ? [basicSsl()] : []),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['app-logo.png', 'icons.svg', 'opencv.js', 'omr.worker.js'],

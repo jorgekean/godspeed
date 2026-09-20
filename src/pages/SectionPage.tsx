@@ -5,6 +5,7 @@ import { Plus, FolderKanban, Edit3, Trash2, X, Users, Printer, FileText, Loader2
 import { useAuth } from '../contexts/AuthContext';
 import { pdf, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { sortStudents } from '../utils/studentUtils';
+import { downloadFile } from '../utils/nativeFile';
 
 // Need to import the generator components from OMRTemplate to wrap them
 // Because we modified OMRTemplate.tsx to export Document20Item and Document50Item, we'll redefine a wrapper here for multi-page export
@@ -95,12 +96,8 @@ export default function SectionsPage() {
             const fileName = `Prefilled_${type}Items_${currentSectionName}.pdf`;
 
             const blob = await pdf(<MultiStudentDocument students={printStudents} examType={type} />).toBlob();
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = fileName;
-            link.click();
-            URL.revokeObjectURL(url);
+            // Platform-aware: native Share sheet on Android, <a download> on web
+            await downloadFile(blob, fileName);
         } catch (error) {
             console.error("Failed to generate PDF", error);
         } finally {
