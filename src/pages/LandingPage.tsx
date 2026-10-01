@@ -10,8 +10,7 @@ export default function LandingPage() {
 
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    // 2. Destructure the login method
-    const { login, currentUser } = useAuth();
+    const { login, loginAsGuest, currentUser } = useAuth();
 
     // Auth Modal States
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -155,7 +154,10 @@ export default function LandingPage() {
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
                         <button
-                            onClick={() => openModal('signup')}
+                            onClick={() => {
+                                loginAsGuest();
+                                navigate('/');
+                            }}
                             className="w-full sm:w-auto px-8 py-4 bg-violet-600 hover:bg-violet-500 text-white rounded-full font-bold text-lg shadow-lg shadow-violet-500/25 active:scale-95 transition-all flex items-center justify-center gap-2"
                         >
                             Start Grading Free <ArrowRight className="w-5 h-5" />
@@ -214,8 +216,11 @@ export default function LandingPage() {
                                     <ShieldCheck className="w-5 h-5 shrink-0" /> Note: Data is saved to your browser. Clearing cache removes data.
                                 </li>
                             </ul>
-                            <button onClick={() => openModal('signup')} className="w-full py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl shadow-lg shadow-violet-500/25 transition-all">
-                                Create Free Account
+                            <button onClick={() => {
+                                loginAsGuest();
+                                navigate('/');
+                            }} className="w-full py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl shadow-lg shadow-violet-500/25 transition-all">
+                                Launch Scanner Workspace
                             </button>
                         </div>
 

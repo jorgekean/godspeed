@@ -166,5 +166,27 @@ export class GodspeedDatabase extends Dexie {
         });
     }
 }
-
 export const db = new GodspeedDatabase();
+
+export async function migrateGuestDataToUser(newEmail: string) {
+    const GUEST_EMAIL = 'guest@godspeedgrader.local';
+
+    await db.transaction('rw', [db.sections, db.students, db.periods, db.exams, db.scanResults, db.subjects, db.gradeLevels], async () => {
+        // Sections
+        await db.sections.where('createdBy').equals(GUEST_EMAIL).modify({ createdBy: newEmail, isSynced: false });
+        // Students
+        await db.students.where('createdBy').equals(GUEST_EMAIL).modify({ createdBy: newEmail, isSynced: false });
+        // Periods
+        await db.periods.where('createdBy').equals(GUEST_EMAIL).modify({ createdBy: newEmail, isSynced: false });
+        // Exams
+        await db.exams.where('createdBy').equals(GUEST_EMAIL).modify({ createdBy: newEmail, isSynced: false });
+        // Scan Results
+        await db.scanResults.where('createdBy').equals(GUEST_EMAIL).modify({ createdBy: newEmail, isSynced: false });
+        // Subjects
+        await db.subjects.where('createdBy').equals(GUEST_EMAIL).modify({ createdBy: newEmail, isSynced: false });
+        // Grade Levels
+        await db.gradeLevels.where('createdBy').equals(GUEST_EMAIL).modify({ createdBy: newEmail, isSynced: false });
+    });
+
+    console.log(`Successfully migrated local guest data to ${newEmail}`);
+}

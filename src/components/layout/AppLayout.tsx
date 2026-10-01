@@ -33,7 +33,7 @@ export default function AppLayout() {
     };
 
     const getPageSub = (path: string) => {
-        if (path === '/') return currentUser ? `Welcome back, ${currentUser?.email}` : 'Grade exams in a flash.';
+        if (path === '/') return currentUser ? (currentUser.role === 'guest' ? 'Welcome to your Local Workspace.' : `Welcome back, ${currentUser?.email}`) : 'Grade exams in a flash.';
         if (path.startsWith('/sections')) return 'Manage your classes and advisory groups.';
         if (path.startsWith('/students')) return 'Manage your student rosters.';
         if (path.startsWith('/periods')) return 'Manage your folders.';
@@ -151,10 +151,10 @@ export default function AppLayout() {
                                     </div>
                                     <div className="overflow-hidden">
                                         <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                                            {currentUser?.email}
+                                            {currentUser?.role === 'guest' ? 'Guest Workspace' : currentUser?.email}
                                         </p>
                                         <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">
-                                            Free Account
+                                            {currentUser?.role === 'guest' ? 'Local Only' : 'Free Account'}
                                         </p>
                                     </div>
                                 </div>
