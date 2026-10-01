@@ -59,7 +59,7 @@ export default function AccountPage() {
 
             if (isLoginMode) {
                 // 3. Successful Login: Pass token and user to Context
-                login(data.token, data.user);
+                await login(data.token, data.user);
             } else {
                 // 4. Successful Registration: Auto-login to generate the JWT token
                 const loginResponse = await fetch(API_BASE_URL + '/auth/login', {
@@ -71,7 +71,7 @@ export default function AccountPage() {
                 const loginData = await loginResponse.json();
 
                 if (loginResponse.ok && loginData.success) {
-                    login(loginData.token, loginData.user);
+                    await login(loginData.token, loginData.user);
                 } else {
                     // Fallback in case auto-login fails for some reason
                     setIsLoginMode(true);
@@ -98,9 +98,9 @@ export default function AccountPage() {
             <div className="max-w-3xl space-y-6">
 
                 {/* ========================================== */}
-                {/* VIEW 1: USER IS NOT LOGGED IN (AUTH FORM) */}
+                {/* VIEW 1: USER IS NOT LOGGED IN OR IS GUEST (AUTH FORM) */}
                 {/* ========================================== */}
-                {!currentUser && (
+                {(!currentUser || currentUser.role === 'guest') && (
                     <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/50 dark:border-white/5 p-6 md:p-8 shadow-sm max-w-md mx-auto md:mx-0">
                         <div className="text-center mb-8">
                             <div className="w-16 h-16 bg-violet-100 dark:bg-violet-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -110,7 +110,7 @@ export default function AccountPage() {
                                 {isLoginMode ? 'Welcome Back' : 'Create Free Account'}
                             </h2>
                             <p className="text-sm text-slate-500 mt-1">
-                                {isLoginMode ? 'Sign in to access your local gradebooks.' : 'Secure your data and unlock class management.'}
+                                {isLoginMode ? 'Sign in to access your local gradebooks.' : 'Secure your data and unlock cloud sync.'}
                             </p>
                         </div>
 
@@ -239,7 +239,7 @@ export default function AccountPage() {
                 {/* ========================================== */}
                 {/* VIEW 2: USER IS LOGGED IN (DASHBOARD) */}
                 {/* ========================================== */}
-                {currentUser && (
+                {currentUser && currentUser.role !== 'guest' && (
                     <>
                         {/* PROFILE CARD */}
                         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/50 dark:border-white/5 p-6 md:p-8 shadow-sm">
