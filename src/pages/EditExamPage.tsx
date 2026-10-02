@@ -210,7 +210,6 @@ export default function EditExam() {
     const isReady = title.trim().length > 0 &&
         (gradeLevel !== '' && (gradeLevel !== 'CUSTOM' || customGrade.trim() !== '')) &&
         (subject !== '' && (subject !== 'CUSTOM' || customSubject.trim() !== '')) &&
-        periodId !== '' &&
         answerKey.replace(/ /g, '').length > 0;
 
     return (
@@ -336,7 +335,7 @@ export default function EditExam() {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Grading Folder</label>
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Period (Optional)</label>
                         <div className="relative group">
                             <select
                                 value={periodId}
@@ -345,11 +344,11 @@ export default function EditExam() {
                                 }}
                                 className="w-full bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all shadow-sm appearance-none cursor-pointer font-bold"
                             >
-                                <option value="">Select Folder</option>
+                                <option value="">No Period</option>
                                 {sortedPeriods.map(period => {
                                     return <option key={period.id} value={period.id}>📁 {period.name}</option>;
                                 })}
-                                <option value="CUSTOM" className="text-violet-600 font-bold">+ Add New Folder...</option>
+                                <option value="CUSTOM" className="text-violet-600 font-bold">+ Add New Period...</option>
                             </select>
                             <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none transition-transform group-focus-within:rotate-180" />
                         </div>
@@ -382,19 +381,19 @@ export default function EditExam() {
                         <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-violet-100 dark:bg-violet-500/20 rounded-xl"><Folder className="w-5 h-5 text-violet-600 dark:text-violet-400" /></div>
-                                <h2 className="text-xl font-bold text-slate-900 dark:text-white">New Folder</h2>
+                                <h2 className="text-xl font-bold text-slate-900 dark:text-white">New Period</h2>
                             </div>
                             <button onClick={() => { setIsPeriodModalOpen(false); setPeriodId(''); }} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 bg-slate-50 dark:bg-slate-800 rounded-full transition-colors"><X className="w-5 h-5" /></button>
                         </div>
                         <div className="p-6 space-y-5">
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Folder Name</label>
+                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Period Name</label>
                                 <input type="text" value={newPeriodName} onChange={(e) => setNewPeriodName(e.target.value)} placeholder="e.g. 1st Quarter, 1st Period, 1st Sem" className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all" autoFocus />
                             </div>
                         </div>
                         <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex gap-3">
                             <button onClick={() => { setIsPeriodModalOpen(false); setPeriodId(''); }} className="flex-1 py-4 font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl transition-colors">Cancel</button>
-                            <button onClick={handleCreatePeriod} disabled={!newPeriodName.trim()} className="flex-1 py-4 font-bold bg-violet-600 hover:bg-violet-500 text-white rounded-2xl shadow-lg shadow-violet-500/20 disabled:opacity-50 transition-all">Create Folder</button>
+                            <button onClick={handleCreatePeriod} disabled={!newPeriodName.trim()} className="flex-1 py-4 font-bold bg-violet-600 hover:bg-violet-500 text-white rounded-2xl shadow-lg shadow-violet-500/20 disabled:opacity-50 transition-all">Create Period</button>
                         </div>
                     </div>
                 </div>
