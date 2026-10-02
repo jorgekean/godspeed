@@ -91,7 +91,7 @@ export default function Help() {
                             <li><strong>Exam Code:</strong> <em className="text-violet-650 dark:text-violet-400 font-semibold">Auto-generated.</em> The system will create a code (e.g., 0001). This code is crucial because the app uses it to instantly grade the right answer key.</li>
                             <li><strong>Grade/Year Level:</strong> Select the appropriate level. This automatically tags the exam to the matching sections you created earlier.</li>
                             <li><strong>Subject:</strong> Enter the subject name.</li>
-                            <li><strong>Folder:</strong> Assign the exam to a specific folder (e.g., <em>1st Qtr 2026</em>, <em>2026 1st Sem</em>). This keeps your terms organized and is highly useful for future reporting and filtering.</li>
+                            <li><strong>Period:</strong> Assign the exam to a specific period (e.g., <em>1st Qtr 2026</em>, <em>2026 1st Sem</em>). This keeps your terms organized and is highly useful for future reporting and filtering.</li>
                             <li><strong>Number of Items:</strong> Enter the total number of questions (Maximum of 100 items).</li>
                             <li><strong>Answer Key:</strong> Select the correct answers for your test.</li>
                         </ul>

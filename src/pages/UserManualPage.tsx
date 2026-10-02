@@ -31,10 +31,10 @@ export default function UserManualPage() {
                         <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                             <h4 className="font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
                                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                                Folders & Sections
+                                Periods & Sections
                             </h4>
                             <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-2 ml-6 list-disc">
-                                <li><strong>Folders:</strong> Create folders (e.g., 1st Quarter, Midterms) to organize your exams and grades.</li>
+                                <li><strong>Periods:</strong> Create grading periods (e.g., 1st Quarter, Midterms) to organize your exams and grades.</li>
                                 <li><strong>Sections:</strong> Create sections (e.g., "Newton") and link them to Grade/Year Levels.</li>
                                 <li><strong>Students:</strong> Add manually or use <strong className="text-violet-600">Import Paste</strong> to copy rosters directly from Excel.</li>
                             </ul>

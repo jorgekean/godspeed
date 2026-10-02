@@ -179,7 +179,7 @@ export default function ExamResultsPage() {
         const headerRows = [
             ['GRADE & SECTION:', sectionInfo],
             ['TOTAL TAKERS:', filteredResults.length],
-            ['FOLDER:', periodName],
+            ['PERIOD:', periodName],
             ['SUBJECT:', subjectName],
             ['TOTAL ITEMS:', exam.itemCount],
         ];

@@ -55,7 +55,9 @@ export default function Dashboard() {
     const exams = useLiveQuery(
         async () => {
             let results = [];
-            if (selectedPeriod !== 'all') {
+            if (selectedPeriod === 'none') {
+                results = await db.exams.filter(e => !e.isDeleted && e.createdBy === userEmail && (!e.periodId || e.periodId === '')).toArray();
+            } else if (selectedPeriod !== 'all') {
                 results = await db.exams.where('periodId').equals(selectedPeriod).filter(e => !e.isDeleted && e.createdBy === userEmail).toArray();
             } else {
                 results = await db.exams.filter(e => !e.isDeleted && e.createdBy === userEmail).toArray();
@@ -113,7 +115,7 @@ export default function Dashboard() {
         [selectedPeriod, selectedGrade, selectedSubject, userEmail]
     );
 
-    const activePeriodName = selectedPeriod === 'all' ? 'All Folders' : periods?.find(p => p.id === selectedPeriod)?.name;
+    const activePeriodName = selectedPeriod === 'all' ? 'All Periods' : (selectedPeriod === 'none' ? 'No Period' : periods?.find(p => p.id === selectedPeriod)?.name);
 
     const getStatusConfig = (status: string) => {
         switch (status) {
@@ -139,13 +141,6 @@ export default function Dashboard() {
                         <Plus className="w-5 h-5" />
                         <span>Create New Exam</span>
                     </button>
-                    <button
-                        onClick={() => navigate('/help')}
-                        className="p-4 bg-white dark:bg-slate-900 text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 rounded-2xl border border-slate-200/50 dark:border-white/5 shadow-sm active:scale-95 transition-all"
-                        title="Help & Guide"
-                    >
-                        <HelpCircle className="w-6 h-6" />
-                    </button>
                 </div>
 
                 <div className="h-2" /> {/* Spacing */}
@@ -167,7 +162,8 @@ export default function Dashboard() {
                                     onChange={(e) => setSelectedPeriod(e.target.value)}
                                     className="w-full bg-slate-200/50 dark:bg-slate-800/50 border-none rounded-xl px-4 py-2 text-[12px] font-bold text-slate-600 dark:text-slate-300 appearance-none focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all cursor-pointer pr-10"
                                 >
-                                    <option value="all">📁 All Folders</option>
+                                    <option value="all">📁 All Periods</option>
+                                    <option value="none">📁 No Period</option>
                                     {sortedPeriods.map(p => {
                                         return (
                                             <option key={p.id} value={p.id}>
