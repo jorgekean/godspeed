@@ -1,130 +1,229 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import { syncService } from '../services/syncEngine';
-// 1. Swap Firebase for your custom Auth Context
-import { useAuth } from '../contexts/AuthContext';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { googleDriveService, type DriveBackupFile } from '../services/googleDriveService';
+import { backupService, type BackupData } from '../services/backupService';
+import { useAuth } from './AuthContext';
+import { toast } from 'sonner';
 
-type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline';
+export type BackupStatus = 'idle' | 'syncing' | 'error' | 'offline' | 'success';
 
-interface SyncContextType {
-    status: SyncStatus;
+export interface SyncContextType {
+    status: BackupStatus;
     lastSyncTimestamp: number;
+    lastBackupTimestamp: number;
+    isBackingUp: boolean;
+    isRestoring: boolean;
+    error: string | null;
+    googleClientId: string;
+    isGoogleConfigured: boolean;
+    setGoogleClientId: (clientId: string) => void;
+    triggerBackupToDrive: () => Promise<DriveBackupFile | null>;
+    triggerRestoreFromDrive: (fileId: string, mode?: 'replace' | 'merge') => Promise<boolean>;
+    listDriveBackups: () => Promise<DriveBackupFile[]>;
+    exportLocalBackupFile: () => Promise<void>;
+    importLocalBackupFile: (file: File, mode?: 'replace' | 'merge') => Promise<Record<string, number>>;
+    // Backward compatibility aliases
     triggerSync: () => Promise<void>;
     triggerPush: () => Promise<void>;
-    error: string | null;
 }
 
 const SyncContext = createContext<SyncContextType | undefined>(undefined);
 
 export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { currentUser, token } = useAuth(); // Use your custom auth state
-    const [status, setStatus] = useState<SyncStatus>('idle');
-    const [lastSyncTimestamp, setLastSyncTimestamp] = useState<number>(0);
+    const { currentUser } = useAuth();
+    const [status, setStatus] = useState<BackupStatus>('idle');
+    const [isBackingUp, setIsBackingUp] = useState(false);
+    const [isRestoring, setIsRestoring] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [lastBackupTimestamp, setLastBackupTimestamp] = useState<number>(() => googleDriveService.getLastBackupTime());
+    const [googleClientId, setGoogleClientIdState] = useState<string>(() => googleDriveService.getClientId());
 
-    // Update lastSyncTimestamp when user changes
+    const isGoogleConfigured = Boolean(googleClientId);
+
+    const setGoogleClientId = useCallback((clientId: string) => {
+        googleDriveService.setClientId(clientId);
+        setGoogleClientIdState(clientId.trim());
+    }, []);
+
+    // Network status listener
     useEffect(() => {
-        if (currentUser?.email) {
-            setLastSyncTimestamp(syncService.getLastSyncTimestamp(currentUser.email));
-        } else {
-            setLastSyncTimestamp(0);
-        }
-    }, [currentUser]);
-
-    // 2. Use a ref to track sync progress without triggering re-renders
-    const isSyncingRef = useRef(false);
-
-    const triggerSync = useCallback(async () => {
-        if (!navigator.onLine) {
+        const handleOnline = () => {
+            if (status === 'offline') setStatus('idle');
+        };
+        const handleOffline = () => {
             setStatus('offline');
-            return;
-        }
-
-        // 2. Prevent syncing if there is no token/user logged in
-        if (!token || !currentUser || isSyncingRef.current) return;
-
-        isSyncingRef.current = true;
-        setStatus('syncing');
-        setError(null);
-
-        try {
-            // 3. Pass the token and email to your sync service
-            await syncService.syncData(token, currentUser.email);
-
-            const newTimestamp = syncService.getLastSyncTimestamp(currentUser.email);
-            setLastSyncTimestamp(newTimestamp);
-            setStatus('idle');
-        } catch (err: any) {
-            console.error('Sync error:', err);
-
-            let message = 'Sync failed. Please try again.';
-            const errorStr = err.message?.toLowerCase() || '';
-
-            if (errorStr.includes('prisma') || errorStr.includes('database') || errorStr.includes('500')) {
-                message = 'Our cloud database is currently undergoing maintenance. Please try again later.';
-            } else if (errorStr.includes('network') || errorStr.includes('connect')) {
-                message = 'Connection lost. Please check your internet and try again.';
-            } else if (err.response?.status === 401) {
-                message = 'Session expired. Please sign out and sign in again.';
-            }
-
-            setError(message);
-            setStatus('error');
-        } finally {
-            isSyncingRef.current = false;
-        }
-    }, [token, currentUser]);
-
-    const triggerPush = useCallback(async () => {
-        if (!navigator.onLine || !token || !currentUser || isSyncingRef.current) return;
-
-        isSyncingRef.current = true;
-        try {
-            console.log("Triggering PUSH sync...");
-            await syncService.pushChanges(token, currentUser.email);
-        } catch (err: any) {
-            console.error('Push error:', err);
-        } finally {
-            isSyncingRef.current = false;
-        }
-    }, [token, currentUser]);
-
-    // Handle online/offline status
-    useEffect(() => {
-        const handleOnline = () => setStatus('idle');
-        const handleOffline = () => setStatus('offline');
+        };
 
         window.addEventListener('online', handleOnline);
         window.addEventListener('offline', handleOffline);
 
-        if (!navigator.onLine) setStatus('offline');
+        if (!navigator.onLine) {
+            setStatus('offline');
+        }
 
         return () => {
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
         };
-    }, []);
+    }, [status]);
 
-    // Auto-sync on auth or every 1 minute (PUSH ONLY)
-    useEffect(() => {
-        // 4. Trigger an initial sync (PUSH & PULL) if the user logs in
-        if (currentUser) {
-            triggerSync();
+    /**
+     * Backup directly to user's Google Drive
+     */
+    const triggerBackupToDrive = useCallback(async (): Promise<DriveBackupFile | null> => {
+        if (!navigator.onLine) {
+            toast.error('You are offline. Connect to the internet to back up to Google Drive.');
+            return null;
         }
 
-        const interval = setInterval(() => {
-            if (currentUser) {
-                // Periodic sync is now PUSH ONLY to save costs
-                triggerPush();
-            }
-        }, 0.5 * 60 * 1000);// 30 secs
+        if (!googleDriveService.isConfigured()) {
+            setError('Google OAuth Client ID is not configured.');
+            return null;
+        }
 
-        return () => {
-            clearInterval(interval);
-        };
-    }, [currentUser, triggerSync, triggerPush]); // Safely depends on currentUser now
+        setIsBackingUp(true);
+        setStatus('syncing');
+        setError(null);
+
+        try {
+            const backupPayload = await backupService.generateBackup({
+                name: currentUser?.name,
+                email: currentUser?.email,
+                school: currentUser?.school
+            });
+
+            const uploaded = await googleDriveService.uploadBackup(backupPayload);
+            const now = Date.now();
+            setLastBackupTimestamp(now);
+            setStatus('success');
+            toast.success('Backed up to Google Drive successfully!', {
+                description: uploaded.name
+            });
+            setTimeout(() => setStatus('idle'), 3000);
+            return uploaded;
+        } catch (err: any) {
+            console.error('Google Drive backup error:', err);
+            const msg = err.message || 'Failed to upload backup to Google Drive.';
+            setError(msg);
+            setStatus('error');
+            toast.error(msg);
+            return null;
+        } finally {
+            setIsBackingUp(false);
+        }
+    }, [currentUser]);
+
+    /**
+     * Restore from Google Drive
+     */
+    const triggerRestoreFromDrive = useCallback(async (fileId: string, mode: 'replace' | 'merge' = 'replace'): Promise<boolean> => {
+        if (!navigator.onLine) {
+            toast.error('You are offline. Connect to the internet to download from Google Drive.');
+            return false;
+        }
+
+        setIsRestoring(true);
+        setStatus('syncing');
+        setError(null);
+
+        try {
+            const backupData: BackupData = await googleDriveService.downloadBackup(fileId);
+            await backupService.restoreBackup(backupData, mode);
+            setStatus('success');
+            toast.success('Workspace restored successfully!');
+            setTimeout(() => setStatus('idle'), 3000);
+            return true;
+        } catch (err: any) {
+            console.error('Google Drive restore error:', err);
+            const msg = err.message || 'Failed to restore backup from Google Drive.';
+            setError(msg);
+            setStatus('error');
+            toast.error(msg);
+            return false;
+        } finally {
+            setIsRestoring(false);
+        }
+    }, []);
+
+    /**
+     * List backups stored in Google Drive
+     */
+    const listDriveBackups = useCallback(async (): Promise<DriveBackupFile[]> => {
+        if (!navigator.onLine) {
+            toast.error('Cannot list Drive backups while offline.');
+            return [];
+        }
+        return await googleDriveService.listBackups();
+    }, []);
+
+    /**
+     * Local JSON File Export (100% Offline)
+     */
+    const exportLocalBackupFile = useCallback(async () => {
+        try {
+            const backupPayload = await backupService.generateBackup({
+                name: currentUser?.name,
+                email: currentUser?.email,
+                school: currentUser?.school
+            });
+            backupService.downloadBackupFile(backupPayload);
+            toast.success('Backup file exported to downloads!');
+        } catch (err: any) {
+            console.error('Local export error:', err);
+            toast.error('Failed to export backup file.');
+        }
+    }, [currentUser]);
+
+    /**
+     * Local JSON File Import (100% Offline)
+     */
+    const importLocalBackupFile = useCallback(async (file: File, mode: 'replace' | 'merge' = 'replace') => {
+        setIsRestoring(true);
+        try {
+            const backupPayload = await backupService.parseBackupFile(file);
+            const counts = await backupService.restoreBackup(backupPayload, mode);
+            toast.success('Backup restored successfully!', {
+                description: `${counts.exams || 0} exams, ${counts.scanResults || 0} scans restored.`
+            });
+            return counts;
+        } catch (err: any) {
+            console.error('Local import error:', err);
+            toast.error(err.message || 'Failed to restore from file.');
+            throw err;
+        } finally {
+            setIsRestoring(false);
+        }
+    }, []);
+
+    // Backward compatible aliases
+    const triggerSync = useCallback(async () => {
+        await triggerBackupToDrive();
+    }, [triggerBackupToDrive]);
+
+    const triggerPush = useCallback(async () => {
+        // Pure offline app - no background pushing to remote servers
+    }, []);
 
     return (
-        <SyncContext.Provider value={{ status, lastSyncTimestamp, triggerSync, triggerPush, error }}>
+        <SyncContext.Provider
+            value={{
+                status,
+                lastSyncTimestamp: lastBackupTimestamp,
+                lastBackupTimestamp,
+                isBackingUp,
+                isRestoring,
+                error,
+                googleClientId,
+                isGoogleConfigured,
+                setGoogleClientId,
+                triggerBackupToDrive,
+                triggerRestoreFromDrive,
+                listDriveBackups,
+                exportLocalBackupFile,
+                importLocalBackupFile,
+                triggerSync,
+                triggerPush
+            }}
+        >
             {children}
         </SyncContext.Provider>
     );
@@ -132,8 +231,10 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useSync = () => {
     const context = useContext(SyncContext);
-    if (context === undefined) {
+    if (!context) {
         throw new Error('useSync must be used within a SyncProvider');
     }
     return context;
 };
+
+export const useBackup = useSync;

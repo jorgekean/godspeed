@@ -1,18 +1,34 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { Users, FolderKanban, LayoutDashboard, LogOut, UserCircle, Lock, User, RefreshCw, AlertCircle, Zap, CalendarDays, Settings2, ChevronUp, BookOpen, GraduationCap, MessageSquare, Mail, Printer, Camera, FileText, Folder, HelpCircle } from 'lucide-react';
+import {
+    Users,
+    FolderKanban,
+    LayoutDashboard,
+    UserCircle,
+    User,
+    Settings2,
+    BookOpen,
+    GraduationCap,
+    MessageSquare,
+    Printer,
+    Camera,
+    Folder,
+    HelpCircle,
+    Cloud,
+    Loader2,
+    Upload,
+    ShieldCheck
+} from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useSync } from '../../contexts/SyncContext';
-import { toast } from 'sonner';
+import { useBackup } from '../../contexts/SyncContext';
 import NoticesModal from './NoticesModal';
 
 export default function AppLayout() {
-    const { currentUser, logout } = useAuth();
-    const { status: syncStatus } = useSync();
+    const { currentUser } = useAuth();
+    const { triggerBackupToDrive, isBackingUp, isGoogleConfigured } = useBackup();
     const navigate = useNavigate();
     const location = useLocation();
 
-    // NEW: State for mobile Manage menu
     const [isManageMenuOpen, setIsManageMenuOpen] = useState(false);
     const [isNoticesModalOpen, setIsNoticesModalOpen] = useState(false);
 
@@ -25,7 +41,7 @@ export default function AppLayout() {
         if (path.startsWith('/grades')) return 'Grade/Year Levels';
         if (path.startsWith('/templates')) return 'Answer Sheets';
         if (path === '/scan') return 'Instant Scan';
-        if (path.startsWith('/account')) return 'Account';
+        if (path.startsWith('/account')) return 'Settings & Backup';
         if (path.startsWith('/create')) return 'Create Exam';
         if (path.startsWith('/edit')) return 'Edit Exam';
         if (path.includes('/results')) return 'Exam Results';
@@ -33,14 +49,14 @@ export default function AppLayout() {
     };
 
     const getPageSub = (path: string) => {
-        if (path === '/') return currentUser ? (currentUser.role === 'guest' ? 'Welcome to your Local Workspace.' : `Welcome back, ${currentUser?.email}`) : 'Grade exams in a flash.';
+        if (path === '/') return 'Local Workspace • 100% Offline';
         if (path.startsWith('/sections')) return 'Manage your classes and advisory groups.';
         if (path.startsWith('/students')) return 'Manage your student rosters.';
         if (path.startsWith('/periods')) return 'Manage your grading periods.';
         if (path.startsWith('/subjects')) return 'Manage your subjects.';
         if (path.startsWith('/grades')) return 'Manage your grade/year levels.';
         if (path.startsWith('/templates')) return 'Download and print empty bubble sheet templates.';
-        if (path.startsWith('/account')) return 'Manage your profile and settings.';
+        if (path.startsWith('/account')) return 'Google Drive backup, file restore, and local settings.';
         if (path.startsWith('/help')) return 'Learn how to use Godspeed Grader.';
         if (path.startsWith('/manual')) return 'Deep-dive into features and workflows.';
         return 'Grade exams in a flash.';
@@ -53,13 +69,12 @@ export default function AppLayout() {
         { path: '/', label: 'Overview', icon: LayoutDashboard, protected: true },
         { path: '/scan', label: 'Instant Scan', icon: Camera, protected: true },
         { path: '/templates', label: 'Answer Sheets', icon: Printer, protected: true },
-        // { path: '/help', label: 'Help & Guide', icon: BookOpen },
-        // { path: '/manual', label: 'User Manual', icon: FileText },
         { path: '/periods', label: 'Periods', icon: Folder, protected: true },
         { path: '/grades', label: 'Grade/Year Levels', icon: GraduationCap, protected: true },
-        { path: '/subjects', label: 'Subjects', icon: BookOpen, protected: true   },
+        { path: '/subjects', label: 'Subjects', icon: BookOpen, protected: true },
         { path: '/sections', label: 'Sections', icon: FolderKanban, protected: true },
         { path: '/students', label: 'Students', icon: Users, protected: true },
+        { path: '/account', label: 'Settings & Backup', icon: Cloud, protected: true },
     ];
 
     const navItems = allNavItems.filter(item => !item.protected || currentUser);
@@ -69,11 +84,8 @@ export default function AppLayout() {
         { path: '/templates', label: 'Sheets', icon: Printer },
         { path: '/scan', label: 'Scan', icon: Camera, isPrimary: true },
         { path: '/manage', label: 'Manage', icon: Settings2, isAction: true },
-        { path: '/account', label: 'Account', icon: User },
-    ].filter(item => {
-        if (item.path === '/' || item.path === '/templates') return true;
-        return currentUser;
-    });
+        { path: '/account', label: 'Backup', icon: Cloud },
+    ];
 
     const manageSubItems = [
         { path: '/grades', label: 'Grade/Year Levels', icon: GraduationCap, protected: true },
@@ -81,16 +93,20 @@ export default function AppLayout() {
         { path: '/students', label: 'Students', icon: Users, protected: true },
         { path: '/periods', label: 'Periods', icon: Folder, protected: true },
         { path: '/subjects', label: 'Subjects', icon: BookOpen, protected: true },
+        { path: '/account', label: 'Settings & Backup', icon: Cloud, protected: true },
         { path: '/help', label: 'Help & Guide', icon: BookOpen },
     ].filter(item => !item.protected || currentUser);
 
-    const handleLogout = async () => {
-        await logout();
-        navigate('/landing?mode=login');
-    };
-
     const isManageActive = manageSubItems.some(item => location.pathname.startsWith(item.path));
     const isScannerPage = location.pathname.startsWith('/scan');
+
+    const handleQuickDriveBackup = async () => {
+        if (!isGoogleConfigured) {
+            navigate('/account');
+        } else {
+            await triggerBackupToDrive();
+        }
+    };
 
     return (
         <div className="flex h-[100dvh] bg-slate-100 dark:bg-slate-950 font-sans overflow-hidden">
@@ -133,69 +149,44 @@ export default function AppLayout() {
 
                 {/* USER PROFILE & FOOTER SECTION */}
                 <div className="p-4 m-4 mt-auto flex flex-col gap-2">
+                    {/* Backup to GDrive Quick Card */}
+                    <button
+                        onClick={handleQuickDriveBackup}
+                        disabled={isBackingUp}
+                        className="flex items-center justify-between px-4 py-3 rounded-2xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20 border border-amber-500/20 text-amber-700 dark:text-amber-300 transition-all font-bold text-xs group text-left active:scale-95"
+                    >
+                        <div className="flex items-center gap-2.5">
+                            <Cloud className={`w-4 h-4 text-amber-500 ${isBackingUp ? 'animate-bounce' : 'group-hover:scale-110'} transition-transform`} />
+                            <span>{isBackingUp ? 'Backing Up...' : 'Backup to Drive'}</span>
+                        </div>
+                        {isBackingUp ? <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500" /> : <Upload className="w-3.5 h-3.5 opacity-60" />}
+                    </button>
+
                     {/* Support & Feedback Button */}
                     <a
                         href="mailto:contact@godspeedgrader.com"
-                        className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-500/10 hover:text-violet-600 dark:hover:text-violet-400 transition-all font-bold text-sm group"
+                        className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-500/10 hover:text-violet-600 dark:hover:text-violet-400 transition-all font-bold text-xs group"
                     >
-                        <MessageSquare className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                        <MessageSquare className="w-4 h-4 group-hover:scale-110 transition-transform" />
                         <span>Support & Feedback</span>
                     </a>
 
                     <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/50 dark:border-white/5 p-4">
-                        {currentUser ? (
-                            <>
-                                <div className="flex items-center gap-3 mb-3">
-                                    <div className="w-10 h-10 bg-violet-100 dark:bg-violet-500/20 rounded-full flex items-center justify-center shrink-0">
-                                        <UserCircle className="w-6 h-6 text-violet-600 dark:text-violet-400" />
-                                    </div>
-                                    <div className="overflow-hidden">
-                                        <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                                            {currentUser?.role === 'guest' ? 'Guest Workspace' : currentUser?.email}
-                                        </p>
-                                        <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">
-                                            {currentUser?.role === 'guest' ? 'Local Only' : 'Free Account'}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {syncStatus !== 'idle' && (
-                                    <div className={`mb-3 flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider ${syncStatus === 'syncing' ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400'}`}>
-                                        {syncStatus === 'syncing' ? (
-                                            <>
-                                                <RefreshCw className="w-3 h-3 animate-spin" />
-                                                Syncing...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <AlertCircle className="w-3 h-3" />
-                                                Sync Error
-                                            </>
-                                        )}
-                                    </div>
-                                )}
-
-                                <button
-                                    onClick={handleLogout}
-                                    className="w-full flex items-center justify-center gap-2 py-2 text-sm font-bold text-slate-400 hover:text-red-600 transition-colors"
-                                >
-                                    <LogOut className="w-4 h-4" /> Sign Out
-                                </button>
-                            </>
-                        ) : (
-                            <div className="text-center py-2">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Join the Speed</p>
-                                <button
-                                    onClick={() => navigate('/landing?mode=login')}
-                                    className="w-full flex items-center justify-center gap-2 py-3 bg-violet-600 hover:bg-violet-500 text-white rounded-xl font-bold text-sm shadow-lg shadow-violet-500/20 active:scale-95 transition-all"
-                                >
-                                    <Zap className="w-4 h-4 fill-white" />
-                                    Sign In / Register
-                                </button>
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-violet-100 dark:bg-violet-500/20 rounded-full flex items-center justify-center shrink-0">
+                                <UserCircle className="w-6 h-6 text-violet-600 dark:text-violet-400" />
                             </div>
-                        )}
+                            <div className="overflow-hidden flex-1">
+                                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                                    {currentUser?.name || 'Local Teacher'}
+                                </p>
+                                <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1">
+                                    <ShieldCheck className="w-3 h-3" /> Offline Mode
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                    <div className="text-center mt-2">
+                    <div className="text-center mt-1">
                         <button onClick={() => setIsNoticesModalOpen(true)} className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                             Third-Party Notices
                         </button>
@@ -212,41 +203,54 @@ export default function AppLayout() {
 
                 {/* GLOBAL HEADER */}
                 <header className="sticky top-0 z-40 bg-slate-100/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-white/5 pt-safe-top">
-                    <div className="w-full max-w-5xl mx-auto flex items-center justify-between px-4 md:px-8 py-4">
+                    <div className="w-full max-w-5xl mx-auto flex items-center justify-between px-4 md:px-8 py-3.5">
                         <div className="md:hidden">
-                            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
                                 {pageTitle === 'Dashboard' ? 'GodSpeed' : pageTitle}
                             </h1>
-                            <p className="text-[11px] font-medium text-slate-500 mt-0.5">{pageSub}</p>
+                            <p className="text-[10px] font-medium text-slate-500">{pageSub}</p>
                         </div>
                         <div className="hidden md:block">
                             <h2 className="text-lg font-bold text-slate-900 dark:text-white">{pageTitle}</h2>
                             <p className="text-xs font-medium text-slate-500">{pageSub}</p>
                         </div>
-                        <div className="flex items-center gap-3">
-                            {currentUser && (
-                                <NavLink
-                                    to="/account"
-                                    className={({ isActive }) =>
-                                        `hidden md:flex w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl items-center justify-center transition-all ${isActive
-                                            ? 'bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400'
-                                            : 'bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-white shadow-sm border border-slate-200/50 dark:border-white/5'
-                                        }`
-                                    }
-                                >
-                                    <UserCircle className="w-6 h-6 md:w-7 md:h-7" />
-                                </NavLink>
-                            )}
+
+                        <div className="flex items-center gap-2 md:gap-3">
+                            {/* Prominent GDrive Backup Button in Header */}
+                            <button
+                                onClick={handleQuickDriveBackup}
+                                disabled={isBackingUp}
+                                title="Backup to Google Drive"
+                                className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2.5 rounded-xl md:rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-bold text-xs md:text-sm transition-all active:scale-95 shadow-sm"
+                            >
+                                <Cloud className={`w-4 h-4 md:w-5 md:h-5 ${isBackingUp ? 'animate-bounce' : ''}`} />
+                                <span className="hidden sm:inline">{isBackingUp ? 'Backing Up...' : 'Backup to Drive'}</span>
+                            </button>
+
                             <NavLink
-                                to="/help"
+                                to="/account"
                                 className={({ isActive }) =>
-                                    `flex w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl items-center justify-center transition-all shrink-0 ${isActive
+                                    `flex w-10 h-10 md:w-11 md:h-11 rounded-xl md:rounded-2xl items-center justify-center transition-all ${isActive
                                         ? 'bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400'
                                         : 'bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-white shadow-sm border border-slate-200/50 dark:border-white/5'
                                     }`
                                 }
+                                title="Settings & Backup"
                             >
-                                <HelpCircle className="w-6 h-6 md:w-7 md:h-7" />
+                                <UserCircle className="w-5 h-5 md:w-6 md:h-6" />
+                            </NavLink>
+
+                            <NavLink
+                                to="/help"
+                                className={({ isActive }) =>
+                                    `flex w-10 h-10 md:w-11 md:h-11 rounded-xl md:rounded-2xl items-center justify-center transition-all shrink-0 ${isActive
+                                        ? 'bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400'
+                                        : 'bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-white shadow-sm border border-slate-200/50 dark:border-white/5'
+                                    }`
+                                }
+                                title="Help"
+                            >
+                                <HelpCircle className="w-5 h-5 md:w-6 md:h-6" />
                             </NavLink>
                         </div>
                     </div>
@@ -254,7 +258,7 @@ export default function AppLayout() {
 
                 <div className={`flex-1 min-h-full ${isScannerPage ? 'pb-0' : 'pb-24 pb-safe-bottom'} md:pb-0`}>
                     <Outlet />
-                    {!isScannerPage && <div className="h-12 md:hidden" />} {/* Extra spacer for general pages */}
+                    {!isScannerPage && <div className="h-12 md:hidden" />}
                 </div>
             </main>
 
@@ -303,20 +307,6 @@ export default function AppLayout() {
                                 </div>
                                 <span className="font-bold">Support & Feedback</span>
                             </a>
-
-                            {/* Mobile Third-Party Notices Link */}
-                            <button
-                                onClick={() => {
-                                    setIsManageMenuOpen(false);
-                                    setIsNoticesModalOpen(true);
-                                }}
-                                className="flex items-center gap-4 px-4 py-4 rounded-2xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                            >
-                                <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                                    <AlertCircle className="w-5 h-5" />
-                                </div>
-                                <span className="font-bold">Third-Party Notices</span>
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -331,7 +321,6 @@ export default function AppLayout() {
                         {mobileMainItems.map((item) => {
                             const isActive = item.isAction ? (isManageActive || isManageMenuOpen) : location.pathname.startsWith(item.path);
 
-                            // 1. Primary "Scan" Button (Big and Centered)
                             if (item.isPrimary) {
                                 return (
                                     <NavLink
@@ -350,52 +339,42 @@ export default function AppLayout() {
                                 );
                             }
 
-                            // 2. "Manage" Action Button
                             if (item.isAction) {
                                 return (
                                     <button
                                         key={item.label}
                                         onClick={() => setIsManageMenuOpen(!isManageMenuOpen)}
-                                        className={`flex flex-col items-center justify-center w-14 h-12 rounded-xl transition-all relative ${isActive
-                                            ? 'text-violet-600 dark:text-violet-400'
-                                            : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                                            }`}
+                                        className={`flex flex-col items-center justify-center w-14 py-1 rounded-xl transition-all ${isActive
+                                            ? 'text-violet-600 dark:text-violet-400 font-bold'
+                                            : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                                        }`}
                                     >
-                                        <div className="relative">
-                                            {isManageMenuOpen ? <ChevronUp className="w-6 h-6 mb-0.5 animate-bounce" /> : <item.icon className={`w-5 h-5 mb-0.5 ${isActive ? 'fill-violet-500/20' : ''}`} />}
-                                        </div>
-                                        <span className="text-[9px] font-semibold">{item.label}</span>
+                                        <item.icon className="w-5 h-5" />
+                                        <span className="text-[10px] mt-1">{item.label}</span>
                                     </button>
                                 );
                             }
 
-                            // 3. Standard Nav Links
                             return (
                                 <NavLink
                                     key={item.path}
                                     to={item.path}
-                                    className={() =>
-                                        `flex flex-col items-center justify-center w-14 h-12 rounded-xl transition-all ${isActive
-                                            ? 'text-violet-600 dark:text-violet-400'
-                                            : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                                        }`
+                                    className={({ isActive }) =>
+                                        `flex flex-col items-center justify-center w-14 py-1 rounded-xl transition-all ${isActive
+                                            ? 'text-violet-600 dark:text-violet-400 font-bold'
+                                            : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                                    }`
                                     }
                                 >
-                                    <div className="relative">
-                                        <item.icon className={`w-5 h-5 mb-0.5 ${isActive ? 'fill-violet-500/20' : ''}`} />
-                                        {currentUser && item.path === '/account' && syncStatus === 'syncing' && (
-                                            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse border-2 border-white dark:border-slate-900 flex items-center justify-center">
-                                                <RefreshCw className="w-1.5 h-1.5 text-white animate-spin" />
-                                            </span>
-                                        )}
-                                    </div>
-                                    <span className="text-[9px] font-semibold">{item.label}</span>
+                                    <item.icon className="w-5 h-5" />
+                                    <span className="text-[10px] mt-1">{item.label}</span>
                                 </NavLink>
                             );
                         })}
                     </div>
                 </nav>
             )}
+
         </div>
     );
 }

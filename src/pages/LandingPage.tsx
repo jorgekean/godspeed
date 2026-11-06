@@ -1,119 +1,16 @@
 import React, { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Zap, Camera, Printer, ShieldCheck, ArrowRight, BarChart3, CheckCircle, Check, Star, X, Lock, Loader2, Mail } from 'lucide-react';
-
-// 1. Import your custom AuthContext instead of Firebase
+import { useNavigate } from 'react-router-dom';
+import { Zap, ArrowRight, CheckCircle, Check, Star, X, Mail, Cloud, ShieldCheck, Database, HardDrive, Smartphone } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function LandingPage() {
-    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
-    const { login, loginAsGuest, currentUser } = useAuth();
-
-    // Auth Modal States
-    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-    const [isLoginMode, setIsLoginMode] = useState(false); // Toggle between Signup / Login
-
-    // Redirect if already logged in
-    React.useEffect(() => {
-        if (currentUser) {
-            navigate('/', { replace: true });
-        }
-    }, [currentUser, navigate]);
-
-    // Handle initial login/signup mode from query params
-    React.useEffect(() => {
-        const mode = searchParams.get('mode');
-        if (mode === 'login') {
-            setIsLoginMode(true);
-            setIsAuthModalOpen(true);
-        } else if (mode === 'signup') {
-            setIsLoginMode(false);
-            setIsAuthModalOpen(true);
-        }
-    }, [searchParams]);
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [agreedToTerms, setAgreedToTerms] = useState(false);
-
-    // Loading & Error States
-    const [isLoading, setIsLoading] = useState(false);
-    const [authError, setAuthError] = useState('');
-
+    const { loginAsGuest, currentUser } = useAuth();
     const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
 
-    const handleAuthSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (!isLoginMode && !agreedToTerms) {
-            setAuthError('You must agree to the Terms and Conditions to create an account.');
-            return;
-        }
-
-        setAuthError('');
-        setIsLoading(true);
-
-        try {
-            // 3. Point to our new Fastify endpoints
-            const endpoint = isLoginMode ? '/auth/login' : '/auth/register';
-
-            const response = await fetch(API_BASE_URL + endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password, role: 'user' })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok || !data.success) {
-                throw new Error(data.message || 'Authentication failed');
-            }
-
-            if (isLoginMode) {
-                // Sign In: Update context state
-                login(data.token, data.user);
-            } else {
-                // Sign Up: Auto-login to fetch the JWT token
-                const loginResponse = await fetch(API_BASE_URL + '/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                });
-
-                const loginData = await loginResponse.json();
-
-                if (loginResponse.ok && loginData.success) {
-                    login(loginData.token, loginData.user);
-                } else {
-                    // Fallback if auto-login fails
-                    setIsLoginMode(true);
-                    setAuthError('Account created successfully! Please sign in.');
-                    setIsLoading(false);
-                    return; // Stop execution so we don't navigate yet
-                }
-            }
-
-            // Success! Close modal and go to dashboard
-            setIsAuthModalOpen(false);
-            navigate('/');
-
-        } catch (error: any) {
-            console.error("Auth error:", error);
-            // Display the specific error message from the backend
-            setAuthError(error.message || 'An unexpected error occurred. Please try again.');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const openModal = (mode: 'login' | 'signup') => {
-        setIsLoginMode(mode === 'login');
-        setAuthError('');
-        setEmail('');
-        setPassword('');
-        setIsAuthModalOpen(true);
+    const handleLaunchApp = () => {
+        loginAsGuest();
+        navigate('/');
     };
 
     return (
@@ -129,12 +26,12 @@ export default function LandingPage() {
                         <span className="font-bold tracking-tight text-lg">GodSpeed <span className="font-normal text-slate-500">Grader</span></span>
                     </div>
                     <div className="flex items-center gap-4">
-                        {/* <button onClick={() => openModal('login')} className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">Sign In</button> */}
                         <button
-                            onClick={() => openModal('login')}
-                            className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-full transition-colors"
+                            onClick={handleLaunchApp}
+                            className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-full transition-colors flex items-center gap-2"
                         >
-                            Sign In
+                            <span>Open Grader</span>
+                            <ArrowRight className="w-4 h-4" />
                         </button>
                     </div>
                 </div>
@@ -143,6 +40,9 @@ export default function LandingPage() {
             {/* HERO SECTION */}
             <section className="relative pt-20 pb-32 px-6 max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-16">
                 <div className="flex-1 text-center lg:text-left z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-violet-100 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 text-xs font-bold mb-6">
+                        <ShieldCheck className="w-4 h-4" /> 100% Offline • Pure Edge Computing
+                    </div>
                     <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-slate-900 leading-[1.1] mb-6">
                         Awaken your <br className="hidden lg:block" />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-fuchsia-500 to-cyan-500">
@@ -150,14 +50,11 @@ export default function LandingPage() {
                         </span>
                     </h1>
                     <p className="text-lg md:text-xl text-slate-500 font-medium mb-10 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-                        Grade exams at the speed of thought. Turn your phone into a high-speed OMR scanner with local edge-computing. No internet required.
+                        Grade exams at lightning speed. Turn your phone into an offline high-speed OMR scanner with local edge-computing. No cloud servers required, with easy backup to Google Drive.
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
                         <button
-                            onClick={() => {
-                                loginAsGuest();
-                                navigate('/');
-                            }}
+                            onClick={handleLaunchApp}
                             className="w-full sm:w-auto px-8 py-4 bg-violet-600 hover:bg-violet-500 text-white rounded-full font-bold text-lg shadow-lg shadow-violet-500/25 active:scale-95 transition-all flex items-center justify-center gap-2"
                         >
                             Start Grading Free <ArrowRight className="w-5 h-5" />
@@ -189,68 +86,74 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* PRICING SECTION */}
+            {/* FEATURES SECTION */}
             <section className="bg-slate-100 py-24 px-6">
                 <div className="max-w-6xl mx-auto">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-5xl font-black tracking-tight text-slate-900 mb-4">Simple pricing for all educators.</h2>
-                        <p className="text-slate-500 font-medium max-w-2xl mx-auto text-lg">Serverless, local-first architecture keeps Godspeed free forever. Upgrade only when you need cloud peace of mind.</p>
+                        <h2 className="text-3xl md:text-5xl font-black tracking-tight text-slate-900 mb-4">
+                            Pure Offline Grading with Google Drive Peace of Mind.
+                        </h2>
+                        <p className="text-slate-500 font-medium max-w-2xl mx-auto text-lg">
+                            No logins or external servers required. Your exam data lives safely on your device and backs up directly to your personal Google Drive.
+                        </p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto gap-8">
-                        {/* 1. Free Account Tier */}
+                        {/* 1. Offline Tier */}
                         <div className="bg-white rounded-3xl p-8 border-2 border-violet-500 shadow-xl shadow-violet-500/10 flex flex-col relative">
                             <div className="absolute top-0 inset-x-0 flex justify-center -translate-y-1/2">
-                                <span className="bg-violet-500 text-white text-xs font-bold px-3 py-1 uppercase tracking-wider rounded-full">Standard</span>
+                                <span className="bg-violet-500 text-white text-xs font-bold px-3 py-1 uppercase tracking-wider rounded-full">
+                                    100% Free Forever
+                                </span>
                             </div>
                             <div className="mb-6">
-                                <h3 className="text-xl font-bold text-slate-900 mb-2">Teacher Free</h3>
-                                <p className="text-slate-500 text-sm">Everything you need, stored locally.</p>
-                                <div className="mt-4"><span className="text-4xl font-black text-slate-900">Free</span></div>
+                                <h3 className="text-xl font-bold text-slate-900 mb-2">Offline Teacher</h3>
+                                <p className="text-slate-500 text-sm">Everything stored locally on your device.</p>
+                                <div className="mt-4"><span className="text-4xl font-black text-slate-900">₱0</span></div>
                             </div>
                             <ul className="space-y-4 mb-8 flex-1">
-                                <li className="flex items-center gap-3 text-slate-900 font-bold"><Check className="w-5 h-5 text-violet-500 shrink-0" /> 100 scans per month</li>
-                                <li className="flex items-center gap-3 text-slate-600 font-medium"><Check className="w-5 h-5 text-violet-500 shrink-0" /> Create unlimited Sections</li>
-                                <li className="flex items-center gap-3 text-slate-600 font-medium"><Check className="w-5 h-5 text-violet-500 shrink-0" /> Excel Roster Import</li>
-                                <li className="flex items-center gap-3 text-slate-400 font-medium text-sm mt-4 p-3 bg-slate-50 rounded-lg">
-                                    <ShieldCheck className="w-5 h-5 shrink-0" /> Note: Data is saved to your browser. Clearing cache removes data.
-                                </li>
+                                <li className="flex items-center gap-3 text-slate-900 font-bold"><Check className="w-5 h-5 text-violet-500 shrink-0" /> Unlimited Offline Scans</li>
+                                <li className="flex items-center gap-3 text-slate-600 font-medium"><Check className="w-5 h-5 text-violet-500 shrink-0" /> Create Unlimited Sections & Rosters</li>
+                                <li className="flex items-center gap-3 text-slate-600 font-medium"><Check className="w-5 h-5 text-violet-500 shrink-0" /> Rapid Key Importer & Answer Sheets</li>
+                                <li className="flex items-center gap-3 text-slate-600 font-medium"><Check className="w-5 h-5 text-violet-500 shrink-0" /> Export Rosters & Item Analysis to Excel</li>
+                                <li className="flex items-center gap-3 text-slate-600 font-medium"><Check className="w-5 h-5 text-violet-500 shrink-0" /> Zero Internet Required for Grading</li>
                             </ul>
-                            <button onClick={() => {
-                                loginAsGuest();
-                                navigate('/');
-                            }} className="w-full py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl shadow-lg shadow-violet-500/25 transition-all">
-                                Launch Scanner Workspace
+                            <button
+                                onClick={handleLaunchApp}
+                                className="w-full py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl shadow-lg shadow-violet-500/25 transition-all"
+                            >
+                                Launch Workspace
                             </button>
                         </div>
 
-                        {/* 3. Premium Tier */}
+                        {/* 2. Google Drive Backup Tier */}
                         <div className="bg-slate-900 rounded-3xl p-8 border border-slate-800 shadow-xl flex flex-col">
                             <div className="mb-6">
                                 <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-                                    <Star className="w-5 h-5 text-amber-400 fill-amber-400" /> Premium Pro
+                                    <Cloud className="w-5 h-5 text-amber-400" /> Google Drive Backup
                                 </h3>
-                                <p className="text-slate-400 text-sm">Peace of mind & deep analytics.</p>
+                                <p className="text-slate-400 text-sm">Direct, private cloud backup to your own Drive.</p>
                                 <div className="mt-4 flex flex-col">
                                     <div className="flex items-center gap-3">
-                                        <span className="text-4xl font-black text-white line-through decoration-rose-500 opacity-50">₱399</span>
-                                        <span className="text-2xl font-bold text-emerald-400 bg-emerald-400/10 px-3 py-1 rounded-full">FREE</span>
+                                        <span className="text-2xl font-bold text-emerald-400 bg-emerald-400/10 px-3 py-1 rounded-full">INCLUDED</span>
                                     </div>
                                     <div className="mt-1">
-                                        <span className="text-slate-400 text-sm font-medium">For a limited time</span>
+                                        <span className="text-slate-400 text-sm font-medium">Free for all teachers</span>
                                     </div>
                                 </div>
                             </div>
                             <ul className="space-y-4 mb-8 flex-1">
-                                <li className="flex items-center gap-3 text-slate-300 font-medium"><Check className="w-5 h-5 text-cyan-400 shrink-0" /> Everything in Free</li>
-                                <li className="flex items-center gap-3 text-white font-bold"><Check className="w-5 h-5 text-cyan-400 shrink-0" /> Unlimited Scans</li>
-                                <li className="flex items-center gap-3 text-white font-bold"><Check className="w-5 h-5 text-cyan-400 shrink-0" /> Instant Scan</li>
-                                <li className="flex items-center gap-3 text-white font-bold"><Check className="w-5 h-5 text-cyan-400 shrink-0" /> Secure Cloud Auto-Sync</li>
-                                <li className="flex items-center gap-3 text-slate-300 font-medium"><Check className="w-5 h-5 text-cyan-400 shrink-0" /> Item Analysis Report</li>
-                                <li className="flex items-center gap-3 text-slate-300 font-medium"><Check className="w-5 h-5 text-cyan-400 shrink-0" /> Sync across Phone & Laptop</li>
+                                <li className="flex items-center gap-3 text-slate-300 font-medium"><Check className="w-5 h-5 text-cyan-400 shrink-0" /> Direct 1-Click Backup to Google Drive</li>
+                                <li className="flex items-center gap-3 text-slate-300 font-medium"><Check className="w-5 h-5 text-cyan-400 shrink-0" /> 1-Click Restore to any device</li>
+                                <li className="flex items-center gap-3 text-slate-300 font-medium"><Check className="w-5 h-5 text-cyan-400 shrink-0" /> Local JSON File Export & Import</li>
+                                <li className="flex items-center gap-3 text-slate-300 font-medium"><Check className="w-5 h-5 text-cyan-400 shrink-0" /> Zero intermediary servers (Direct to Google)</li>
+                                <li className="flex items-center gap-3 text-slate-300 font-medium"><Check className="w-5 h-5 text-cyan-400 shrink-0" /> Full student data privacy compliance</li>
                             </ul>
-                            <button onClick={() => openModal('signup')} className="w-full py-3.5 bg-white hover:bg-slate-200 text-slate-900 font-bold rounded-xl transition-colors">
-                                Get Premium
+                            <button
+                                onClick={handleLaunchApp}
+                                className="w-full py-3.5 bg-white hover:bg-slate-200 text-slate-900 font-bold rounded-xl transition-colors"
+                            >
+                                Start Grading Now
                             </button>
                         </div>
                     </div>
@@ -261,13 +164,13 @@ export default function LandingPage() {
             <section className="py-24 px-6 bg-white">
                 <div className="max-w-4xl mx-auto text-center">
                     <div className="inline-flex items-center gap-2 px-4 py-2 bg-violet-50 text-violet-600 rounded-full text-sm font-bold mb-8">
-                        <Zap className="w-4 h-4" /> Institutional Partnerships
+                        <Zap className="w-4 h-4" /> Institutional Support
                     </div>
                     <h2 className="text-3xl md:text-5xl font-black tracking-tight text-slate-900 mb-6">
-                        Bring Godspeed to your school.
+                        Built for educators, everywhere.
                     </h2>
                     <p className="text-slate-500 font-medium text-lg mb-10 leading-relaxed">
-                        Are you a school administrator or department head? We offer customized solutions, bulk licensing, and dedicated support for educational institutions interested in a more structured grading workflow.
+                        Whether you teach in a high-tech smart classroom or a remote province with limited connectivity, Godspeed Grader works offline everywhere you need it.
                     </p>
                     <a
                         href="mailto:contact@godspeedgrader.com"
@@ -277,101 +180,6 @@ export default function LandingPage() {
                     </a>
                 </div>
             </section>
-
-            {/* ========================================== */}
-            {/* REAL AUTHENTICATION MODAL */}
-            {/* ========================================== */}
-            {isAuthModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
-                    <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden relative animate-in zoom-in-95 duration-200">
-                        <button
-                            onClick={() => setIsAuthModalOpen(false)}
-                            className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full transition-colors"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-
-                        <div className="p-8 pt-10 text-center">
-                            <div className="w-16 h-16 bg-violet-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                                <Lock className="w-8 h-8 text-violet-600" />
-                            </div>
-
-                            <h3 className="text-2xl font-black text-slate-900 mb-2">
-                                {isLoginMode ? 'Welcome Back' : 'Create your Account'}
-                            </h3>
-                            <p className="text-slate-500 mb-6 font-medium">
-                                {isLoginMode ? 'Sign in to access your grading data.' : 'Get unlimited local scans for free.'}
-                            </p>
-
-                            {authError && (
-                                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm font-semibold rounded-xl">
-                                    {authError}
-                                </div>
-                            )}
-
-                            <form onSubmit={handleAuthSubmit} className="space-y-4 text-left">
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1 ml-1">Email Address</label>
-                                    <input
-                                        type="email"
-                                        required
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        placeholder="teacher@school.edu.ph"
-                                        className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all font-medium"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1 ml-1">Password</label>
-                                    <input
-                                        type="password"
-                                        required
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        placeholder="••••••••"
-                                        className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all font-medium"
-                                    />
-                                </div>
-
-                                {!isLoginMode && (
-                                    <div className="flex items-start gap-3 px-1 py-2 animate-in fade-in duration-300">
-                                        <input
-                                            id="terms"
-                                            type="checkbox"
-                                            required
-                                            checked={agreedToTerms}
-                                            onChange={(e) => setAgreedToTerms(e.target.checked)}
-                                            className="mt-1 w-4 h-4 text-violet-600 border-slate-300 rounded focus:ring-violet-500 transition-all cursor-pointer"
-                                        />
-                                        <label htmlFor="terms" className="text-sm text-slate-500 leading-tight">
-                                            I agree to the <button type="button" onClick={() => setIsTermsModalOpen(true)} className="text-violet-600 font-bold hover:underline">Terms and Conditions</button> and Privacy Policy.
-                                        </label>
-                                    </div>
-                                )}
-
-                                <button
-                                    type="submit"
-                                    disabled={isLoading}
-                                    className="w-full py-4 mt-2 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl shadow-lg shadow-violet-500/25 transition-all flex items-center justify-center gap-2"
-                                >
-                                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isLoginMode ? 'Sign In' : 'Create Account')}
-                                </button>
-                            </form>
-
-                            <div className="mt-6 text-sm text-slate-500 font-medium">
-                                {isLoginMode ? "Don't have an account? " : "Already have an account? "}
-                                <button
-                                    onClick={() => openModal(isLoginMode ? 'signup' : 'login')}
-                                    className="text-violet-600 font-bold hover:underline"
-                                >
-                                    {isLoginMode ? 'Sign Up' : 'Sign In'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* TERMS MODAL */}
             {isTermsModalOpen && (
@@ -385,23 +193,14 @@ export default function LandingPage() {
                         </div>
                         <div className="p-8 max-h-[60vh] overflow-y-auto text-slate-600 space-y-4 text-sm leading-relaxed">
                             <p className="font-bold text-slate-900">Last Updated: June 14, 2026</p>
-                            <h4 className="font-bold text-slate-900">1. Acceptance of Terms</h4>
-                            <p>By creating an account on GodSpeed Grader, you agree to comply with and be bound by these Terms and Conditions. If you do not agree to these terms, please do not use the application.</p>
+                            <h4 className="font-bold text-slate-900">1. Offline First & Privacy</h4>
+                            <p>GodSpeed Grader operates as a client-side offline application. Your student records, rosters, and test scores are processed locally on your device and are never transmitted to our servers.</p>
 
-                            <h4 className="font-bold text-slate-900">2. Description of Service</h4>
-                            <p>GodSpeed Grader is a tool designed to help educators scan and grade OMR (Optical Mark Recognition) sheets using mobile camera technology and edge computing.</p>
+                            <h4 className="font-bold text-slate-900">2. Google Drive Backup</h4>
+                            <p>When you choose to use the Google Drive backup feature, the application interacts directly with Google's Drive API from your web browser to store your backup files in your personal account.</p>
 
-                            <h4 className="font-bold text-slate-900">3. User Responsibilities</h4>
-                            <p>You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You agree to use the service for educational purposes only.</p>
-
-                            <h4 className="font-bold text-slate-900">4. Data Privacy</h4>
-                            <p>Your data is processed locally on your device whenever possible. If you enable Cloud Sync, your data is securely stored on our servers to allow access across multiple devices. We do not sell your personal data to third parties.</p>
-
-                            <h4 className="font-bold text-slate-900">5. Limitation of Liability</h4>
-                            <p>GodSpeed Grader is provided "as is" without any warranties. We are not responsible for any grading errors, data loss, or system downtime.</p>
-
-                            <h4 className="font-bold text-slate-900">6. Changes to Terms</h4>
-                            <p>We reserve the right to modify these terms at any time. Your continued use of the service constitutes acceptance of the new terms.</p>
+                            <h4 className="font-bold text-slate-900">3. Limitation of Liability</h4>
+                            <p>GodSpeed Grader is provided "as is" without any warranties. Users are advised to regularly create backups using the Google Drive or Export Backup features.</p>
                         </div>
                         <div className="p-6 border-t border-slate-100 bg-slate-50 text-right">
                             <button

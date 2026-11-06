@@ -194,7 +194,7 @@ export default function UserManualPage() {
                                 { title: 'Lighting', desc: 'Scan in bright, indirect light. Avoid harsh shadows.' },
                                 { title: 'Steady', desc: 'Keep your phone parallel to the paper for maximum accuracy.' },
                                 { title: 'Bubbles', desc: 'Use dark ink/pencil. Ensure students shade fully.' },
-                                { title: 'Offline', desc: 'Sync your data to the cloud only when you need a backup.' },
+                                { title: 'Google Drive Backup', desc: 'Backup your gradebooks directly to Google Drive or export a JSON file anytime.' },
                             ].map((tip, i) => (
                                 <div key={i} className="flex gap-4">
                                     <div className="w-8 h-8 rounded-lg bg-white/10 dark:bg-slate-100 flex items-center justify-center font-black text-xs shrink-0">

@@ -1,388 +1,662 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useSync } from '../contexts/SyncContext';
-import { useNavigate } from 'react-router-dom';
-import { UserCircle, ShieldCheck, LogOut, Star, Lock, Database, FileText, Loader2, Mail, RefreshCw, AlertCircle, CheckCircle2, X, MessageSquare } from 'lucide-react';
+import { useBackup } from '../contexts/SyncContext';
+import { db } from '../services/db';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { backupService } from '../services/backupService';
+import { type DriveBackupFile } from '../services/googleDriveService';
+import {
+    UserCircle,
+    ShieldCheck,
+    Database,
+    Loader2,
+    Mail,
+    RefreshCw,
+    AlertCircle,
+    CheckCircle2,
+    Download,
+    Upload,
+    Cloud,
+    HardDrive,
+    Trash2,
+    Settings,
+    Edit3,
+    FileJson,
+    Save,
+    X,
+    ExternalLink,
+    HelpCircle
+} from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function AccountPage() {
-    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+    const { currentUser, updateProfile } = useAuth();
+    const {
+        status,
+        lastBackupTimestamp,
+        isBackingUp,
+        isRestoring,
+        googleClientId,
+        isGoogleConfigured,
+        setGoogleClientId,
+        triggerBackupToDrive,
+        triggerRestoreFromDrive,
+        listDriveBackups,
+        exportLocalBackupFile,
+        importLocalBackupFile,
+        error: backupError
+    } = useBackup();
 
-    // 1. Destructure login from our custom context
-    const { currentUser, login, logout } = useAuth();
-    const { status, triggerSync, lastSyncTimestamp, error: syncError } = useSync();
-    const navigate = useNavigate();
+    // Profile editing states
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [name, setName] = useState(currentUser?.name || '');
+    const [email, setEmail] = useState(currentUser?.email || '');
+    const [school, setSchool] = useState(currentUser?.school || '');
 
-    // Auth Form States (Only used if user is NOT logged in)
-    // ... (rest of the file remains same until the return section)
-    const [isLoginMode, setIsLoginMode] = useState(false); // Default to Sign Up
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [agreedToTerms, setAgreedToTerms] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [authError, setAuthError] = useState('');
+    // Google Drive restore modal states
+    const [isDriveRestoreOpen, setIsDriveRestoreOpen] = useState(false);
+    const [driveBackups, setDriveBackups] = useState<DriveBackupFile[]>([]);
+    const [isLoadingDriveList, setIsLoadingDriveList] = useState(false);
+    const [selectedDriveFileId, setSelectedDriveFileId] = useState<string | null>(null);
+    const [restoreMode, setRestoreMode] = useState<'replace' | 'merge'>('replace');
 
-    const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
+    // Google OAuth config modal states
+    const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+    const [clientIdInput, setClientIdInput] = useState(googleClientId);
 
-    const handleAuthSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    // File input ref for local JSON restore
+    const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
-        if (!isLoginMode && !agreedToTerms) {
-            setAuthError('You must agree to the Terms and Conditions to create an account.');
-            return;
+    // Live counts of IndexedDB tables
+    const stats = useLiveQuery(async () => {
+        const [sections, students, exams, scanResults, periods, subjects, gradeLevels] = await Promise.all([
+            db.sections.count(),
+            db.students.count(),
+            db.exams.count(),
+            db.scanResults.count(),
+            db.periods.count(),
+            db.subjects.count(),
+            db.gradeLevels.count()
+        ]);
+        return {
+            sections,
+            students,
+            exams,
+            scanResults,
+            periods,
+            subjects,
+            gradeLevels,
+            total: sections + students + exams + scanResults + periods + subjects + gradeLevels
+        };
+    }, []);
+
+    useEffect(() => {
+        if (currentUser) {
+            setName(currentUser.name || 'Teacher');
+            setEmail(currentUser.email || 'guest@godspeedgrader.local');
+            setSchool(currentUser.school || '');
         }
+    }, [currentUser]);
 
-        setAuthError('');
-        setIsLoading(true);
-
+    const handleSaveProfile = async (e: React.FormEvent) => {
+        e.preventDefault();
         try {
-            // 2. Point to our new Fastify endpoints
-            const endpoint = isLoginMode ? '/auth/login' : '/auth/register';
-
-            const response = await fetch(API_BASE_URL + endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password, role: 'user' })
-            }).catch(() => {
-                throw new Error('Could not connect to the server. Please check your internet connection and try again.');
-            });
-
-            const data = await response.json().catch(() => ({}));
-
-            // Handle backend errors (e.g., "Email already registered", "Invalid email or password")
-            if (!response.ok || !data.success) {
-                // If it looks like a Prisma/DB error, hide the technical details
-                if (data.message?.includes('prisma') || data.message?.includes('database') || data.message?.includes('connect')) {
-                    throw new Error('Our database is currently unavailable. Please try again in a few minutes.');
-                }
-                throw new Error(data.message || 'Authentication failed. Please check your credentials.');
-            }
-
-            if (isLoginMode) {
-                // 3. Successful Login: Pass token and user to Context
-                await login(data.token, data.user);
-            } else {
-                // 4. Successful Registration: Auto-login to generate the JWT token
-                const loginResponse = await fetch(API_BASE_URL + '/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                });
-
-                const loginData = await loginResponse.json();
-
-                if (loginResponse.ok && loginData.success) {
-                    await login(loginData.token, loginData.user);
-                } else {
-                    // Fallback in case auto-login fails for some reason
-                    setIsLoginMode(true);
-                    setAuthError('Account created successfully! Please sign in.');
-                }
-            }
-        } catch (error: any) {
-            console.error("Auth error:", error);
-            // Display the specific message returned from our Fastify backend
-            setAuthError(error.message || 'An unexpected error occurred. Please try again.');
-        } finally {
-            setIsLoading(false);
+            await updateProfile({ name, email, school });
+            setIsEditingProfile(false);
+            toast.success('Local profile updated!');
+        } catch (err: any) {
+            toast.error(err.message || 'Failed to update profile.');
         }
     };
 
-    const handleLogout = () => {
-        // Our custom logout is synchronous now, no need to await
-        logout();
-        navigate('/landing?mode=login');
+    const handleSaveClientId = () => {
+        setGoogleClientId(clientIdInput.trim());
+        setIsConfigModalOpen(false);
+        toast.success(clientIdInput.trim() ? 'Google Client ID saved!' : 'Custom Client ID removed.');
+    };
+
+    const handleOpenDriveRestore = async () => {
+        if (!isGoogleConfigured) {
+            setIsConfigModalOpen(true);
+            return;
+        }
+
+        setIsDriveRestoreOpen(true);
+        setIsLoadingDriveList(true);
+        try {
+            const list = await listDriveBackups();
+            setDriveBackups(list);
+            if (list.length > 0) {
+                setSelectedDriveFileId(list[0].id);
+            }
+        } catch (err: any) {
+            toast.error(err.message || 'Could not fetch backups from Google Drive.');
+        } finally {
+            setIsLoadingDriveList(false);
+        }
+    };
+
+    const handleConfirmDriveRestore = async () => {
+        if (!selectedDriveFileId) return;
+
+        const confirmMsg = restoreMode === 'replace'
+            ? 'Restoring will REPLACE your current local data with the backup from Google Drive. Continue?'
+            : 'Restoring will MERGE the backup from Google Drive into your current local data. Continue?';
+
+        if (!window.confirm(confirmMsg)) return;
+
+        const success = await triggerRestoreFromDrive(selectedDriveFileId, restoreMode);
+        if (success) {
+            setIsDriveRestoreOpen(false);
+        }
+    };
+
+    const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const mode = window.confirm(
+            'Do you want to REPLACE your current data with this file?\n\nClick OK to REPLACE, or Cancel to MERGE without overwriting existing unique entries.'
+        )
+            ? 'replace'
+            : 'merge';
+
+        try {
+            await importLocalBackupFile(file, mode);
+        } catch (err) {
+            // Error handled in context
+        } finally {
+            e.target.value = '';
+        }
+    };
+
+    const handleClearAll = async () => {
+        const answer = window.prompt(
+            'WARNING: This will permanently delete all local sections, students, exams, and grades on this device.\n\nType "DELETE" to confirm:'
+        );
+        if (answer === 'DELETE') {
+            await backupService.clearAllData();
+            toast.success('All local workspace data has been cleared.');
+        }
     };
 
     return (
         <div className="min-h-full flex flex-col p-4 md:p-8 animate-in fade-in duration-300">
-            <div className="max-w-3xl space-y-6">
+            <div className="max-w-4xl mx-auto w-full space-y-6">
 
                 {/* ========================================== */}
-                {/* VIEW 1: USER IS NOT LOGGED IN OR IS GUEST (AUTH FORM) */}
+                {/* 1. LOCAL PROFILE & WORKSPACE STATUS */}
                 {/* ========================================== */}
-                {(!currentUser || currentUser.role === 'guest') && (
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/50 dark:border-white/5 p-6 md:p-8 shadow-sm max-w-md mx-auto md:mx-0">
-                        <div className="text-center mb-8">
-                            <div className="w-16 h-16 bg-violet-100 dark:bg-violet-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <Lock className="w-8 h-8 text-violet-600 dark:text-violet-400" />
+                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/50 dark:border-white/5 p-6 md:p-8 shadow-sm">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div className="flex items-center gap-5">
+                            <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-tr from-violet-600 to-fuchsia-600 rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-violet-500/20 text-white font-black text-2xl">
+                                {name ? name.charAt(0).toUpperCase() : 'T'}
                             </div>
-                            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                                {isLoginMode ? 'Welcome Back' : 'Create Free Account'}
-                            </h2>
-                            <p className="text-sm text-slate-500 mt-1">
-                                {isLoginMode ? 'Sign in to access your local gradebooks.' : 'Secure your data and unlock cloud sync.'}
-                            </p>
-                        </div>
-
-                        {authError && (
-                            <div className="mb-6 p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 text-sm font-semibold rounded-xl text-center">
-                                {authError}
-                            </div>
-                        )}
-
-                        <form onSubmit={handleAuthSubmit} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 ml-1">Email Address</label>
-                                <div className="relative">
-                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                                    <input
-                                        type="email"
-                                        required
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        placeholder="teacher@school.edu.ph"
-                                        className="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all font-medium"
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 ml-1">Password</label>
-                                <div className="relative">
-                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                                    <input
-                                        type="password"
-                                        required
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        placeholder="••••••••"
-                                        className="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all font-medium"
-                                    />
-                                </div>
-                            </div>
-
-                            {!isLoginMode && (
-                                <div className="flex items-start gap-3 px-1 py-1 animate-in fade-in duration-300">
-                                    <input
-                                        id="terms-account"
-                                        type="checkbox"
-                                        required
-                                        checked={agreedToTerms}
-                                        onChange={(e) => setAgreedToTerms(e.target.checked)}
-                                        className="mt-1 w-4 h-4 text-violet-600 border-slate-300 rounded focus:ring-violet-500 transition-all cursor-pointer"
-                                    />
-                                    <label htmlFor="terms-account" className="text-sm text-slate-500 dark:text-slate-400 leading-tight">
-                                        I agree to the <button type="button" onClick={() => setIsTermsModalOpen(true)} className="text-violet-600 dark:text-violet-400 font-bold hover:underline">Terms and Conditions</button> and Privacy Policy.
-                                    </label>
-                                </div>
-                            )}
-
-                            <button
-                                type="submit"
-                                disabled={isLoading}
-                                className="w-full py-4 mt-2 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl shadow-lg shadow-violet-500/25 active:scale-95 transition-all flex items-center justify-center gap-2"
-                            >
-                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isLoginMode ? 'Sign In' : 'Create Account')}
-                            </button>
-                        </form>
-
-                        <div className="mt-6 text-center">
-                            <p className="text-sm text-slate-500 font-medium">
-                                {isLoginMode ? "Don't have an account? " : "Already registered? "}
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setIsLoginMode(!isLoginMode);
-                                        setAuthError('');
-                                    }}
-                                    className="text-violet-600 dark:text-violet-400 font-bold hover:underline"
-                                >
-                                    {isLoginMode ? 'Sign Up Free' : 'Sign In'}
-                                </button>
-                            </p>
-                        </div>
-                    </div>
-                )}
-
-                {/* TERMS MODAL */}
-                {isTermsModalOpen && (
-                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
-                        <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden relative animate-in zoom-in-95 duration-200">
-                            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Terms and Conditions</h3>
-                                <button onClick={() => setIsTermsModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 bg-slate-50 dark:bg-slate-800 rounded-full transition-colors">
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
-                            <div className="p-8 max-h-[60vh] overflow-y-auto text-slate-600 dark:text-slate-400 space-y-4 text-sm leading-relaxed">
-                                <p className="font-bold text-slate-900 dark:text-white">Last Updated: June 14, 2026</p>
-                                <h4 className="font-bold text-slate-900 dark:text-white">1. Acceptance of Terms</h4>
-                                <p>By creating an account on GodSpeed Grader, you agree to comply with and be bound by these Terms and Conditions. If you do not agree to these terms, please do not use the application.</p>
-
-                                <h4 className="font-bold text-slate-900 dark:text-white">2. Description of Service</h4>
-                                <p>GodSpeed Grader is a tool designed to help educators scan and grade OMR (Optical Mark Recognition) sheets using mobile camera technology and edge computing.</p>
-
-                                <h4 className="font-bold text-slate-900 dark:text-white">3. User Responsibilities</h4>
-                                <p>You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You agree to use the service for educational purposes only.</p>
-
-                                <h4 className="font-bold text-slate-900 dark:text-white">4. Data Privacy</h4>
-                                <p>Your data is processed locally on your device whenever possible. If you enable Cloud Sync, your data is securely stored on our servers to allow access across multiple devices. We do not sell your personal data to third parties.</p>
-
-                                <h4 className="font-bold text-slate-900 dark:text-white">5. Limitation of Liability</h4>
-                                <p>GodSpeed Grader is provided "as is" without any warranties. We are not responsible for any grading errors, data loss, or system downtime.</p>
-
-                                <h4 className="font-bold text-slate-900 dark:text-white">6. Changes to Terms</h4>
-                                <p>We reserve the right to modify these terms at any time. Your continued use of the service constitutes acceptance of the new terms.</p>
-                            </div>
-                            <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-right">
-                                <button
-                                    onClick={() => setIsTermsModalOpen(false)}
-                                    className="px-6 py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all"
-                                >
-                                    Got it
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* ========================================== */}
-                {/* VIEW 2: USER IS LOGGED IN (DASHBOARD) */}
-                {/* ========================================== */}
-                {currentUser && currentUser.role !== 'guest' && (
-                    <>
-                        {/* PROFILE CARD */}
-                        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/50 dark:border-white/5 p-6 md:p-8 shadow-sm">
-                            <div className="flex flex-col md:flex-row md:items-center gap-6">
-                                <div className="w-20 h-20 bg-violet-100 dark:bg-violet-500/20 rounded-full flex items-center justify-center shrink-0">
-                                    <UserCircle className="w-12 h-12 text-violet-600 dark:text-violet-400" />
-                                </div>
-
-                                <div className="flex-1 text-center md:text-left">
-                                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
-                                        {currentUser.email}
+                            <div className="flex-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">
+                                        {name || 'Offline Teacher'}
                                     </h2>
-                                    <p className="text-slate-500 font-medium flex items-center justify-center md:justify-start gap-2">
-                                        <ShieldCheck className="w-4 h-4 text-emerald-500" /> Free Account
-                                    </p>
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
+                                        <ShieldCheck className="w-3.5 h-3.5" /> 100% Offline & Private
+                                    </span>
                                 </div>
-
-                                <button
-                                    onClick={handleLogout}
-                                    className="w-full md:w-auto px-5 py-3 text-sm font-bold text-red-600 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-xl transition-colors flex items-center justify-center gap-2"
-                                >
-                                    <LogOut className="w-4 h-4" /> Sign Out
-                                </button>
+                                <p className="text-slate-500 text-sm mt-0.5">
+                                    {email} {school ? `• ${school}` : ''}
+                                </p>
+                                <p className="text-xs text-slate-400 mt-1">
+                                    All grading data is processed directly inside your browser. No external server account needed.
+                                </p>
                             </div>
                         </div>
 
-                        {/* CLOUD SYNC CARD */}
-                        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/50 dark:border-white/5 p-6 md:p-8 shadow-sm">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                                <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-500/10 rounded-2xl flex items-center justify-center shrink-0">
-                                        <Database className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Cloud Data Sync</h3>
-                                        <p className="text-sm text-slate-500 font-medium max-w-sm">
-                                            Pull latest data from the cloud or push your local changes manually.
-                                        </p>
-                                        <div className="flex items-center gap-3 mt-3">
-                                            <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                                                <RefreshCw className={`w-3.5 h-3.5 ${status === 'syncing' ? 'animate-spin' : ''}`} />
-                                                {status === 'syncing' ? 'Syncing...' : (lastSyncTimestamp > 0 ? `Last: ${new Date(lastSyncTimestamp).toLocaleString()}` : 'Never synced')}
-                                            </span>
-                                            {status === 'idle' && (
-                                                <span className="flex items-center gap-1 text-xs font-bold text-emerald-500 uppercase tracking-wider">
-                                                    <CheckCircle2 className="w-3.5 h-3.5" /> Ready
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
+                        <button
+                            onClick={() => setIsEditingProfile(!isEditingProfile)}
+                            className="w-full md:w-auto px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 font-bold text-sm transition-all flex items-center justify-center gap-2"
+                        >
+                            <Edit3 className="w-4 h-4" />
+                            {isEditingProfile ? 'Cancel' : 'Edit Profile'}
+                        </button>
+                    </div>
 
-                                <div className="flex flex-col gap-2">
-                                    <button
-                                        onClick={() => triggerSync()}
-                                        disabled={status === 'syncing' || !navigator.onLine}
-                                        className="w-full md:w-auto px-6 py-3.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 font-bold rounded-xl active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {status === 'syncing' ? (
-                                            <Loader2 className="w-5 h-5 animate-spin" />
-                                        ) : (
-                                            <RefreshCw className="w-5 h-5" />
-                                        )}
-                                        Sync Now
-                                    </button>
-                                    {!navigator.onLine && (
-                                        <p className="text-[10px] text-center text-red-500 font-bold uppercase tracking-tighter">Check Internet Connection</p>
+                    {/* Inline Profile Editor */}
+                    {isEditingProfile && (
+                        <form onSubmit={handleSaveProfile} className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800/80 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1 ml-1">
+                                    Teacher Name
+                                </label>
+                                <input
+                                    type="text"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    placeholder="e.g. Teacher Maria"
+                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-medium text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1 ml-1">
+                                    School Name
+                                </label>
+                                <input
+                                    type="text"
+                                    value={school}
+                                    onChange={(e) => setSchool(e.target.value)}
+                                    placeholder="e.g. Rizal High School"
+                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-medium text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1 ml-1">
+                                    Email / ID (Local)
+                                </label>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="teacher@school.edu.ph"
+                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-medium text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                />
+                            </div>
+                            <div className="sm:col-span-3 flex justify-end">
+                                <button
+                                    type="submit"
+                                    className="px-6 py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl text-sm transition-all shadow-md shadow-violet-500/20 flex items-center gap-2"
+                                >
+                                    <Save className="w-4 h-4" /> Save Profile
+                                </button>
+                            </div>
+                        </form>
+                    )}
+                </div>
+
+                {/* ========================================== */}
+                {/* 2. GOOGLE DRIVE BACKUP & RESTORE (HERO) */}
+                {/* ========================================== */}
+                <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-900/90 rounded-3xl border-2 border-violet-500/20 dark:border-violet-500/30 p-6 md:p-8 shadow-xl shadow-violet-500/5 relative overflow-hidden">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+                        <div className="flex items-start gap-4">
+                            <div className="w-14 h-14 bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/20 rounded-2xl flex items-center justify-center shrink-0">
+                                <Cloud className="w-7 h-7 text-amber-500" />
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                                        Google Drive Backup & Restore
+                                    </h3>
+                                    {isGoogleConfigured ? (
+                                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                                            Drive Connected
+                                        </span>
+                                    ) : (
+                                        <button
+                                            onClick={() => setIsConfigModalOpen(true)}
+                                            className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition-colors"
+                                        >
+                                            Setup Client ID
+                                        </button>
                                     )}
                                 </div>
-                            </div>
-
-                            {syncError && (
-                                <div className="mt-4 p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 text-xs font-bold rounded-xl flex items-center gap-2">
-                                    <AlertCircle className="w-4 h-4" />
-                                    {syncError}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* SUBSCRIPTION TIER CARD */}
-                        <div className="bg-slate-900 rounded-3xl border border-slate-800 p-6 md:p-8 shadow-xl text-white relative overflow-hidden">
-                            {/* Background glow */}
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 blur-[80px] rounded-full"></div>
-
-                            <div className="relative z-10">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
-                                    <h3 className="text-lg font-bold">Premium Pro</h3>
-                                </div>
-                                <p className="text-slate-400 mb-6 max-w-md">
-                                    Get complete peace of mind. Sync your grades to the cloud and unlock DepEd Item Analysis exports.
+                                <p className="text-sm text-slate-500 font-medium mt-1 max-w-xl">
+                                    Backup your entire offline database (classes, students, exams, and grades) straight into your personal Google Drive account.
                                 </p>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-                                    <div className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700/50">
-                                        <Database className="w-5 h-5 text-cyan-400 mb-2" />
-                                        <h4 className="font-bold text-sm mb-1">Cloud Auto-Sync</h4>
-                                        <p className="text-xs text-slate-400">Never lose a gradebook if your cache clears.</p>
-                                    </div>
-                                    <div className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700/50">
-                                        <FileText className="w-5 h-5 text-fuchsia-400 mb-2" />
-                                        <h4 className="font-bold text-sm mb-1">Item Analysis</h4>
-                                        <p className="text-xs text-slate-400">Export precise competency reports to Excel.</p>
-                                    </div>
+                                <div className="flex items-center gap-4 mt-3">
+                                    <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
+                                        <RefreshCw className={`w-3.5 h-3.5 ${isBackingUp || isRestoring ? 'animate-spin text-violet-500' : ''}`} />
+                                        {isBackingUp ? 'Uploading to Google Drive...' : isRestoring ? 'Restoring from Drive...' : (
+                                            lastBackupTimestamp > 0
+                                                ? `Last backup: ${new Date(lastBackupTimestamp).toLocaleString()}`
+                                                : 'No Google Drive backups yet'
+                                        )}
+                                    </span>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row md:flex-col gap-2.5 shrink-0">
+                            <button
+                                onClick={async () => {
+                                    if (!isGoogleConfigured) {
+                                        setIsConfigModalOpen(true);
+                                        return;
+                                    }
+                                    await triggerBackupToDrive();
+                                }}
+                                disabled={isBackingUp || isRestoring}
+                                className="px-6 py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-2xl shadow-lg shadow-violet-500/25 active:scale-95 transition-all flex items-center justify-center gap-2.5 disabled:opacity-50"
+                            >
+                                {isBackingUp ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
+                                <span>Backup to Google Drive</span>
+                            </button>
+
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={handleOpenDriveRestore}
+                                    disabled={isBackingUp || isRestoring}
+                                    className="flex-1 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                >
+                                    <Download className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                                    <span>Restore from Drive</span>
+                                </button>
 
                                 <button
-                                    onClick={() => alert("Good news! All premium features are currently UNLOCKED and FREE for all registered accounts for a limited time. No subscription is needed right now!")}
-                                    className="w-full sm:w-auto px-8 py-3.5 bg-white text-slate-900 hover:bg-slate-100 font-bold rounded-xl active:scale-95 transition-all flex items-center justify-center gap-3"
+                                    onClick={() => setIsConfigModalOpen(true)}
+                                    title="Google Drive Settings"
+                                    className="p-2.5 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 rounded-xl transition-all"
                                 >
-                                    <span className="line-through decoration-rose-500 opacity-60">₱399/year</span>
-                                    <span className="text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-full text-sm">FREE NOW</span>
+                                    <Settings className="w-4 h-4" />
                                 </button>
                             </div>
                         </div>
+                    </div>
 
-                        {/* SUPPORT CARD */}
-                        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/50 dark:border-white/5 p-6 md:p-8 shadow-sm">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                                <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center shrink-0">
-                                        <Mail className="w-6 h-6 text-slate-600 dark:text-slate-400" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Help & Feedback</h3>
-                                        <p className="text-sm text-slate-500 font-medium max-w-sm">
-                                            Found a bug or have a suggestion? We'd love to hear from you.
-                                        </p>
-                                    </div>
-                                </div>
-                                <a
-                                    href="mailto:contact@godspeedgrader.com"
-                                    className="w-full md:w-auto px-6 py-3.5 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 font-bold rounded-xl transition-all flex items-center justify-center gap-2"
-                                >
-                                    <MessageSquare className="w-5 h-5" />
-                                    Contact Support
-                                </a>
+                    {backupError && (
+                        <div className="mt-4 p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 text-xs font-bold rounded-xl flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4 shrink-0" />
+                            <span>{backupError}</span>
+                        </div>
+                    )}
+                </div>
+
+                {/* ========================================== */}
+                {/* 3. OFFLINE FILE BACKUP & RESTORE (LOCAL JSON) */}
+                {/* ========================================== */}
+                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/50 dark:border-white/5 p-6 md:p-8 shadow-sm">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-500/10 rounded-2xl flex items-center justify-center shrink-0">
+                                <FileJson className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                                    Local JSON Backup & Restore
+                                </h3>
+                                <p className="text-sm text-slate-500 font-medium max-w-xl">
+                                    Save your data as a physical file on your device. Works completely offline with zero internet access. You can keep copies on flash drives, computer folders, or manually upload to Google Drive.
+                                </p>
                             </div>
                         </div>
-                    </>
-                )}
+
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <button
+                                onClick={exportLocalBackupFile}
+                                className="px-5 py-3 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2"
+                            >
+                                <Download className="w-4 h-4" /> Export Backup File (.json)
+                            </button>
+
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept=".json"
+                                onChange={handleFileInputChange}
+                                className="hidden"
+                            />
+
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className="px-5 py-3 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2"
+                            >
+                                <Upload className="w-4 h-4" /> Restore from File
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ========================================== */}
+                {/* 4. WORKSPACE STORAGE OVERVIEW */}
+                {/* ========================================== */}
+                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/50 dark:border-white/5 p-6 md:p-8 shadow-sm">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                            <HardDrive className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Device Database Storage</h3>
+                        </div>
+                        <span className="text-xs font-bold text-slate-400">
+                            Total Records: {stats?.total || 0}
+                        </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Sections</p>
+                            <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{stats?.sections || 0}</p>
+                        </div>
+                        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Students</p>
+                            <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{stats?.students || 0}</p>
+                        </div>
+                        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Exams</p>
+                            <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{stats?.exams || 0}</p>
+                        </div>
+                        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Grades Scanned</p>
+                            <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{stats?.scanResults || 0}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ========================================== */}
+                {/* 5. DANGER ZONE */}
+                {/* ========================================== */}
+                <div className="bg-red-50/50 dark:bg-red-950/20 rounded-3xl border border-red-200/60 dark:border-red-900/40 p-6 md:p-8">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h4 className="text-base font-bold text-red-600 dark:text-red-400 flex items-center gap-2">
+                                <Trash2 className="w-4 h-4" /> Reset Local Workspace
+                            </h4>
+                            <p className="text-xs text-red-600/80 dark:text-red-400/80 mt-1 max-w-lg">
+                                Irreversibly delete all offline classes, students, exams, and scanned grades from this device. Please ensure you have backed up to Google Drive or downloaded a JSON file before proceeding.
+                            </p>
+                        </div>
+                        <button
+                            onClick={handleClearAll}
+                            className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition-colors shrink-0"
+                        >
+                            Clear All Data
+                        </button>
+                    </div>
+                </div>
 
             </div>
+
+            {/* ========================================== */}
+            {/* GOOGLE DRIVE RESTORE MODAL */}
+            {/* ========================================== */}
+            {isDriveRestoreOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
+                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <Cloud className="w-5 h-5 text-amber-500" />
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                                    Restore from Google Drive
+                                </h3>
+                            </div>
+                            <button
+                                onClick={() => setIsDriveRestoreOpen(false)}
+                                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                            {isLoadingDriveList ? (
+                                <div className="py-12 flex flex-col items-center justify-center gap-3 text-slate-400">
+                                    <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
+                                    <p className="text-sm font-semibold">Scanning your Google Drive for backups...</p>
+                                </div>
+                            ) : driveBackups.length === 0 ? (
+                                <div className="py-12 text-center text-slate-400">
+                                    <AlertCircle className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+                                    <p className="font-bold text-slate-700 dark:text-slate-300">No Godspeed backups found</p>
+                                    <p className="text-xs text-slate-500 mt-1">
+                                        Backups created with "Backup to Google Drive" will appear here automatically.
+                                    </p>
+                                </div>
+                            ) : (
+                                <>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                                        Select a backup file to restore:
+                                    </label>
+                                    <div className="space-y-2">
+                                        {driveBackups.map((file) => (
+                                            <div
+                                                key={file.id}
+                                                onClick={() => setSelectedDriveFileId(file.id)}
+                                                className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
+                                                    selectedDriveFileId === file.id
+                                                        ? 'bg-violet-50 dark:bg-violet-500/10 border-violet-500'
+                                                        : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                                                }`}
+                                            >
+                                                <div>
+                                                    <p className="text-sm font-bold text-slate-900 dark:text-white">
+                                                        {file.name}
+                                                    </p>
+                                                    <p className="text-xs text-slate-500 mt-0.5">
+                                                        {file.createdTime ? new Date(file.createdTime).toLocaleString() : ''}
+                                                    </p>
+                                                </div>
+                                                <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 border-slate-300 dark:border-slate-600">
+                                                    {selectedDriveFileId === file.id && (
+                                                        <div className="w-2.5 h-2.5 rounded-full bg-violet-600"></div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                                            Restore Mode:
+                                        </label>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => setRestoreMode('replace')}
+                                                className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all ${
+                                                    restoreMode === 'replace'
+                                                        ? 'bg-violet-600 text-white border-violet-600'
+                                                        : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                                }`}
+                                            >
+                                                Replace Workspace
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setRestoreMode('merge')}
+                                                className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all ${
+                                                    restoreMode === 'merge'
+                                                        ? 'bg-violet-600 text-white border-violet-600'
+                                                        : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                                }`}
+                                            >
+                                                Merge into Current
+                                            </button>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3 bg-slate-50 dark:bg-slate-800/50">
+                            <button
+                                onClick={() => setIsDriveRestoreOpen(false)}
+                                className="px-5 py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:text-slate-700"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmDriveRestore}
+                                disabled={!selectedDriveFileId || isRestoring || driveBackups.length === 0}
+                                className="px-6 py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl text-sm transition-all shadow-md shadow-violet-500/20 disabled:opacity-50 flex items-center gap-2"
+                            >
+                                {isRestoring ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                                Restore Selected Backup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ========================================== */}
+            {/* GOOGLE DRIVE CONFIG / CLIENT ID MODAL */}
+            {/* ========================================== */}
+            {isConfigModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
+                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <Settings className="w-5 h-5 text-violet-600" />
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                                    Google Drive API Configuration
+                                </h3>
+                            </div>
+                            <button
+                                onClick={() => setIsConfigModalOpen(false)}
+                                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-4">
+                            <p className="text-sm text-slate-600 dark:text-slate-400">
+                                Godspeed Grader communicates directly with Google's Drive API from your browser using the safest, minimal <code className="text-xs bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-mono text-violet-600">drive.file</code> permission.
+                            </p>
+
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5 ml-1">
+                                    Google OAuth 2.0 Client ID
+                                </label>
+                                <input
+                                    type="text"
+                                    value={clientIdInput}
+                                    onChange={(e) => setClientIdInput(e.target.value)}
+                                    placeholder="e.g. 1234567890-xyz.apps.googleusercontent.com"
+                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                />
+                            </div>
+
+                            <div className="bg-slate-50 dark:bg-slate-800/40 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 text-xs text-slate-500 space-y-2">
+                                <p className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                    <HelpCircle className="w-4 h-4 text-violet-500" /> How to get a free Google Client ID:
+                                </p>
+                                <ol className="list-decimal list-inside space-y-1 pl-1">
+                                    <li>Visit the <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer" className="text-violet-600 dark:text-violet-400 font-semibold underline inline-flex items-center gap-0.5">Google Cloud Console <ExternalLink className="w-3 h-3 inline" /></a></li>
+                                    <li>Enable the <strong>Google Drive API</strong></li>
+                                    <li>Create an <strong>OAuth 2.0 Web Client ID</strong> with your domain / localhost in Authorized JavaScript Origins</li>
+                                    <li>Paste your Client ID here and click Save</li>
+                                </ol>
+                                <p className="text-[11px] text-slate-400 pt-1">
+                                    💡 <em>Tip: You can also use the "Export Backup File (.json)" anytime for 100% offline file backup without setting up an API key.</em>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3 bg-slate-50 dark:bg-slate-800/50">
+                            <button
+                                onClick={() => setIsConfigModalOpen(false)}
+                                className="px-5 py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:text-slate-700"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSaveClientId}
+                                className="px-6 py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl text-sm transition-all shadow-md shadow-violet-500/20"
+                            >
+                                Save Client ID
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }
