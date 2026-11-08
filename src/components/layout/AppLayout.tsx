@@ -5,6 +5,7 @@ import {
     FolderKanban,
     LayoutDashboard,
     UserCircle,
+    User,
     Settings2,
     BookOpen,
     GraduationCap,
@@ -52,7 +53,7 @@ export default function AppLayout() {
         if (path.startsWith('/grades')) return 'Grade/Year Levels';
         if (path.startsWith('/templates')) return 'Answer Sheets';
         if (path === '/scan') return 'Instant Scan';
-        if (path.startsWith('/account')) return 'Settings & Backup';
+        if (path.startsWith('/account')) return 'Profile & Backup';
         if (path.startsWith('/create')) return 'Create Exam';
         if (path.startsWith('/edit')) return 'Edit Exam';
         if (path.includes('/results')) return 'Exam Results';
@@ -67,7 +68,7 @@ export default function AppLayout() {
         if (path.startsWith('/subjects')) return 'Manage your subjects.';
         if (path.startsWith('/grades')) return 'Manage your grade/year levels.';
         if (path.startsWith('/templates')) return 'Download and print empty bubble sheet templates.';
-        if (path.startsWith('/account')) return 'Google Drive backup, file restore, and local settings.';
+        if (path.startsWith('/account')) return 'Teacher profile, Google Drive backup, and local storage.';
         if (path.startsWith('/help')) return 'Learn how to use Godspeed Grader.';
         if (path.startsWith('/manual')) return 'Deep-dive into features and workflows.';
         return 'Grade exams in a flash.';
@@ -85,7 +86,7 @@ export default function AppLayout() {
         { path: '/subjects', label: 'Subjects', icon: BookOpen, protected: true },
         { path: '/sections', label: 'Sections', icon: FolderKanban, protected: true },
         { path: '/students', label: 'Students', icon: Users, protected: true },
-        { path: '/account', label: 'Settings & Backup', icon: Cloud, protected: true },
+        { path: '/account', label: 'Profile & Backup', icon: User, protected: true },
     ];
 
     const navItems = allNavItems.filter(item => !item.protected || currentUser);
@@ -95,7 +96,7 @@ export default function AppLayout() {
         { path: '/templates', label: 'Sheets', icon: Printer },
         { path: '/scan', label: 'Scan', icon: Camera, isPrimary: true },
         { path: '/manage', label: 'Manage', icon: Settings2, isAction: true },
-        { path: '/account', label: 'Backup', icon: Cloud },
+        { path: '/account', label: 'Profile', icon: User },
     ];
 
     const manageSubItems = [
