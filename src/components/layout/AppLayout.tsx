@@ -5,7 +5,6 @@ import {
     FolderKanban,
     LayoutDashboard,
     UserCircle,
-    User,
     Settings2,
     BookOpen,
     GraduationCap,
@@ -17,7 +16,10 @@ import {
     Cloud,
     Loader2,
     Upload,
-    ShieldCheck
+    ShieldCheck,
+    X,
+    ExternalLink,
+    Download
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useBackup } from '../../contexts/SyncContext';
@@ -25,12 +27,21 @@ import NoticesModal from './NoticesModal';
 
 export default function AppLayout() {
     const { currentUser } = useAuth();
-    const { triggerBackupToDrive, isBackingUp, isGoogleConfigured } = useBackup();
+    const {
+        triggerBackupToDrive,
+        isBackingUp,
+        isGoogleConfigured,
+        googleClientId,
+        setGoogleClientId,
+        exportLocalBackupFile
+    } = useBackup();
     const navigate = useNavigate();
     const location = useLocation();
 
     const [isManageMenuOpen, setIsManageMenuOpen] = useState(false);
     const [isNoticesModalOpen, setIsNoticesModalOpen] = useState(false);
+    const [isDriveSetupModalOpen, setIsDriveSetupModalOpen] = useState(false);
+    const [quickClientIdInput, setQuickClientIdInput] = useState(googleClientId || '');
 
     const getPageTitle = (path: string) => {
         if (path === '/') return 'Dashboard';
@@ -93,7 +104,6 @@ export default function AppLayout() {
         { path: '/students', label: 'Students', icon: Users, protected: true },
         { path: '/periods', label: 'Periods', icon: Folder, protected: true },
         { path: '/subjects', label: 'Subjects', icon: BookOpen, protected: true },
-        { path: '/account', label: 'Settings & Backup', icon: Cloud, protected: true },
         { path: '/help', label: 'Help & Guide', icon: BookOpen },
     ].filter(item => !item.protected || currentUser);
 
@@ -102,9 +112,20 @@ export default function AppLayout() {
 
     const handleQuickDriveBackup = async () => {
         if (!isGoogleConfigured) {
-            navigate('/account');
+            setQuickClientIdInput(googleClientId || '');
+            setIsDriveSetupModalOpen(true);
         } else {
             await triggerBackupToDrive();
+        }
+    };
+
+    const handleSaveAndBackup = async () => {
+        if (quickClientIdInput.trim()) {
+            setGoogleClientId(quickClientIdInput.trim());
+            setIsDriveSetupModalOpen(false);
+            setTimeout(() => {
+                triggerBackupToDrive();
+            }, 100);
         }
     };
 
@@ -149,7 +170,7 @@ export default function AppLayout() {
 
                 {/* USER PROFILE & FOOTER SECTION */}
                 <div className="p-4 m-4 mt-auto flex flex-col gap-2">
-                    {/* Backup to GDrive Quick Card */}
+                    {/* Backup to GDrive Quick Button */}
                     <button
                         onClick={handleQuickDriveBackup}
                         disabled={isBackingUp}
@@ -216,7 +237,7 @@ export default function AppLayout() {
                         </div>
 
                         <div className="flex items-center gap-2 md:gap-3">
-                            {/* Prominent GDrive Backup Button in Header */}
+                            {/* Prominent GDrive Backup Action Button */}
                             <button
                                 onClick={handleQuickDriveBackup}
                                 disabled={isBackingUp}
@@ -227,15 +248,16 @@ export default function AppLayout() {
                                 <span className="hidden sm:inline">{isBackingUp ? 'Backing Up...' : 'Backup to Drive'}</span>
                             </button>
 
+                            {/* Manage Account Link: Only shown on desktop header (hidden on mobile, which uses bottom nav tab) */}
                             <NavLink
                                 to="/account"
                                 className={({ isActive }) =>
-                                    `flex w-10 h-10 md:w-11 md:h-11 rounded-xl md:rounded-2xl items-center justify-center transition-all ${isActive
+                                    `hidden md:flex w-10 h-10 md:w-11 md:h-11 rounded-xl md:rounded-2xl items-center justify-center transition-all ${isActive
                                         ? 'bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400'
                                         : 'bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-white shadow-sm border border-slate-200/50 dark:border-white/5'
                                     }`
                                 }
-                                title="Settings & Backup"
+                                title="Manage Account & Settings"
                             >
                                 <UserCircle className="w-5 h-5 md:w-6 md:h-6" />
                             </NavLink>
@@ -261,6 +283,69 @@ export default function AppLayout() {
                     {!isScannerPage && <div className="h-12 md:hidden" />}
                 </div>
             </main>
+
+            {/* ========================================== */}
+            {/* QUICK GOOGLE DRIVE SETUP MODAL */}
+            {/* ========================================== */}
+            {isDriveSetupModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
+                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <Cloud className="w-5 h-5 text-amber-500" />
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                                    Connect Google Drive
+                                </h3>
+                            </div>
+                            <button
+                                onClick={() => setIsDriveSetupModalOpen(false)}
+                                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-4">
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                                To backup directly into your Google Drive, enter your Google OAuth 2.0 Web Client ID. It only requires the minimal <code className="text-[11px] bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-violet-600 font-mono">drive.file</code> scope.
+                            </p>
+
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5 ml-1">
+                                    Google OAuth Client ID
+                                </label>
+                                <input
+                                    type="text"
+                                    value={quickClientIdInput}
+                                    onChange={(e) => setQuickClientIdInput(e.target.value)}
+                                    placeholder="1234567890-xyz.apps.googleusercontent.com"
+                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                />
+                            </div>
+
+                            <div className="pt-2 flex flex-col gap-2">
+                                <button
+                                    onClick={handleSaveAndBackup}
+                                    disabled={!quickClientIdInput.trim()}
+                                    className="w-full py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl text-xs transition-all shadow-md shadow-violet-500/20 disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    <Cloud className="w-4 h-4" /> Save & Backup to Drive
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        setIsDriveSetupModalOpen(false);
+                                        exportLocalBackupFile();
+                                    }}
+                                    className="w-full py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs transition-all flex items-center justify-center gap-2"
+                                >
+                                    <Download className="w-4 h-4" /> Download Offline File (.json) Instead
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ========================================== */}
             {/* MOBILE MANAGE MENU (OVERLAY) */}
