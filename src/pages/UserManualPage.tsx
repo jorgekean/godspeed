@@ -31,12 +31,12 @@ export default function UserManualPage() {
                         <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                             <h4 className="font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
                                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                                Periods & Sections
+                                Terms & Classes
                             </h4>
                             <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-2 ml-6 list-disc">
-                                <li><strong>Periods:</strong> Create grading periods (e.g., 1st Quarter, Midterms) to organize your exams and grades.</li>
-                                <li><strong>Sections:</strong> Create sections (e.g., "Newton") and link them to Grade/Year Levels.</li>
-                                <li><strong>Students:</strong> Add manually or use <strong className="text-violet-600">Import Paste</strong> to copy rosters directly from Excel.</li>
+                                <li><strong>Terms / Quarters:</strong> Create academic terms (e.g., 1st Quarter, Midterms, Fall Semester) to organize exams and grades.</li>
+                                <li><strong>Classes:</strong> Create classes or sections (e.g., "Period 1", "Newton", or jumpstart immediately with a default General Class).</li>
+                                <li><strong>Students:</strong> Add manually or use <strong className="text-violet-600">Import Paste</strong> to copy rosters directly from Excel or Google Sheets.</li>
                             </ul>
                         </div>
                     </div>
@@ -72,7 +72,7 @@ export default function UserManualPage() {
                         <div>
                             <h4 className="text-sm font-bold text-amber-900 dark:text-amber-400 mb-1">Printing Templates</h4>
                             <p className="text-xs text-amber-800/80 dark:text-amber-400/60 leading-relaxed">
-                                Use the <strong>Answer Sheets</strong> page for blank templates. For pre-filled sheets with student names, go to the <strong>Sections</strong> page and click the printer icon.
+                                Use the <strong>Answer Sheets</strong> page for blank templates. For pre-filled sheets with student names, go to the <strong>Classes</strong> page and click the printer icon.
                                 <br/><br/>
                                 <strong>Tip:</strong> Always print at "100%" scale. Do not "Fit to Page."
                             </p>
@@ -102,7 +102,7 @@ export default function UserManualPage() {
                         </div>
                         <h4 className="font-bold text-slate-900 dark:text-white mb-2">Smart Scanner</h4>
                         <p className="text-xs text-slate-500 leading-relaxed">
-                            Open a specific exam from your dashboard. Select a section first for guided grading and manual student tagging if IDs are unreadable.
+                            Open a specific exam from your dashboard. Select a class first for guided grading and manual student tagging if IDs are unreadable.
                         </p>
                     </div>
                 </div>
@@ -159,7 +159,7 @@ export default function UserManualPage() {
                         Master Godspeed <span className="text-violet-600">Grader</span>
                     </h1>
                     <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
-                        Welcome to the official manual. This guide covers everything from your first section setup to advanced competency tracking and exports.
+                        Welcome to the official manual. This guide covers everything from your first class setup to advanced competency tracking and exports.
                     </p>
                 </div>
 

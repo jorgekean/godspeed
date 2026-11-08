@@ -367,7 +367,7 @@ export default function AccountPage() {
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Sections</p>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Classes</p>
                             <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{stats?.sections || 0}</p>
                         </div>
                         <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">

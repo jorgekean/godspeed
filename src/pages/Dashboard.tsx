@@ -115,7 +115,7 @@ export default function Dashboard() {
         [selectedPeriod, selectedGrade, selectedSubject, userEmail]
     );
 
-    const activePeriodName = selectedPeriod === 'all' ? 'All Periods' : (selectedPeriod === 'none' ? 'No Period' : periods?.find(p => p.id === selectedPeriod)?.name);
+    const activePeriodName = selectedPeriod === 'all' ? 'All Terms' : (selectedPeriod === 'none' ? 'No Term' : periods?.find(p => p.id === selectedPeriod)?.name);
 
     const getStatusConfig = (status: string) => {
         switch (status) {
@@ -162,8 +162,8 @@ export default function Dashboard() {
                                     onChange={(e) => setSelectedPeriod(e.target.value)}
                                     className="w-full bg-slate-200/50 dark:bg-slate-800/50 border-none rounded-xl px-4 py-2 text-[12px] font-bold text-slate-600 dark:text-slate-300 appearance-none focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all cursor-pointer pr-10"
                                 >
-                                    <option value="all">📁 All Periods</option>
-                                    <option value="none">📁 No Period</option>
+                                    <option value="all">📁 All Terms</option>
+                                    <option value="none">📁 No Term</option>
                                     {sortedPeriods.map(p => {
                                         return (
                                             <option key={p.id} value={p.id}>

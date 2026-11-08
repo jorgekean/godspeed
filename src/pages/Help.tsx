@@ -35,17 +35,17 @@ export default function Help() {
                             Create a Grade or Year Level
                         </h4>
                         <p className="pl-7 leading-relaxed">
-                            Tap the <strong className="text-slate-800 dark:text-slate-200">Manage</strong> button in your app. Start by creating your <strong>Grade Level</strong> (e.g., Grade 10, Grade 11) or <strong>Year Level</strong> (e.g., 1st Year, 2nd Year). Setting this up first ensures your sections have a proper category to fall under.
+                            Tap the <strong className="text-slate-800 dark:text-slate-200">Manage</strong> button in your app. Start by creating your <strong>Grade Level</strong> (e.g., Grade 10, Grade 11) or <strong>Year Level</strong> (e.g., 1st Year, 2nd Year). Setting this up first ensures your classes have a proper category to fall under. (You can also jumpstart immediately using the default <em>General Class</em>!)
                         </p>
                     </div>
 
                     <div className="space-y-2">
                         <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                             <span className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/35 text-blue-600 dark:text-blue-400 text-xs font-black flex items-center justify-center">2</span>
-                            Create a Section
+                            Create a Class / Section
                         </h4>
                         <p className="pl-7 leading-relaxed">
-                            Still under the <strong className="text-slate-800 dark:text-slate-200">Manage</strong> menu, select <strong>Create Section</strong>. Name your class (e.g., "Section A" or "Rizal") and assign it to the Grade or Year Level you just created.
+                            Still under the <strong className="text-slate-800 dark:text-slate-200">Manage</strong> menu, select <strong>Classes</strong>. Name your class (e.g., "Period 1", "Section A", or "Rizal") and assign it to the Grade or Year Level you just created.
                         </p>
                     </div>
 
@@ -89,9 +89,9 @@ export default function Help() {
                         <ul className="space-y-2.5 list-disc pl-5 leading-relaxed">
                             <li><strong>Title:</strong> Give your exam a clear name (e.g., "Midterm Math Exam").</li>
                             <li><strong>Exam Code:</strong> <em className="text-violet-650 dark:text-violet-400 font-semibold">Auto-generated.</em> The system will create a code (e.g., 0001). This code is crucial because the app uses it to instantly grade the right answer key.</li>
-                            <li><strong>Grade/Year Level:</strong> Select the appropriate level. This automatically tags the exam to the matching sections you created earlier.</li>
+                            <li><strong>Grade/Year Level:</strong> Select the appropriate level. This automatically tags the exam to the matching classes you created.</li>
                             <li><strong>Subject:</strong> Enter the subject name.</li>
-                            <li><strong>Period:</strong> Assign the exam to a specific period (e.g., <em>1st Qtr 2026</em>, <em>2026 1st Sem</em>). This keeps your terms organized and is highly useful for future reporting and filtering.</li>
+                            <li><strong>Academic Term:</strong> Assign the exam to a specific term (e.g., <em>1st Qtr 2026</em>, <em>Fall 2026</em>, <em>2026 1st Sem</em>). This keeps your terms organized and is highly useful for future reporting and filtering.</li>
                             <li><strong>Number of Items:</strong> Enter the total number of questions (Maximum of 100 items).</li>
                             <li><strong>Answer Key:</strong> Select the correct answers for your test.</li>
                         </ul>
@@ -118,7 +118,7 @@ export default function Help() {
                 <div className="space-y-4 text-sm text-slate-600 dark:text-slate-400">
                     <ul className="space-y-3 leading-relaxed list-disc pl-5">
                         <li><strong>Option A (Standard):</strong> Tap <strong className="text-slate-900 dark:text-white">Sheets</strong> on the bottom navigation bar to print blank sheets.</li>
-                        <li><strong>Option B (Recommended):</strong> Go to the <strong className="text-slate-900 dark:text-white">Sections</strong> page. Printing from here is great because it automatically pre-fills the students' numbers onto their answer sheets!</li>
+                        <li><strong>Option B (Recommended):</strong> Go to the <strong className="text-slate-900 dark:text-white">Classes</strong> page. Printing from here is great because it automatically pre-fills the students' numbers onto their answer sheets!</li>
                     </ul>
 
                     <div className="flex gap-3 p-4 bg-blue-50 dark:bg-blue-500/5 border border-blue-100 dark:border-blue-500/10 rounded-2xl text-blue-800 dark:text-blue-400">
@@ -161,7 +161,7 @@ export default function Help() {
                             <span className="shrink-0 w-6 h-6 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 flex items-center justify-center font-bold text-xs mt-0.5">3</span>
                             <div>
                                 <h4 className="font-bold text-slate-900 dark:text-white mb-0.5">Start Official Grading</h4>
-                                <p className="leading-relaxed">Once you confirm the environment is good, select the section you want to grade first from the list shown under that exam. Align your camera and <strong>Start Scanning</strong>. Once finished with one section, simply move on to the next section or a different exam.</p>
+                                <p className="leading-relaxed">Once you confirm the environment is good, select the class you want to grade first from the list shown under that exam. Align your camera and <strong>Start Scanning</strong>. Once finished with one class, simply move on to the next class or a different exam.</p>
                             </div>
                         </div>
                     </div>

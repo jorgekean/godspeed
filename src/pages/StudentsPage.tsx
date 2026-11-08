@@ -65,6 +65,28 @@ export default function StudentsPage() {
     const [fullName, setFullName] = useState('');
     const [formSectionId, setFormSectionId] = useState('');
 
+    const ensureGeneralClass = async () => {
+        const existing = await db.sections.where('createdBy').equals(userEmail).filter(s => !s.isDeleted).first();
+        if (existing) {
+            setSelectedFilterSection(existing.id);
+            return existing.id;
+        }
+
+        const newId = crypto.randomUUID();
+        await db.sections.add({
+            id: newId,
+            gradeLevel: 'General',
+            sectionName: 'General Class',
+            createdAt: Date.now(),
+            createdBy: userEmail,
+            updatedAt: Date.now(),
+            isSynced: false,
+            isDeleted: false
+        });
+        setSelectedFilterSection(newId);
+        return newId;
+    };
+
     const openSingleModal = (student?: any) => {
         if (student) {
             setEditingId(student.id);
@@ -81,18 +103,23 @@ export default function StudentsPage() {
     };
 
     const handleSaveSingle = async () => {
-        if (!fullName.trim() || !formSectionId) return;
+        if (!fullName.trim()) return;
+
+        let targetId = formSectionId;
+        if (!targetId) {
+            targetId = await ensureGeneralClass();
+        }
 
         if (editingId) {
             await db.students.update(editingId, {
                 studentNo: studentNo.trim(),
                 fullName: fullName.trim(),
-                sectionId: formSectionId
+                sectionId: targetId
             });
         } else {
             await db.students.add({
                 id: crypto.randomUUID(),
-                sectionId: formSectionId,
+                sectionId: targetId,
                 fullName: fullName.trim(),
                 studentNo: studentNo.trim(),
                 createdBy: userEmail,
@@ -165,11 +192,16 @@ export default function StudentsPage() {
     }, [pasteData, nextGeneratedId]);
 
     const handleSaveBulk = async () => {
-        if (parsedBulkData.length === 0 || !bulkSectionId) return;
+        if (parsedBulkData.length === 0) return;
+
+        let targetId = bulkSectionId;
+        if (!targetId) {
+            targetId = await ensureGeneralClass();
+        }
 
         const newStudents = parsedBulkData.map(student => ({
             id: crypto.randomUUID(),
-            sectionId: bulkSectionId,
+            sectionId: targetId,
             fullName: student.fullName,
             studentNo: student.studentNo,
             createdBy: userEmail,
@@ -180,7 +212,7 @@ export default function StudentsPage() {
 
         await db.students.bulkAdd(newStudents);
 
-        setSelectedFilterSection(bulkSectionId);
+        setSelectedFilterSection(targetId);
         setIsBulkModalOpen(false);
         setPasteData('');
     };
@@ -196,10 +228,31 @@ export default function StudentsPage() {
 
     if (sections !== undefined && sections.length === 0) {
         return (
-            <div className="flex-1 flex flex-col items-center justify-center h-full text-center p-8">
-                <FolderKanban className="w-16 h-16 text-slate-300 mb-4" />
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Create a Section First</h2>
-                <p className="text-slate-500 max-w-sm mb-6">You need to create at least one section before you can add students.</p>
+            <div className="flex-1 flex flex-col items-center justify-center h-full text-center p-8 animate-in fade-in">
+                <div className="w-16 h-16 bg-violet-50 dark:bg-violet-500/10 rounded-2xl flex items-center justify-center mb-4">
+                    <FolderKanban className="w-8 h-8 text-violet-600 dark:text-violet-400" />
+                </div>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Welcome to Students</h2>
+                <p className="text-slate-500 max-w-md mb-6 text-sm">
+                    Students are organized by class or roster. You can start immediately with a default <strong>General Class</strong> or create your own custom class.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                        onClick={async () => {
+                            await ensureGeneralClass();
+                        }}
+                        className="px-6 py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl shadow-lg shadow-violet-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                    >
+                        <UserPlus className="w-5 h-5" />
+                        <span>Start with General Class</span>
+                    </button>
+                    <button
+                        onClick={() => navigate('/sections')}
+                        className="px-6 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                    >
+                        Create Custom Class
+                    </button>
+                </div>
             </div>
         );
     }
@@ -264,7 +317,7 @@ export default function StudentsPage() {
                 {students?.length === 0 ? (
                     <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
                         <Users className="w-12 h-12 text-slate-300 dark:text-slate-700 mb-4" />
-                        <p className="text-slate-500 font-medium">No students in this section.</p>
+                        <p className="text-slate-500 font-medium">No students in this class.</p>
                     </div>
                 ) : filteredStudents.length === 0 ? (
                     <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
@@ -323,7 +376,7 @@ export default function StudentsPage() {
                         </div>
                         <div className="p-5 space-y-4">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-700">Section</label>
+                                <label className="text-sm font-medium text-slate-700">Class / Section</label>
                                 <select value={formSectionId} onChange={(e) => setFormSectionId(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-violet-500/50">
                                     {sections?.map(s => <option key={s.id} value={s.id}>{s.gradeLevel} - {s.sectionName}</option>)}
                                 </select>
@@ -371,7 +424,7 @@ export default function StudentsPage() {
 
                         <div className="p-5 space-y-4 overflow-y-auto">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-700">Target Section</label>
+                                <label className="text-sm font-medium text-slate-700">Target Class</label>
                                 <select value={bulkSectionId} onChange={(e) => setBulkSectionId(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-3 font-semibold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-violet-500/50">
                                     {sections?.map(s => <option key={s.id} value={s.id}>{s.gradeLevel} - {s.sectionName}</option>)}
                                 </select>

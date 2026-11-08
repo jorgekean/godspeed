@@ -152,7 +152,7 @@ export default function SectionsPage() {
                     className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-xl font-medium shadow-lg shadow-violet-500/20 active:scale-95 transition-all"
                 >
                     <Plus className="w-5 h-5" />
-                    <span className="hidden sm:inline">Add Section</span>
+                    <span className="hidden sm:inline">Add Class</span>
                 </button>
             </div>
 
@@ -162,8 +162,8 @@ export default function SectionsPage() {
                     <div className="w-16 h-16 bg-violet-50 dark:bg-violet-500/10 rounded-full flex items-center justify-center mb-4">
                         <FolderKanban className="w-8 h-8 text-violet-500" />
                     </div>
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">No sections yet</h3>
-                    <p className="text-sm text-slate-500 max-w-sm">Create your first section to start organizing your students and tracking their performance.</p>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">No classes yet</h3>
+                    <p className="text-sm text-slate-500 max-w-sm">Create your first class or section to start organizing your student rosters.</p>
                 </div>
             )}
 
@@ -240,7 +240,7 @@ export default function SectionsPage() {
                                     </div>
                                     <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Print Pre-filled Sheets</h3>
                                     <p className="text-sm text-slate-500 mb-6">
-                                        Generate PDFs for <strong>{printStudents.length}</strong> students in this section. Each sheet will be pre-filled with student details.
+                                        Generate PDFs for <strong>{printStudents.length}</strong> students in this class. Each sheet will be pre-filled with student details.
                                     </p>
 
                                     <div className="flex flex-col gap-3">
@@ -317,7 +317,7 @@ export default function SectionsPage() {
                             ) : (
                                 <div className="py-8">
                                     <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                                    <p className="text-slate-500 font-medium">This section has no students yet.</p>
+                                    <p className="text-slate-500 font-medium">This class has no students yet.</p>
                                     <p className="text-xs text-slate-400 mt-2">Add students in the Students tab before printing.</p>
                                 </div>
                             )}
@@ -335,7 +335,7 @@ export default function SectionsPage() {
 
                         <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800">
                             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                                {editingId ? 'Edit Section' : 'Add New Section'}
+                                {editingId ? 'Edit Class' : 'Add New Class'}
                             </h2>
                             <button onClick={handleCloseModal} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 bg-slate-50 dark:bg-slate-800 rounded-full transition-colors">
                                 <X className="w-4 h-4" />
@@ -358,12 +358,12 @@ export default function SectionsPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Section Name</label>
+                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Class / Section Name</label>
                                 <input
                                     type="text"
                                     value={sectionName}
                                     onChange={(e) => setSectionName(e.target.value)}
-                                    placeholder="e.g. Rizal, Newton, Apple"
+                                    placeholder="e.g. Period 1, Rizal, Class A, Newton"
                                     className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
                                     autoFocus
                                 />
@@ -382,7 +382,7 @@ export default function SectionsPage() {
                                 disabled={!isReady}
                                 className={`flex-1 py-3 font-bold rounded-xl transition-all ${isReady ? 'bg-violet-600 hover:bg-violet-500 text-white shadow-md shadow-violet-500/20' : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'}`}
                             >
-                                Save Section
+                                Save Class
                             </button>
                         </div>
                     </div>
