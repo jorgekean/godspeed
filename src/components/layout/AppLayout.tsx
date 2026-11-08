@@ -95,7 +95,7 @@ export default function AppLayout() {
         { path: '/students', label: 'Students', icon: Users, protected: true },
         { path: '/periods', label: 'Terms', icon: Folder, protected: true },
         { path: '/subjects', label: 'Subjects', icon: BookOpen, protected: true },
-        { path: '/help', label: 'Help & Guide', icon: BookOpen },
+        { path: '/help', label: 'Help & Guide', icon: HelpCircle },
     ].filter(item => !item.protected || currentUser);
 
     const isManageActive = manageSubItems.some(item => location.pathname.startsWith(item.path));
