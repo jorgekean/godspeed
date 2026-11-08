@@ -6,39 +6,28 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { backupService } from '../services/backupService';
 import { type DriveBackupFile } from '../services/googleDriveService';
 import {
-    UserCircle,
     ShieldCheck,
-    Database,
     Loader2,
-    Mail,
     RefreshCw,
     AlertCircle,
-    CheckCircle2,
     Download,
     Upload,
     Cloud,
     HardDrive,
     Trash2,
-    Settings,
     Edit3,
     FileJson,
     Save,
-    X,
-    ExternalLink,
-    HelpCircle
+    X
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function AccountPage() {
     const { currentUser, updateProfile } = useAuth();
     const {
-        status,
         lastBackupTimestamp,
         isBackingUp,
         isRestoring,
-        googleClientId,
-        isGoogleConfigured,
-        setGoogleClientId,
         triggerBackupToDrive,
         triggerRestoreFromDrive,
         listDriveBackups,
@@ -59,10 +48,6 @@ export default function AccountPage() {
     const [isLoadingDriveList, setIsLoadingDriveList] = useState(false);
     const [selectedDriveFileId, setSelectedDriveFileId] = useState<string | null>(null);
     const [restoreMode, setRestoreMode] = useState<'replace' | 'merge'>('replace');
-
-    // Google OAuth config modal states
-    const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
-    const [clientIdInput, setClientIdInput] = useState(googleClientId);
 
     // File input ref for local JSON restore
     const fileInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -109,18 +94,7 @@ export default function AccountPage() {
         }
     };
 
-    const handleSaveClientId = () => {
-        setGoogleClientId(clientIdInput.trim());
-        setIsConfigModalOpen(false);
-        toast.success(clientIdInput.trim() ? 'Google Client ID saved!' : 'Custom Client ID removed.');
-    };
-
     const handleOpenDriveRestore = async () => {
-        if (!isGoogleConfigured) {
-            setIsConfigModalOpen(true);
-            return;
-        }
-
         setIsDriveRestoreOpen(true);
         setIsLoadingDriveList(true);
         try {
@@ -285,21 +259,9 @@ export default function AccountPage() {
                                     <h3 className="text-xl font-bold text-slate-900 dark:text-white">
                                         Google Drive Backup & Restore
                                     </h3>
-                                    {isGoogleConfigured ? (
-                                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
-                                            Drive Connected
-                                        </span>
-                                    ) : (
-                                        <button
-                                            onClick={() => setIsConfigModalOpen(true)}
-                                            className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition-colors"
-                                        >
-                                            Setup Client ID
-                                        </button>
-                                    )}
                                 </div>
                                 <p className="text-sm text-slate-500 font-medium mt-1 max-w-xl">
-                                    Backup your entire offline database (classes, students, exams, and grades) straight into your personal Google Drive account.
+                                    Backup and restore your entire offline database (classes, students, exams, and grades) directly into your personal Google Drive account using your Gmail login.
                                 </p>
 
                                 <div className="flex items-center gap-4 mt-3">
@@ -317,13 +279,7 @@ export default function AccountPage() {
 
                         <div className="flex flex-col sm:flex-row md:flex-col gap-2.5 shrink-0">
                             <button
-                                onClick={async () => {
-                                    if (!isGoogleConfigured) {
-                                        setIsConfigModalOpen(true);
-                                        return;
-                                    }
-                                    await triggerBackupToDrive();
-                                }}
+                                onClick={() => triggerBackupToDrive()}
                                 disabled={isBackingUp || isRestoring}
                                 className="px-6 py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-2xl shadow-lg shadow-violet-500/25 active:scale-95 transition-all flex items-center justify-center gap-2.5 disabled:opacity-50"
                             >
@@ -331,24 +287,14 @@ export default function AccountPage() {
                                 <span>Backup to Google Drive</span>
                             </button>
 
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={handleOpenDriveRestore}
-                                    disabled={isBackingUp || isRestoring}
-                                    className="flex-1 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                                >
-                                    <Download className="w-4 h-4 text-violet-600 dark:text-violet-400" />
-                                    <span>Restore from Drive</span>
-                                </button>
-
-                                <button
-                                    onClick={() => setIsConfigModalOpen(true)}
-                                    title="Google Drive Settings"
-                                    className="p-2.5 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 rounded-xl transition-all"
-                                >
-                                    <Settings className="w-4 h-4" />
-                                </button>
-                            </div>
+                            <button
+                                onClick={handleOpenDriveRestore}
+                                disabled={isBackingUp || isRestoring}
+                                className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                            >
+                                <Download className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                                <span>Restore from Drive</span>
+                            </button>
                         </div>
                     </div>
 
@@ -488,7 +434,7 @@ export default function AccountPage() {
                             {isLoadingDriveList ? (
                                 <div className="py-12 flex flex-col items-center justify-center gap-3 text-slate-400">
                                     <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
-                                    <p className="text-sm font-semibold">Scanning your Google Drive for backups...</p>
+                                    <p className="text-sm font-semibold">Connecting to Google Drive...</p>
                                 </div>
                             ) : driveBackups.length === 0 ? (
                                 <div className="py-12 text-center text-slate-400">
@@ -578,79 +524,6 @@ export default function AccountPage() {
                             >
                                 {isRestoring ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                                 Restore Selected Backup
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* ========================================== */}
-            {/* GOOGLE DRIVE CONFIG / CLIENT ID MODAL */}
-            {/* ========================================== */}
-            {isConfigModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
-                    <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
-                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <Settings className="w-5 h-5 text-violet-600" />
-                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                                    Google Drive API Configuration
-                                </h3>
-                            </div>
-                            <button
-                                onClick={() => setIsConfigModalOpen(false)}
-                                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        <div className="p-6 space-y-4">
-                            <p className="text-sm text-slate-600 dark:text-slate-400">
-                                Godspeed Grader communicates directly with Google's Drive API from your browser using the safest, minimal <code className="text-xs bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-mono text-violet-600">drive.file</code> permission.
-                            </p>
-
-                            <div>
-                                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5 ml-1">
-                                    Google OAuth 2.0 Client ID
-                                </label>
-                                <input
-                                    type="text"
-                                    value={clientIdInput}
-                                    onChange={(e) => setClientIdInput(e.target.value)}
-                                    placeholder="e.g. 1234567890-xyz.apps.googleusercontent.com"
-                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-violet-500"
-                                />
-                            </div>
-
-                            <div className="bg-slate-50 dark:bg-slate-800/40 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 text-xs text-slate-500 space-y-2">
-                                <p className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                                    <HelpCircle className="w-4 h-4 text-violet-500" /> How to get a free Google Client ID:
-                                </p>
-                                <ol className="list-decimal list-inside space-y-1 pl-1">
-                                    <li>Visit the <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer" className="text-violet-600 dark:text-violet-400 font-semibold underline inline-flex items-center gap-0.5">Google Cloud Console <ExternalLink className="w-3 h-3 inline" /></a></li>
-                                    <li>Enable the <strong>Google Drive API</strong></li>
-                                    <li>Create an <strong>OAuth 2.0 Web Client ID</strong> with your domain / localhost in Authorized JavaScript Origins</li>
-                                    <li>Paste your Client ID here and click Save</li>
-                                </ol>
-                                <p className="text-[11px] text-slate-400 pt-1">
-                                    💡 <em>Tip: You can also use the "Export Backup File (.json)" anytime for 100% offline file backup without setting up an API key.</em>
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3 bg-slate-50 dark:bg-slate-800/50">
-                            <button
-                                onClick={() => setIsConfigModalOpen(false)}
-                                className="px-5 py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:text-slate-700"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleSaveClientId}
-                                className="px-6 py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl text-sm transition-all shadow-md shadow-violet-500/20"
-                            >
-                                Save Client ID
                             </button>
                         </div>
                     </div>
