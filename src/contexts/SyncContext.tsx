@@ -75,20 +75,15 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
     }, [status]);
 
+    // Check token validity on mount
+    useEffect(() => {
+        setIsGoogleConnected(googleDriveService.hasValidToken());
+    }, []);
+
     /**
-     * Backup directly to user's Google Drive
+     * Internal: Executes backup with a known valid token
      */
-    const triggerBackupToDrive = useCallback(async (): Promise<DriveBackupFile | null> => {
-        if (!navigator.onLine) {
-            toast.error('You are offline. Connect to the internet to back up to Google Drive.');
-            return null;
-        }
-
-        if (!googleDriveService.isConfigured()) {
-            setError('Google OAuth Client ID is not configured.');
-            return null;
-        }
-
+    const executeBackupWithToken = useCallback(async (token: string): Promise<DriveBackupFile | null> => {
         setIsBackingUp(true);
         setStatus('syncing');
         setError(null);
@@ -100,7 +95,7 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 school: currentUser?.school
             });
 
-            const uploaded = await googleDriveService.uploadBackup(backupPayload);
+            const uploaded = await googleDriveService.uploadBackup(backupPayload, token);
             const now = Date.now();
             setLastBackupTimestamp(now);
             setIsGoogleConnected(true);
@@ -116,6 +111,9 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setError(msg);
             setStatus('error');
             toast.error(msg);
+            if (!googleDriveService.hasValidToken()) {
+                setIsGoogleConnected(false);
+            }
             return null;
         } finally {
             setIsBackingUp(false);
@@ -123,20 +121,87 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [currentUser]);
 
     /**
-     * Handle OAuth 2.0 Redirect Callback (for iOS / Standalone PWA) on boot
+     * Backup directly to user's Google Drive.
+     * Uses cached token if available (ZERO popups).
+     * If no token, initiates synchronous GIS authorization directly in the user click event tick.
      */
-    useEffect(() => {
-        const { token, pendingAction } = googleDriveService.processRedirectHash();
-        if (token) {
-            setIsGoogleConnected(true);
-            toast.success('Signed in to Google Drive!');
-            if (pendingAction === 'backup') {
-                triggerBackupToDrive();
-            }
-        } else {
-            setIsGoogleConnected(googleDriveService.hasValidToken());
+    const triggerBackupToDrive = useCallback(async (): Promise<DriveBackupFile | null> => {
+        if (!navigator.onLine) {
+            toast.error('You are offline. Connect to the internet to back up to Google Drive.');
+            return null;
         }
-    }, [triggerBackupToDrive]);
+
+        if (!googleDriveService.isConfigured()) {
+            setError('Google OAuth Client ID is not configured.');
+            return null;
+        }
+
+        // 1. Fast path: token is already stored in localStorage (JinTracker pattern)
+        const cachedToken = googleDriveService.getStoredToken();
+        if (cachedToken) {
+            return await executeBackupWithToken(cachedToken);
+        }
+
+        // 2. Synchronous user gesture path: opens popup immediately with zero async delays
+        return new Promise((resolve) => {
+            setIsBackingUp(true);
+            setStatus('syncing');
+            googleDriveService.requestTokenSynchronously(
+                async (token) => {
+                    setIsGoogleConnected(true);
+                    const uploaded = await executeBackupWithToken(token);
+                    resolve(uploaded);
+                },
+                (err) => {
+                    setIsBackingUp(false);
+                    setStatus('error');
+                    toast.error(err.message || 'Google authorization failed');
+                    resolve(null);
+                }
+            );
+        });
+    }, [executeBackupWithToken]);
+
+    /**
+     * List backups stored in Google Drive
+     */
+    const listDriveBackups = useCallback(async (): Promise<DriveBackupFile[]> => {
+        if (!navigator.onLine) {
+            toast.error('Cannot list Drive backups while offline.');
+            return [];
+        }
+
+        const cachedToken = googleDriveService.getStoredToken();
+        if (cachedToken) {
+            try {
+                const list = await googleDriveService.listBackups(cachedToken);
+                setIsGoogleConnected(true);
+                return list;
+            } catch (err: any) {
+                if (!googleDriveService.hasValidToken()) {
+                    setIsGoogleConnected(false);
+                }
+                throw err;
+            }
+        }
+
+        return new Promise((resolve, reject) => {
+            googleDriveService.requestTokenSynchronously(
+                async (token) => {
+                    setIsGoogleConnected(true);
+                    try {
+                        const list = await googleDriveService.listBackups(token);
+                        resolve(list);
+                    } catch (e) {
+                        reject(e);
+                    }
+                },
+                (err) => {
+                    reject(err);
+                }
+            );
+        });
+    }, []);
 
     /**
      * Restore from Google Drive
@@ -147,12 +212,18 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return false;
         }
 
+        const token = googleDriveService.getStoredToken();
+        if (!token) {
+            toast.error('Please connect to Google Drive first.');
+            return false;
+        }
+
         setIsRestoring(true);
         setStatus('syncing');
         setError(null);
 
         try {
-            const backupData: BackupData = await googleDriveService.downloadBackup(fileId);
+            const backupData: BackupData = await googleDriveService.downloadBackup(fileId, token);
             await backupService.restoreBackup(backupData, mode);
             setIsGoogleConnected(true);
             setStatus('success');
@@ -165,27 +236,12 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setError(msg);
             setStatus('error');
             toast.error(msg);
+            if (!googleDriveService.hasValidToken()) {
+                setIsGoogleConnected(false);
+            }
             return false;
         } finally {
             setIsRestoring(false);
-        }
-    }, []);
-
-    /**
-     * List backups stored in Google Drive
-     */
-    const listDriveBackups = useCallback(async (): Promise<DriveBackupFile[]> => {
-        if (!navigator.onLine) {
-            toast.error('Cannot list Drive backups while offline.');
-            return [];
-        }
-        try {
-            const list = await googleDriveService.listBackups();
-            setIsGoogleConnected(true);
-            return list;
-        } catch (err: any) {
-            setIsGoogleConnected(googleDriveService.hasValidToken());
-            throw err;
         }
     }, []);
 

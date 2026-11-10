@@ -21,9 +21,8 @@ declare global {
 
 const STORAGE_KEY_CLIENT_ID = 'godspeed_gdrive_client_id';
 const STORAGE_KEY_LAST_BACKUP = 'godspeed_last_gdrive_backup';
-const STORAGE_KEY_TOKEN = 'godspeed_gdrive_token';
-const STORAGE_KEY_TOKEN_EXPIRY = 'godspeed_gdrive_token_expiry';
-const STORAGE_KEY_PENDING_ACTION = 'godspeed_gdrive_pending_action';
+const STORAGE_KEY_TOKEN = 'google_drive_token';
+const STORAGE_KEY_TOKEN_EXPIRY = 'google_drive_token_expiry';
 
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
@@ -33,28 +32,6 @@ export interface DriveBackupFile {
     createdTime: string;
     size?: string;
     webViewLink?: string;
-}
-
-/**
- * Detect if the client is running on Apple iOS (iPhone, iPad, iPod)
- */
-export function isIOS(): boolean {
-    if (typeof window === 'undefined') return false;
-    return (
-        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-    );
-}
-
-/**
- * Detect if the client is running as an installed PWA (Standalone WebClip / WebApp)
- */
-export function isStandalonePWA(): boolean {
-    if (typeof window === 'undefined') return false;
-    return (
-        (window.navigator as any).standalone === true ||
-        window.matchMedia('(display-mode: standalone)').matches
-    );
 }
 
 export const googleDriveService = {
@@ -119,7 +96,7 @@ export const googleDriveService = {
     },
 
     /**
-     * Save Google OAuth access token with expiration buffer
+     * Save Google OAuth access token with expiration buffer (JinTracker pattern)
      */
     setStoredToken(token: string, expiresInSeconds: number = 3600) {
         if (!token) {
@@ -140,7 +117,6 @@ export const googleDriveService = {
     clearStoredToken() {
         localStorage.removeItem(STORAGE_KEY_TOKEN);
         localStorage.removeItem(STORAGE_KEY_TOKEN_EXPIRY);
-        localStorage.removeItem(STORAGE_KEY_PENDING_ACTION);
     },
 
     /**
@@ -148,65 +124,6 @@ export const googleDriveService = {
      */
     hasValidToken(): boolean {
         return Boolean(this.getStoredToken());
-    },
-
-    /**
-     * Check and process redirect hash on app boot / load.
-     * This handles the OAuth 2.0 Implicit redirect flow for iPhone / iOS standalone PWA.
-     */
-    processRedirectHash(): { token: string | null; pendingAction: string | null } {
-        if (typeof window === 'undefined') return { token: null, pendingAction: null };
-
-        const hash = window.location.hash;
-        if (!hash || !hash.includes('access_token=')) {
-            return { token: null, pendingAction: null };
-        }
-
-        try {
-            const params = new URLSearchParams(hash.replace(/^#/, ''));
-            const accessToken = params.get('access_token');
-            const expiresIn = params.get('expires_in');
-            const pendingAction = localStorage.getItem(STORAGE_KEY_PENDING_ACTION);
-            localStorage.removeItem(STORAGE_KEY_PENDING_ACTION);
-
-            if (accessToken) {
-                this.setStoredToken(accessToken, expiresIn ? parseInt(expiresIn, 10) : 3600);
-                // Clean the token hash from browser address bar history
-                window.history.replaceState(null, '', window.location.pathname + window.location.search);
-                return { token: accessToken, pendingAction };
-            }
-        } catch (e) {
-            console.error('Failed to parse OAuth redirect hash:', e);
-        }
-
-        return { token: null, pendingAction: null };
-    },
-
-    /**
-     * Bulletproof iOS / PWA Redirect Fallback:
-     * When running as an iPhone PWA or if popups are blocked by Safari,
-     * navigates the entire window directly to Google OAuth 2.0.
-     */
-    redirectToGoogleOAuth(pendingAction: string = 'backup') {
-        const clientId = this.getClientId();
-        if (!clientId) {
-            throw new Error('Google OAuth Client ID is not configured.');
-        }
-
-        localStorage.setItem(STORAGE_KEY_PENDING_ACTION, pendingAction);
-
-        // Current page URL without hash
-        const redirectUri = window.location.origin + window.location.pathname;
-
-        const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-        authUrl.searchParams.set('client_id', clientId);
-        authUrl.searchParams.set('redirect_uri', redirectUri);
-        authUrl.searchParams.set('response_type', 'token');
-        authUrl.searchParams.set('scope', SCOPES);
-        authUrl.searchParams.set('include_granted_scopes', 'true');
-        authUrl.searchParams.set('prompt', 'select_account');
-
-        window.location.assign(authUrl.toString());
     },
 
     /**
@@ -220,7 +137,6 @@ export const googleDriveService = {
             if (existingScript) {
                 existingScript.addEventListener('load', () => resolve());
                 existingScript.addEventListener('error', () => reject(new Error('Failed to load Google Identity Services.')));
-                // If it already loaded before listener
                 if (window.google?.accounts?.oauth2) {
                     resolve();
                 }
@@ -239,86 +155,62 @@ export const googleDriveService = {
     },
 
     /**
-     * Requests an OAuth 2.0 access token for Google Drive scope.
-     * 1. Returns stored token if still valid (bypassing popups completely!)
-     * 2. If running on iPhone PWA (standalone WebClip), uses OAuth direct redirect
-     * 3. In desktop/standard browsers, uses GIS popup with fallback to redirect
+     * CRITICAL FOR IPHONE / SAFARI / PWA:
+     * This MUST be called synchronously inside a user tap/click event handler.
+     * Invoking requestAccessToken without prior async delays prevents Safari from blocking the popup.
      */
-    async requestAccessToken(prompt: string = '', pendingAction: string = 'backup'): Promise<string> {
-        // 1. Fast path: check valid cached token
-        const cachedToken = this.getStoredToken();
-        if (cachedToken) {
-            return cachedToken;
-        }
-
+    requestTokenSynchronously(
+        onSuccess: (token: string) => void,
+        onError: (err: Error) => void,
+        prompt: string = ''
+    ) {
         const clientId = this.getClientId();
         if (!clientId) {
-            throw new Error('Google OAuth Client ID is not configured. Please check your setup in Account settings.');
+            onError(new Error('Google OAuth Client ID is not configured.'));
+            return;
         }
 
         if (!navigator.onLine) {
-            throw new Error('No internet connection. Please connect to the internet to authorize Google Drive.');
+            onError(new Error('No internet connection. Please connect to the internet.'));
+            return;
         }
 
-        // 2. iOS Standalone PWA Workaround:
-        // In iPhone PWA standalone mode, window.open popups are blocked by iOS WebKit.
-        // Redirect directly so the user signs in cleanly and comes right back.
-        if (isIOS() && isStandalonePWA()) {
-            this.redirectToGoogleOAuth(pendingAction);
-            return new Promise(() => {}); // Halts promise while navigating
+        if (!window.google?.accounts?.oauth2) {
+            onError(new Error('Google Identity Services is still loading. Please tap again in a moment.'));
+            return;
         }
 
-        // 3. Desktop / Browser Mode: Google Identity Services token client
-        await this.loadGsiScript();
-
-        return new Promise((resolve, reject) => {
-            try {
-                const tokenClient = window.google!.accounts.oauth2.initTokenClient({
-                    client_id: clientId,
-                    scope: SCOPES,
-                    callback: (response: any) => {
-                        if (response.error) {
-                            // If popup was blocked or failed on mobile Safari, fallback to redirect
-                            if (response.error === 'popup_failed_to_open' || response.error === 'popup_closed') {
-                                this.redirectToGoogleOAuth(pendingAction);
-                                return;
-                            }
-                            reject(new Error(response.error_description || response.error || 'Google authorization failed.'));
-                        } else if (response.access_token) {
-                            const expiresIn = response.expires_in ? parseInt(response.expires_in, 10) : 3600;
-                            this.setStoredToken(response.access_token, expiresIn);
-                            resolve(response.access_token);
-                        } else {
-                            reject(new Error('No access token returned from Google.'));
-                        }
-                    },
-                    error_callback: (err: any) => {
-                        // Popup blocked fallback
-                        if (err?.type === 'popup_failed_to_open' || isIOS()) {
-                            this.redirectToGoogleOAuth(pendingAction);
-                            return;
-                        }
-                        reject(new Error(err.message || 'Google OAuth error occurred.'));
+        try {
+            const tokenClient = window.google.accounts.oauth2.initTokenClient({
+                client_id: clientId,
+                scope: SCOPES,
+                callback: (response: any) => {
+                    if (response.error) {
+                        onError(new Error(response.error_description || response.error || 'Google authorization failed'));
+                    } else if (response.access_token) {
+                        const expiresIn = response.expires_in ? parseInt(response.expires_in, 10) : 3600;
+                        this.setStoredToken(response.access_token, expiresIn);
+                        onSuccess(response.access_token);
+                    } else {
+                        onError(new Error('No access token returned from Google.'));
                     }
-                });
-
-                tokenClient.requestAccessToken({ prompt });
-            } catch (err: any) {
-                // If GIS fails to initialize or opens a blocked popup, fallback to redirect
-                if (isIOS() || isStandalonePWA()) {
-                    this.redirectToGoogleOAuth(pendingAction);
-                    return;
+                },
+                error_callback: (err: any) => {
+                    onError(new Error(err?.message || 'Google popup closed or blocked.'));
                 }
-                reject(new Error(err.message || 'Could not initialize Google Identity Client.'));
-            }
-        });
+            });
+
+            // Synchronously request access token on the user's click tick
+            tokenClient.requestAccessToken({ prompt });
+        } catch (err: any) {
+            onError(new Error(err.message || 'Could not launch Google authorization.'));
+        }
     },
 
     /**
      * Uploads the backup JSON directly to the user's Google Drive via Drive v3 REST API
      */
-    async uploadBackup(backupData: BackupData, accessToken?: string): Promise<DriveBackupFile> {
-        let token = accessToken || (await this.requestAccessToken('', 'backup'));
+    async uploadBackup(backupData: BackupData, accessToken: string): Promise<DriveBackupFile> {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 16);
         const fileName = `godspeed-grader-backup-${timestamp}.json`;
 
@@ -342,27 +234,18 @@ export const googleDriveService = {
             fileContent +
             closeDelimiter;
 
-        let response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,createdTime,size,webViewLink', {
+        const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,createdTime,size,webViewLink', {
             method: 'POST',
             headers: {
-                Authorization: `Bearer ${token}`,
+                Authorization: `Bearer ${accessToken}`,
                 'Content-Type': `multipart/related; boundary=${boundary}`
             },
             body: multipartBody
         });
 
-        // If token expired (401), clear and retry once
         if (response.status === 401) {
             this.clearStoredToken();
-            token = await this.requestAccessToken('select_account', 'backup');
-            response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,createdTime,size,webViewLink', {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': `multipart/related; boundary=${boundary}`
-                },
-                body: multipartBody
-            });
+            throw new Error('Google authorization expired. Please tap Backup again to reconnect.');
         }
 
         if (!response.ok) {
@@ -379,26 +262,19 @@ export const googleDriveService = {
     /**
      * Lists existing Godspeed Grader backup files in user's Google Drive
      */
-    async listBackups(accessToken?: string): Promise<DriveBackupFile[]> {
-        let token = accessToken || (await this.requestAccessToken('', 'restore'));
-
+    async listBackups(accessToken: string): Promise<DriveBackupFile[]> {
         const query = encodeURIComponent("name contains 'godspeed-grader-backup' and trashed = false");
         const url = `https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,name,createdTime,size,webViewLink)&orderBy=createdTime desc&pageSize=20`;
 
-        let response = await fetch(url, {
+        const response = await fetch(url, {
             headers: {
-                Authorization: `Bearer ${token}`
+                Authorization: `Bearer ${accessToken}`
             }
         });
 
         if (response.status === 401) {
             this.clearStoredToken();
-            token = await this.requestAccessToken('select_account', 'restore');
-            response = await fetch(url, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
+            throw new Error('Google authorization expired. Please tap Restore again to reconnect.');
         }
 
         if (!response.ok) {
@@ -413,24 +289,17 @@ export const googleDriveService = {
     /**
      * Downloads a backup JSON file from Google Drive
      */
-    async downloadBackup(fileId: string, accessToken?: string): Promise<BackupData> {
-        let token = accessToken || (await this.requestAccessToken('', 'restore'));
-
+    async downloadBackup(fileId: string, accessToken: string): Promise<BackupData> {
         const url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
-        let response = await fetch(url, {
+        const response = await fetch(url, {
             headers: {
-                Authorization: `Bearer ${token}`
+                Authorization: `Bearer ${accessToken}`
             }
         });
 
         if (response.status === 401) {
             this.clearStoredToken();
-            token = await this.requestAccessToken('select_account', 'restore');
-            response = await fetch(url, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
+            throw new Error('Google authorization expired. Please reconnect.');
         }
 
         if (!response.ok) {
