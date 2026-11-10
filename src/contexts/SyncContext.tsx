@@ -15,6 +15,8 @@ export interface SyncContextType {
     error: string | null;
     googleClientId: string;
     isGoogleConfigured: boolean;
+    isGoogleConnected: boolean;
+    disconnectGoogleDrive: () => void;
     setGoogleClientId: (clientId: string) => void;
     triggerBackupToDrive: () => Promise<DriveBackupFile | null>;
     triggerRestoreFromDrive: (fileId: string, mode?: 'replace' | 'merge') => Promise<boolean>;
@@ -36,12 +38,19 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [error, setError] = useState<string | null>(null);
     const [lastBackupTimestamp, setLastBackupTimestamp] = useState<number>(() => googleDriveService.getLastBackupTime());
     const [googleClientId, setGoogleClientIdState] = useState<string>(() => googleDriveService.getClientId());
+    const [isGoogleConnected, setIsGoogleConnected] = useState<boolean>(() => googleDriveService.hasValidToken());
 
     const isGoogleConfigured = Boolean(googleClientId);
 
     const setGoogleClientId = useCallback((clientId: string) => {
         googleDriveService.setClientId(clientId);
         setGoogleClientIdState(clientId.trim());
+    }, []);
+
+    const disconnectGoogleDrive = useCallback(() => {
+        googleDriveService.clearStoredToken();
+        setIsGoogleConnected(false);
+        toast.info('Disconnected Google Drive account.');
     }, []);
 
     // Network status listener
@@ -94,6 +103,7 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const uploaded = await googleDriveService.uploadBackup(backupPayload);
             const now = Date.now();
             setLastBackupTimestamp(now);
+            setIsGoogleConnected(true);
             setStatus('success');
             toast.success('Backed up to Google Drive successfully!', {
                 description: uploaded.name
@@ -113,6 +123,22 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [currentUser]);
 
     /**
+     * Handle OAuth 2.0 Redirect Callback (for iOS / Standalone PWA) on boot
+     */
+    useEffect(() => {
+        const { token, pendingAction } = googleDriveService.processRedirectHash();
+        if (token) {
+            setIsGoogleConnected(true);
+            toast.success('Signed in to Google Drive!');
+            if (pendingAction === 'backup') {
+                triggerBackupToDrive();
+            }
+        } else {
+            setIsGoogleConnected(googleDriveService.hasValidToken());
+        }
+    }, [triggerBackupToDrive]);
+
+    /**
      * Restore from Google Drive
      */
     const triggerRestoreFromDrive = useCallback(async (fileId: string, mode: 'replace' | 'merge' = 'replace'): Promise<boolean> => {
@@ -128,6 +154,7 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             const backupData: BackupData = await googleDriveService.downloadBackup(fileId);
             await backupService.restoreBackup(backupData, mode);
+            setIsGoogleConnected(true);
             setStatus('success');
             toast.success('Workspace restored successfully!');
             setTimeout(() => setStatus('idle'), 3000);
@@ -152,7 +179,14 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
             toast.error('Cannot list Drive backups while offline.');
             return [];
         }
-        return await googleDriveService.listBackups();
+        try {
+            const list = await googleDriveService.listBackups();
+            setIsGoogleConnected(true);
+            return list;
+        } catch (err: any) {
+            setIsGoogleConnected(googleDriveService.hasValidToken());
+            throw err;
+        }
     }, []);
 
     /**
@@ -214,6 +248,8 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 error,
                 googleClientId,
                 isGoogleConfigured,
+                isGoogleConnected,
+                disconnectGoogleDrive,
                 setGoogleClientId,
                 triggerBackupToDrive,
                 triggerRestoreFromDrive,

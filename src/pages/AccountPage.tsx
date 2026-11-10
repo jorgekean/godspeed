@@ -18,6 +18,7 @@ import {
     Edit3,
     FileJson,
     Save,
+    CheckCircle2,
     X
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -28,6 +29,8 @@ export default function AccountPage() {
         lastBackupTimestamp,
         isBackingUp,
         isRestoring,
+        isGoogleConnected,
+        disconnectGoogleDrive,
         triggerBackupToDrive,
         triggerRestoreFromDrive,
         listDriveBackups,
@@ -259,12 +262,21 @@ export default function AccountPage() {
                                     <h3 className="text-xl font-bold text-slate-900 dark:text-white">
                                         Google Drive Backup & Restore
                                     </h3>
+                                    {isGoogleConnected ? (
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
+                                            <CheckCircle2 className="w-3.5 h-3.5" /> Connected
+                                        </span>
+                                    ) : (
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                                            Ready to Connect
+                                        </span>
+                                    )}
                                 </div>
                                 <p className="text-sm text-slate-500 font-medium mt-1 max-w-xl">
-                                    Backup and restore your entire offline database (classes, students, exams, and grades) directly into your personal Google Drive account using your Gmail login.
+                                    Backup and restore your entire offline database directly into your personal Google Drive account. Works seamlessly on iPhone PWA with automatic token caching and popup bypass.
                                 </p>
 
-                                <div className="flex items-center gap-4 mt-3">
+                                <div className="flex items-center gap-4 mt-3 flex-wrap">
                                     <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
                                         <RefreshCw className={`w-3.5 h-3.5 ${isBackingUp || isRestoring ? 'animate-spin text-violet-500' : ''}`} />
                                         {isBackingUp ? 'Uploading to Google Drive...' : isRestoring ? 'Restoring from Drive...' : (
@@ -273,6 +285,16 @@ export default function AccountPage() {
                                                 : 'No Google Drive backups yet'
                                         )}
                                     </span>
+
+                                    {isGoogleConnected && (
+                                        <button
+                                            type="button"
+                                            onClick={disconnectGoogleDrive}
+                                            className="text-xs text-slate-400 hover:text-red-500 font-semibold underline transition-colors"
+                                        >
+                                            Disconnect Account
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         </div>
