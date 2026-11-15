@@ -14,7 +14,8 @@ import {
     BarChart3,
     ArrowLeft,
     ListChecks,
-    Info
+    Info,
+    ShieldCheck
 } from 'lucide-react';
 
 export default function Help() {
@@ -191,6 +192,28 @@ export default function Help() {
                         <li>Select the exam you want to review.</li>
                         <li>Tap the <strong>Bar Icon</strong> (Analytics/Reports tab) to view detailed results, class averages, and competency reports.</li>
                     </ul>
+                </div>
+            )
+        },
+        {
+            id: 6,
+            title: 'Student Privacy & Offline Data Safety',
+            icon: <ShieldCheck className="w-6 h-6 text-emerald-500" />,
+            intro: 'Your students\' grades and records are 100% private and stored locally on your device.',
+            content: (
+                <div className="space-y-4 text-sm text-slate-600 dark:text-slate-400">
+                    <p className="leading-relaxed">
+                        Godspeed Grader operates with zero central data tracking. Camera frames are processed in real-time on your phone via WebAssembly and are never uploaded or saved remotely. All student names and test scores remain securely in your device's sandboxed database.
+                    </p>
+                    <div className="pt-2">
+                        <button
+                            type="button"
+                            onClick={() => navigate('/privacy')}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold rounded-xl text-xs hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors"
+                        >
+                            Read Full Privacy Policy →
+                        </button>
+                    </div>
                 </div>
             )
         }

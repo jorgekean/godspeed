@@ -29,6 +29,7 @@ import SmartScannerPage from './pages/SmartScannerPage'
 import NoticesPage from './pages/NoticesPage'
 import UserManualPage from './pages/UserManualPage'
 import StudentProfilePage from './pages/StudentProfilePage'
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { currentUser, isLoading } = useAuth();
@@ -60,10 +61,11 @@ function App() {
                 {/* 1. CORE LAYOUT ROUTES (With Bottom Nav / Sidebar) */}
                 {/* ========================================== */}
                 <Route element={<AppLayout />}>
-                  {/* Publicly accessible documentation */}
+                  {/* Publicly accessible documentation & privacy */}
                   <Route path="/help" element={<Help />} />
                   <Route path="/manual" element={<UserManualPage />} />
                   <Route path="/notices" element={<NoticesPage />} />
+                  <Route path="/privacy" element={<PrivacyPolicyPage />} />
 
                   {/* Protected core app routes */}
                   <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>

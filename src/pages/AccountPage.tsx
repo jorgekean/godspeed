@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useBackup } from '../contexts/SyncContext';
 import { db } from '../services/db';
@@ -329,7 +330,7 @@ export default function AccountPage() {
                 </div>
 
                 {/* ========================================== */}
-                {/* 3. OFFLINE FILE BACKUP & RESTORE (LOCAL JSON) */}
+                {/* 3. OFFLINE FILE BACKUP & RESTORE (APPLE FILES & LOCAL JSON) */}
                 {/* ========================================== */}
                 <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/50 dark:border-white/5 p-6 md:p-8 shadow-sm">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -339,10 +340,10 @@ export default function AccountPage() {
                             </div>
                             <div>
                                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                                    Local JSON Backup & Restore
+                                    Apple Files, iCloud & Local Backup
                                 </h3>
                                 <p className="text-sm text-slate-500 font-medium max-w-xl">
-                                    Save your data as a physical file on your device. Works completely offline with zero internet access. You can keep copies on flash drives, computer folders, or manually upload to Google Drive.
+                                    Save your data directly to Apple Files, iCloud Drive, or local storage. Works 100% offline. Export copies to share via AirDrop or restore any previous backup file.
                                 </p>
                             </div>
                         </div>
@@ -367,7 +368,7 @@ export default function AccountPage() {
                                 onClick={() => fileInputRef.current?.click()}
                                 className="px-5 py-3 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2"
                             >
-                                <Upload className="w-4 h-4" /> Restore from File
+                                <Upload className="w-4 h-4" /> Restore from Files
                             </button>
                         </div>
                     </div>
@@ -427,6 +428,27 @@ export default function AccountPage() {
                             Clear All Data
                         </button>
                     </div>
+                </div>
+
+                {/* ========================================== */}
+                {/* 5. PRIVACY POLICY & COMPLIANCE */}
+                {/* ========================================== */}
+                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/50 dark:border-white/5 p-6 md:p-8 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                            <ShieldCheck className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <h3 className="text-base font-bold text-slate-900 dark:text-white">Student Data Privacy & Safety</h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">100% on-device processing, no external servers, FERPA & COPPA compliant design.</p>
+                        </div>
+                    </div>
+                    <Link
+                        to="/privacy"
+                        className="px-5 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-xl text-xs transition-all flex items-center gap-1.5 shrink-0"
+                    >
+                        Read Privacy Policy
+                    </Link>
                 </div>
 
             </div>

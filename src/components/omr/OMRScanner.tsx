@@ -371,13 +371,43 @@ export const OMRScanner = forwardRef<OMRScannerRef, OMRScannerProps>(
 
                     <Webcam audio={false} ref={webcamRef} screenshotFormat="image/jpeg" videoConstraints={{ facingMode: "environment" }} onUserMedia={handleUserMedia} onUserMediaError={handleCameraError} className="absolute inset-0 w-full h-full object-cover" />
 
-                    {/* Loading State Overlay */}
-                    {!isCameraReady && (
+                    {/* Error & Permission Denied State Overlay */}
+                    {error ? (
+                        <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center p-6 text-center z-30 animate-in fade-in duration-300">
+                            <div className="w-16 h-16 rounded-3xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-4 text-amber-500">
+                                <AlertTriangle className="w-8 h-8" />
+                            </div>
+                            <h3 className="text-xl font-black text-white mb-2">Camera Permission Needed</h3>
+                            <p className="text-slate-400 text-xs max-w-xs mb-6 leading-relaxed">
+                                Godspeed Grader requires camera access to scan and grade bubble answer sheets. All computer vision is processed 100% on your device.
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setError(null);
+                                    setIsCameraReady(false);
+                                }}
+                                className="w-full max-w-xs py-3 px-4 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-violet-500/20 active:scale-95 flex items-center justify-center gap-2"
+                            >
+                                <RefreshCw className="w-4 h-4" /> Try Reconnecting Camera
+                            </button>
+                            <div className="mt-6 p-4 bg-slate-900/80 rounded-2xl border border-white/5 max-w-xs text-left w-full">
+                                <p className="text-[11px] font-bold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                                    <Camera className="w-3.5 h-3.5 text-violet-400" /> To enable in iOS Settings:
+                                </p>
+                                <ol className="text-[11px] text-slate-400 space-y-1 list-decimal list-inside">
+                                    <li>Open your iPhone <strong className="text-slate-200">Settings</strong> app</li>
+                                    <li>Scroll down and tap <strong className="text-slate-200">Godspeed Grader</strong></li>
+                                    <li>Toggle <strong className="text-slate-200">Camera</strong> to ON</li>
+                                </ol>
+                            </div>
+                        </div>
+                    ) : !isCameraReady ? (
                         <div className="absolute inset-0 bg-black flex flex-col items-center justify-center z-20">
                             <Camera className="w-12 h-12 text-slate-700 animate-pulse mb-4" />
                             <p className="text-slate-500 font-bold">Waking up camera...</p>
                         </div>
-                    )}
+                    ) : null}
 
                     {/* Overlays */}
                     {reviewQueue.length > 0 ? (

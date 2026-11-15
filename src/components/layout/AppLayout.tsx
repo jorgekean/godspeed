@@ -183,10 +183,14 @@ export default function AppLayout() {
                             </div>
                         </div>
                     </div>
-                    <div className="text-center mt-1">
-                        <button onClick={() => setIsNoticesModalOpen(true)} className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
-                            Third-Party Notices
+                    <div className="flex items-center justify-center gap-2 text-xs text-slate-400 mt-2">
+                        <button onClick={() => setIsNoticesModalOpen(true)} className="hover:text-slate-600 dark:hover:text-slate-300">
+                            Licenses
                         </button>
+                        <span>•</span>
+                        <NavLink to="/privacy" className="hover:text-slate-600 dark:hover:text-slate-300">
+                            Privacy Policy
+                        </NavLink>
                     </div>
                 </div>
             </aside>
