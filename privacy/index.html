@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy - Godspeed Grader</title>
+  <link rel="icon" type="image/png" href="./app-logo.png">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --accent: #7c3aed;
+      --accent-light: #ede9fe;
+      --border: #e2e8f0;
+      --emerald: #059669;
+      --emerald-bg: #d1fae5;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #020617;
+        --card-bg: #0f172a;
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
+        --accent: #a78bfa;
+        --accent-light: rgba(139, 92, 246, 0.15);
+        --border: #1e293b;
+        --emerald: #34d399;
+        --emerald-bg: rgba(16, 185, 129, 0.15);
+      }
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding: 0 1rem 4rem;
+    }
+    .header {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 0 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--emerald);
+      background: var(--emerald-bg);
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 2rem auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+    .hero {
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: 2.25rem;
+      font-weight: 900;
+      letter-spacing: -0.025em;
+      margin-bottom: 0.5rem;
+    }
+    .hero .date {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+    .hero .lead {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 650px;
+      margin: 0 auto;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 1.25rem;
+    }
+    .card h3 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+    .card p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .section-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 1.25rem;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+    section h2 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.5rem;
+      height: 1.5rem;
+      background: var(--accent-light);
+      color: var(--accent);
+      border-radius: 0.375rem;
+      font-size: 0.75rem;
+      font-weight: 900;
+    }
+    p, li {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+    strong {
+      color: var(--text-main);
+    }
+    ul {
+      margin-left: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-top: 0.5rem;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+    }
+    .contact-email {
+      font-weight: 700;
+      color: var(--accent);
+      margin-top: 0.5rem;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div style="font-weight: 800; font-size: 1rem;">Godspeed Grader</div>
+    <div class="badge">Privacy-First Architecture</div>
+  </header>
+
+  <main class="container">
+    <div class="hero">
+      <h1>Privacy Policy</h1>
+      <p class="date">Last Updated: November 2026 • Godspeed Grader</p>
+      <p class="lead">
+        Godspeed Grader is built from the ground up to protect student privacy and teacher data. Your educational records belong solely to you and your school.
+      </p>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>100% Local Storage</h3>
+        <p>All students, classes, and exam grades live exclusively on your device's local database. No central server stores your data.</p>
+      </div>
+      <div class="card">
+        <h3>On-Device Computer Vision</h3>
+        <p>Camera frames are processed in real-time via WebAssembly on your phone. No photos or videos are ever uploaded.</p>
+      </div>
+      <div class="card">
+        <h3>No Trackers or Ads</h3>
+        <p>Zero third-party tracking libraries, advertising SDKs, or data brokers. Your educational workflow is strictly private.</p>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <section>
+        <h2><span class="num">1</span> Student Data Privacy & FERPA / COPPA Alignment</h2>
+        <p>
+          Godspeed Grader does not collect, transmit, sell, or rent student personal data. All student identifiers, rosters, and test scores remain confined within your device's sandboxed storage. Because the application does not transmit student data to developer servers, it aligns with student privacy standards, including the Family Educational Rights and Privacy Act (FERPA) and Children’s Online Privacy Protection Act (COPPA).
+        </p>
+      </section>
+
+      <hr>
+
+      <section>
+        <h2><span class="num">2</span> Camera Permission & Video Feed Processing</h2>
+        <p>
+          When you grant camera access, the camera feed is used exclusively for scanning bubble answer sheets in real-time. The computer vision analysis is executed completely on-device using a client-side WebAssembly build of OpenCV.
+        </p>
+        <ul>
+          <li>Camera frames are evaluated in volatile memory and discarded immediately after mark detection.</li>
+          <li>No photos, video streams, or biometric faces are ever recorded, saved, or sent over the internet.</li>
+          <li>You can revoke camera permissions at any time in your device’s System Settings.</li>
+        </ul>
+      </section>
+
+      <hr>
+
+      <section>
+        <h2><span class="num">3</span> Optional Cloud Storage & Apple Files / iCloud Drive</h2>
+        <p>
+          Godspeed Grader provides optional cloud and file backup features strictly under your control:
+        </p>
+        <ul>
+          <li><strong>Apple Files & iCloud Drive:</strong> When you export a backup, the file is saved directly to your Apple Files or iCloud Drive using standard iOS native file dialogs.</li>
+          <li><strong>Google Drive Sync:</strong> If you connect Google Drive, the app uses direct OAuth 2.0 PKCE to write a single backup file directly to your personal Google Drive storage. Godspeed Grader developers never have access to your credentials or files.</li>
+        </ul>
+      </section>
+
+      <hr>
+
+      <section>
+        <h2><span class="num">4</span> Data Retention & Full Deletion Control</h2>
+        <p>
+          You retain full authority over your data. Under the <strong>Profile & Backup</strong> screen, you have access to:
+        </p>
+        <ul>
+          <li><strong>Export:</strong> Download a full, readable JSON backup of your records at any time.</li>
+          <li><strong>Clear All Workspace Data:</strong> Immediately wipe all local IndexedDB tables with a single tap.</li>
+          <li><strong>Uninstalling:</strong> Deleting the app from your device immediately erases all locally stored database files.</li>
+        </ul>
+      </section>
+
+      <hr>
+
+      <section>
+        <h2><span class="num">5</span> Contact Us</h2>
+        <p>
+          If you have questions about this Privacy Policy or data privacy in Godspeed Grader, please contact us:
+        </p>
+        <p class="contact-email">privacy@godspeedgrader.app</p>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
