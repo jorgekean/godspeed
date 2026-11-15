@@ -260,7 +260,7 @@ export default function AccountPage() {
                             <div>
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-                                        Google Drive Backup & Restore
+                                        Google Drive Cloud Sync
                                     </h3>
                                     {isGoogleConnected ? (
                                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
@@ -273,16 +273,16 @@ export default function AccountPage() {
                                     )}
                                 </div>
                                 <p className="text-sm text-slate-500 font-medium mt-1 max-w-xl">
-                                    Backup and restore your entire offline database directly into your personal Google Drive account. Works seamlessly on iPhone PWA with automatic token caching and popup bypass.
+                                    Seamless two-way cloud sync with your personal Google Drive account. Merges your exams, classes, and grades into a single master file without duplicates or clutter.
                                 </p>
 
                                 <div className="flex items-center gap-4 mt-3 flex-wrap">
                                     <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
                                         <RefreshCw className={`w-3.5 h-3.5 ${isBackingUp || isRestoring ? 'animate-spin text-violet-500' : ''}`} />
-                                        {isBackingUp ? 'Uploading to Google Drive...' : isRestoring ? 'Restoring from Drive...' : (
+                                        {isBackingUp ? 'Syncing with Google Drive...' : isRestoring ? 'Restoring from Drive...' : (
                                             lastBackupTimestamp > 0
-                                                ? `Last backup: ${new Date(lastBackupTimestamp).toLocaleString()}`
-                                                : 'No Google Drive backups yet'
+                                                ? `Last synced: ${new Date(lastBackupTimestamp).toLocaleString()}`
+                                                : 'Not synced yet'
                                         )}
                                     </span>
 
@@ -305,8 +305,8 @@ export default function AccountPage() {
                                 disabled={isBackingUp || isRestoring}
                                 className="px-6 py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-2xl shadow-lg shadow-violet-500/25 active:scale-95 transition-all flex items-center justify-center gap-2.5 disabled:opacity-50"
                             >
-                                {isBackingUp ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
-                                <span>Backup to Google Drive</span>
+                                {isBackingUp ? <Loader2 className="w-5 h-5 animate-spin" /> : <RefreshCw className="w-5 h-5" />}
+                                <span>Sync with Google Drive</span>
                             </button>
 
                             <button

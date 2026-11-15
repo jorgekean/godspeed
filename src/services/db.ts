@@ -45,6 +45,8 @@ export interface Exam {
     examCode?: string;    // NEW: 4-digit OMR code
     category?: 'WW' | 'PT' | 'QA'; // NEW: For K-12 grading
     maxScore?: number;    // NEW: Overrides itemCount if set
+    defaultPointsPerItem?: number; // Default points per item (defaults to 1)
+    itemPoints?: number[];         // Optional customized points per item [q1, q2, ...]
     itemCount: number;
     answerKey: string;
     competencyMap?: Record<string, string>; // Maps "itemNumber" -> "Competency Name"

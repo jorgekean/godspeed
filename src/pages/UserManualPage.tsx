@@ -132,7 +132,7 @@ export default function UserManualPage() {
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans">
             {/* Header */}
-            <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-white/5">
+            <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-white/5 pt-safe-top">
                 <div className="w-full max-w-4xl mx-auto flex items-center justify-between px-4 py-4">
                     <button 
                         onClick={() => navigate(-1)}

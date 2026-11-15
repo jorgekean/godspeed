@@ -112,12 +112,14 @@ export default function SmartScannerPage() {
             .equals([exam.id, studentId])
             .first();
 
+        const examTotalScore = exam.maxScore || (exam.itemPoints ? exam.itemPoints.reduce((a, b) => a + b, 0) : exam.itemCount);
+
         const baseData = {
             examId: exam.id,
             sectionId: selectedSectionId,
             studentId: studentId,
             score: finalScore,
-            total: exam.itemCount,
+            total: examTotalScore,
             answers: finalAnswers.reduce((acc, ans, i) => ({ ...acc, [i + 1]: ans }), {}),
             scannedAt: Date.now(),
             createdBy: currentUser.email,
@@ -141,12 +143,13 @@ export default function SmartScannerPage() {
         scannerRef.current?.updateLastResult({
             isSaved: true,
             studentName: studentName,
-            score: finalScore
+            score: finalScore,
+            total: examTotalScore
         });
 
         // Only show toast here if we were in manual tagging mode (not auto-tagged)
         if (scanMode === 'tagging') {
-            toast.success(`${studentName} scored ${finalScore}/${exam.itemCount}. Saved! Go to next paper.`, {
+            toast.success(`${studentName} scored ${finalScore}/${examTotalScore}. Saved! Go to next paper.`, {
                 duration: 3000,
                 icon: <CheckCircle2 className="w-5 h-5 text-green-500" />
             });
@@ -359,6 +362,7 @@ export default function SmartScannerPage() {
                     <OMRScanner
                         ref={scannerRef}
                         correctAnswers={exam.answerKey.split('')}
+                        itemPoints={exam.itemPoints}
                         onScanComplete={handleScanSuccess}
                         enabled={scanMode === 'scanning'}
                         allStudentsGraded={

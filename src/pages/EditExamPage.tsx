@@ -42,6 +42,8 @@ export default function EditExam() {
     const [subject, setSubject] = useState('');
     const [periodId, setPeriodId] = useState('');
     const [answerKey, setAnswerKey] = useState('');
+    const [defaultPointsPerItem, setDefaultPointsPerItem] = useState<number>(1);
+    const [itemPoints, setItemPoints] = useState<number[]>([]);
 
     // Custom entry states
     const [customGrade, setCustomGrade] = useState('');
@@ -64,6 +66,14 @@ export default function EditExam() {
             setSubject(exam.subject);
             setPeriodId(exam.periodId || '');
             setAnswerKey(exam.answerKey);
+
+            const defPts = exam.defaultPointsPerItem || 1;
+            setDefaultPointsPerItem(defPts);
+            if (exam.itemPoints && Array.isArray(exam.itemPoints) && exam.itemPoints.length > 0) {
+                setItemPoints(exam.itemPoints);
+            } else {
+                setItemPoints(Array(exam.itemCount).fill(defPts));
+            }
 
             if (exam.competencyMap) {
                 setCompetencyMap(exam.competencyMap);
@@ -172,6 +182,10 @@ export default function EditExam() {
         }
 
         const cleanAnswerKey = answerKey.replace(/ /g, '').toUpperCase();
+        const cleanPoints = (itemPoints && itemPoints.length > 0 ? itemPoints : Array(cleanAnswerKey.length).fill(defaultPointsPerItem))
+            .slice(0, cleanAnswerKey.length)
+            .map(p => (typeof p === 'number' && !isNaN(p) && p > 0 ? p : defaultPointsPerItem || 1));
+        const totalMaxScore = cleanPoints.reduce((sum, p) => sum + p, 0);
 
         localStorage.setItem('last_used_period_id', periodId);
         await db.exams.update(examId, {
@@ -182,6 +196,9 @@ export default function EditExam() {
             periodId: periodId,
             itemCount: cleanAnswerKey.length,
             answerKey: cleanAnswerKey,
+            defaultPointsPerItem: defaultPointsPerItem,
+            itemPoints: cleanPoints,
+            maxScore: totalMaxScore,
             competencyMap: competencyMap,
             updatedAt: Date.now(),
             isSynced: false
@@ -362,6 +379,10 @@ export default function EditExam() {
                     setCompetencyMap={setCompetencyMap}
                     competencyList={competencyList}
                     setCompetencyList={setCompetencyList}
+                    itemPoints={itemPoints}
+                    setItemPoints={setItemPoints}
+                    defaultPointsPerItem={defaultPointsPerItem}
+                    setDefaultPointsPerItem={setDefaultPointsPerItem}
                 />
 
                 <button

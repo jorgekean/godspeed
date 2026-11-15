@@ -81,7 +81,8 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, []);
 
     /**
-     * Internal: Executes backup with a known valid token
+     * Internal: Executes smart two-way sync/backup with a known valid token.
+     * Merges cloud and local datasets and updates the master Google Drive file in-place.
      */
     const executeBackupWithToken = useCallback(async (token: string): Promise<DriveBackupFile | null> => {
         setIsBackingUp(true);
@@ -89,25 +90,49 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setError(null);
 
         try {
-            const backupPayload = await backupService.generateBackup({
+            // 1. Generate current local snapshot
+            const localPayload = await backupService.generateBackup({
                 name: currentUser?.name,
                 email: currentUser?.email,
                 school: currentUser?.school
             });
 
-            const uploaded = await googleDriveService.uploadBackup(backupPayload, token);
+            // 2. Check for an existing master file in Google Drive
+            const existingMaster = await googleDriveService.getMasterBackupFile(token);
+            let finalPayload = localPayload;
+
+            if (existingMaster) {
+                try {
+                    // 3. Download existing cloud backup and merge with local data
+                    const cloudData = await googleDriveService.downloadBackup(existingMaster.id, token);
+                    finalPayload = backupService.mergeBackupData(localPayload, cloudData);
+
+                    // 4. Update local IndexedDB with merged records from the cloud
+                    await backupService.restoreBackup(finalPayload, 'merge');
+                } catch (mergeErr) {
+                    console.warn('Could not merge existing cloud data, continuing with local dataset:', mergeErr);
+                }
+            }
+
+            // 5. Upload/update the master backup file with the merged data
+            const uploaded = await googleDriveService.uploadOrUpdateMasterBackup(
+                finalPayload,
+                token,
+                existingMaster?.id
+            );
+
             const now = Date.now();
             setLastBackupTimestamp(now);
             setIsGoogleConnected(true);
             setStatus('success');
-            toast.success('Backed up to Google Drive successfully!', {
-                description: uploaded.name
+            toast.success('Synced with Google Drive successfully!', {
+                description: `${finalPayload.summary.examsCount} exams, ${finalPayload.summary.scanResultsCount} grades up to date.`
             });
             setTimeout(() => setStatus('idle'), 3000);
             return uploaded;
         } catch (err: any) {
-            console.error('Google Drive backup error:', err);
-            const msg = err.message || 'Failed to upload backup to Google Drive.';
+            console.error('Google Drive sync error:', err);
+            const msg = err.message || 'Failed to sync with Google Drive.';
             setError(msg);
             setStatus('error');
             toast.error(msg);

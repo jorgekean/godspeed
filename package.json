@@ -9,9 +9,18 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "cap:build": "npm run build && npx cap sync ios",
+    "cap:open:ios": "npx cap open ios"
   },
   "dependencies": {
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/browser": "^8.0.5",
+    "@capacitor/cli": "^8.6.2",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/ios": "^8.6.2",
+    "@capacitor/share": "^8.0.3",
     "@react-pdf/renderer": "^4.5.1",
     "@tailwindcss/vite": "^4.2.4",
     "@tanstack/react-table": "^8.21.3",

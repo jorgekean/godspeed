@@ -66,19 +66,25 @@ export default function GlobalScannerPage() {
                 }
             }
 
-            // 2.5 Recalculate accurate score using the matched exam's key
+            // 2.5 Recalculate accurate score using the matched exam's key and custom item points
             let accurateScore = 0;
+            let totalMaxScore = 0;
             const key = matchedExam.answerKey.split(''); // Ensure it's an array of characters
+            const itemPts = matchedExam.itemPoints || [];
+            const defPts = matchedExam.defaultPointsPerItem || 1;
             
             // rawAnswers is an array: [detectedQ1, detectedQ2, ...] from OMRScanner
             for (let i = 0; i < matchedExam.itemCount; i++) {
+                const weight = (typeof itemPts[i] === 'number') ? itemPts[i] : defPts;
+                totalMaxScore += weight;
                 const studentAns = rawAnswers[i];
                 const correctAns = key[i];
                 
                 if (studentAns !== "BLANK" && studentAns !== "REVIEW" && studentAns === correctAns) {
-                    accurateScore++;
+                    accurateScore += weight;
                 }
             }
+            const finalExamTotal = matchedExam.maxScore || totalMaxScore || matchedExam.itemCount;
 
             // 3. Save result if student was identified
             if (studentId) {
@@ -92,7 +98,7 @@ export default function GlobalScannerPage() {
                     sectionId: sectionId!,
                     studentId: studentId,
                     score: accurateScore,
-                    total: matchedExam.itemCount,
+                    total: finalExamTotal,
                     answers: rawAnswers.reduce((acc, ans, i) => ({ ...acc, [i + 1]: ans }), {}),
                     scannedAt: Date.now(),
                     createdBy: userEmail,
@@ -107,11 +113,11 @@ export default function GlobalScannerPage() {
                     await db.scanResults.add({ id: crypto.randomUUID(), ...baseData });
                 }
                 
-                toast.success(`Scored ${accurateScore}/${matchedExam.itemCount} for ${studentName}`, {
+                toast.success(`Scored ${accurateScore}/${finalExamTotal} for ${studentName}`, {
                     icon: <CheckCircle2 className="w-5 h-5 text-green-500" />
                 });
             } else {
-                toast.info(`Scored ${accurateScore}/${matchedExam.itemCount}. Student not identified.`, {
+                toast.info(`Scored ${accurateScore}/${finalExamTotal}. Student not identified.`, {
                     description: "Student ID was missing or not found in your records."
                 });
             }
@@ -119,7 +125,7 @@ export default function GlobalScannerPage() {
             // 4. Update internal scanner results
             scannerRef.current?.updateLastResult({
                 score: accurateScore,
-                total: matchedExam.itemCount,
+                total: finalExamTotal,
                 studentName: studentName,
                 examTitle: matchedExam.title,
                 correctAnswers: matchedExam.answerKey,

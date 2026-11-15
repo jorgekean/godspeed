@@ -248,7 +248,7 @@ export default function Dashboard() {
                                             <span className="opacity-30">•</span>
                                             <span>{exam.subject}</span>
                                             <span className="opacity-30">•</span>
-                                            <span>{exam.itemCount} Items</span>
+                                            <span>{exam.itemCount} Items{exam.maxScore && exam.maxScore !== exam.itemCount ? ` (${exam.maxScore} pts)` : ''}</span>
                                             <span className="opacity-30">•</span>
                                             {exam.status === 'graded' ? (
                                                 <span className="text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider text-[10px]">Graded</span>

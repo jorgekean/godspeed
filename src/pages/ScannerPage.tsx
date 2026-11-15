@@ -54,7 +54,7 @@ export default function ScannerPage() {
                     {/* Pass the answerKey array to your scanner component! */}
                     <OMRScanner
                         correctAnswers={exam.answerKey.split('')}
-                    // itemCount={exam.itemCount}
+                        itemPoints={exam.itemPoints}
                     />
 
                 </div>

@@ -217,11 +217,11 @@ export default function AppLayout() {
                             <button
                                 onClick={handleQuickDriveBackup}
                                 disabled={isBackingUp}
-                                title="Backup to Google Drive"
+                                title="Sync with Google Drive"
                                 className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2.5 rounded-xl md:rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-bold text-xs md:text-sm transition-all active:scale-95 shadow-sm"
                             >
                                 <Cloud className={`w-4 h-4 md:w-5 md:h-5 ${isBackingUp ? 'animate-bounce' : ''}`} />
-                                <span className="hidden sm:inline">{isBackingUp ? 'Backing Up...' : 'Backup to Drive'}</span>
+                                <span className="hidden sm:inline">{isBackingUp ? 'Syncing...' : 'Sync to Drive'}</span>
                             </button>
 
                             {/* Manage Account Link: Only shown on desktop header (hidden on mobile, which uses bottom nav tab) */}

@@ -15,15 +15,42 @@
   --color-primary-950: var(--primary-950);
 }
 
-/* Safe Area Utilities */
+/* Safe Area Utilities & Root Insets */
+:root {
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 @utility pt-safe-top {
-  padding-top: env(safe-area-inset-top, 0px);
+  padding-top: max(env(safe-area-inset-top, 0px), var(--safe-area-top, 0px));
 }
 @utility pb-safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-bottom, 0px));
 }
 @utility pb-safe {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-bottom, 0px));
+}
+
+/* Explicit CSS class rules ensuring headers and footers clear iOS hardware elements */
+.pt-safe-top {
+  padding-top: max(env(safe-area-inset-top, 0px), var(--safe-area-top, 0px));
+}
+.pb-safe, .pb-safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-bottom, 0px));
+}
+
+/* iOS Specific Guarantee: guarantees clearance of notch, Dynamic Island, and status bar */
+html.plt-ios .pt-safe-top,
+html.ios-device .pt-safe-top,
+body.platform-ios .pt-safe-top {
+  padding-top: max(env(safe-area-inset-top, 0px), 48px) !important;
+}
+
+html.plt-ios .pb-safe,
+html.plt-ios .pb-safe-bottom,
+html.ios-device .pb-safe,
+body.platform-ios .pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 24px) !important;
 }
 
 /* Tailwind v4 dark mode strategy */
@@ -78,6 +105,44 @@ body {
   .hover-reveal {
     @apply md:opacity-0 md:group-hover:opacity-100;
   }
+}
+
+/* Custom Theme-Relevant Scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+}
+
+.dark .custom-scrollbar {
+  scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #8b5cf6;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.25);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #a78bfa;
 }
 
 @media print {

@@ -32,6 +32,8 @@ export default function CreateExam() {
     const [subject, setSubject] = useState('');
     const [periodId, setPeriodId] = useState(() => localStorage.getItem('last_used_period_id') || '');
     const [answerKey, setAnswerKey] = useState(' '.repeat(20));
+    const [defaultPointsPerItem, setDefaultPointsPerItem] = useState<number>(1);
+    const [itemPoints, setItemPoints] = useState<number[]>(() => Array(20).fill(1));
 
     // Auto-generate exam code
     useEffect(() => {
@@ -142,6 +144,10 @@ export default function CreateExam() {
         }
 
         const cleanAnswerKey = answerKey.replace(/[\s,]/g, '').toUpperCase();
+        const cleanPoints = (itemPoints && itemPoints.length > 0 ? itemPoints : Array(cleanAnswerKey.length).fill(defaultPointsPerItem))
+            .slice(0, cleanAnswerKey.length)
+            .map(p => (typeof p === 'number' && !isNaN(p) && p > 0 ? p : defaultPointsPerItem || 1));
+        const totalMaxScore = cleanPoints.reduce((sum, p) => sum + p, 0);
 
         localStorage.setItem('last_used_period_id', periodId);
         await db.exams.add({
@@ -154,6 +160,9 @@ export default function CreateExam() {
             createdBy: currentUser?.email!,
             itemCount: cleanAnswerKey.length,
             answerKey: cleanAnswerKey,
+            defaultPointsPerItem: defaultPointsPerItem,
+            itemPoints: cleanPoints,
+            maxScore: totalMaxScore,
             competencyMap: competencyMap,
             createdAt: Date.now(),
             updatedAt: Date.now(),
@@ -320,6 +329,10 @@ export default function CreateExam() {
                     setCompetencyMap={setCompetencyMap}
                     competencyList={competencyList}
                     setCompetencyList={setCompetencyList}
+                    itemPoints={itemPoints}
+                    setItemPoints={setItemPoints}
+                    defaultPointsPerItem={defaultPointsPerItem}
+                    setDefaultPointsPerItem={setDefaultPointsPerItem}
                 />
 
                 <button

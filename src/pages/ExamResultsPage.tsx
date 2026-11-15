@@ -563,11 +563,19 @@ export default function ExamResultsPage() {
                                                 </button>
                                             </div>
                                         </th>
-                                        {Array.from({ length: exam.itemCount }).map((_, i) => (
-                                            <th key={i} className="p-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center min-w-[40px]">
-                                                Q{i + 1}
-                                            </th>
-                                        ))}
+                                        {Array.from({ length: exam.itemCount }).map((_, i) => {
+                                            const pts = (exam.itemPoints && typeof exam.itemPoints[i] === 'number')
+                                                ? exam.itemPoints[i]
+                                                : (exam.defaultPointsPerItem || 1);
+                                            return (
+                                                <th key={i} className="p-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center min-w-[44px]">
+                                                    <div>Q{i + 1}</div>
+                                                    {pts > 1 && (
+                                                        <span className="text-[9px] font-black text-amber-500 lowercase block">{pts}pts</span>
+                                                    )}
+                                                </th>
+                                            );
+                                        })}
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">

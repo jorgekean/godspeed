@@ -1,4 +1,7 @@
 import { db, type Section, type Student, type Period, type Exam, type ScanResult, type Subject, type GradeLevel } from './db';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 
 export interface BackupData {
     version: number;
@@ -79,16 +82,35 @@ export const backupService = {
     },
 
     /**
-     * Downloads the backup as a local JSON file
+     * Downloads or shares the backup as a local JSON file
      */
-    downloadBackupFile(backupData: BackupData) {
+    async downloadBackupFile(backupData: BackupData) {
         const jsonString = JSON.stringify(backupData, null, 2);
-        const blob = new Blob([jsonString], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 16);
         const fileName = `godspeed-grader-backup-${timestamp}.json`;
 
+        if (Capacitor.isNativePlatform()) {
+            try {
+                const writeResult = await Filesystem.writeFile({
+                    path: fileName,
+                    data: jsonString,
+                    directory: Directory.Cache,
+                    encoding: Encoding.UTF8
+                });
+                await Share.share({
+                    title: fileName,
+                    text: 'Godspeed Grader Local Backup',
+                    url: writeResult.uri,
+                    dialogTitle: 'Save or Share Backup File'
+                });
+                return;
+            } catch (err) {
+                console.error('Native file share failed, falling back to web download:', err);
+            }
+        }
+
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
         const anchor = document.createElement('a');
         anchor.href = url;
         anchor.download = fileName;
@@ -119,6 +141,65 @@ export const backupService = {
             reader.onerror = () => reject(new Error('Failed to read file.'));
             reader.readAsText(file);
         });
+    },
+
+    /**
+     * Merges two BackupData datasets cleanly by primary key (ID) and latest timestamp
+     */
+    mergeBackupData(localData: BackupData, cloudData: BackupData): BackupData {
+        const mergeList = <T extends { id: string; updatedAt?: number }>(
+            localList: T[] = [],
+            cloudList: T[] = []
+        ): T[] => {
+            const map = new Map<string, T>();
+            for (const item of localList) {
+                if (item && item.id) {
+                    map.set(item.id, item);
+                }
+            }
+            for (const item of cloudList) {
+                if (item && item.id) {
+                    const existing = map.get(item.id);
+                    if (!existing) {
+                        map.set(item.id, item);
+                    } else {
+                        const cloudUpdated = item.updatedAt || 0;
+                        const localUpdated = existing.updatedAt || 0;
+                        if (cloudUpdated > localUpdated) {
+                            map.set(item.id, item);
+                        }
+                    }
+                }
+            }
+            return Array.from(map.values());
+        };
+
+        const mergedData = {
+            sections: mergeList(localData.data?.sections, cloudData.data?.sections),
+            students: mergeList(localData.data?.students, cloudData.data?.students),
+            periods: mergeList(localData.data?.periods, cloudData.data?.periods),
+            exams: mergeList(localData.data?.exams, cloudData.data?.exams),
+            scanResults: mergeList(localData.data?.scanResults, cloudData.data?.scanResults),
+            subjects: mergeList(localData.data?.subjects, cloudData.data?.subjects),
+            gradeLevels: mergeList(localData.data?.gradeLevels, cloudData.data?.gradeLevels)
+        };
+
+        return {
+            version: 2,
+            appName: 'Godspeed Grader',
+            exportedAt: new Date().toISOString(),
+            userProfile: localData.userProfile || cloudData.userProfile,
+            data: mergedData,
+            summary: {
+                sectionsCount: mergedData.sections.length,
+                studentsCount: mergedData.students.length,
+                periodsCount: mergedData.periods.length,
+                examsCount: mergedData.exams.length,
+                scanResultsCount: mergedData.scanResults.length,
+                subjectsCount: mergedData.subjects.length,
+                gradeLevelsCount: mergedData.gradeLevels.length
+            }
+        };
     },
 
     /**

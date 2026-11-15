@@ -4,6 +4,7 @@ import { Camera, CheckCircle, AlertTriangle, RefreshCw, HelpCircle, Zap } from '
 
 interface OMRScannerProps {
     correctAnswers?: string[];
+    itemPoints?: number[];
     onScanComplete?: (score: number, rawAnswers: string[], examCode?: string, studentNo?: string) => void;
     enabled?: boolean;
     allStudentsGraded?: boolean;
@@ -23,7 +24,7 @@ export interface OMRScannerRef {
 }
 
 export const OMRScanner = forwardRef<OMRScannerRef, OMRScannerProps>(
-    ({ correctAnswers, onScanComplete, enabled = true, allStudentsGraded = false, onViewResults }, ref) => {
+    ({ correctAnswers, itemPoints, onScanComplete, enabled = true, allStudentsGraded = false, onViewResults }, ref) => {
         const webcamRef = useRef<Webcam>(null);
         const workerRef = useRef<Worker | null>(null);
         const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -125,20 +126,25 @@ export const OMRScanner = forwardRef<OMRScannerRef, OMRScannerProps>(
             }
 
             let score = 0;
+            let maxPossibleScore = 0;
             if (correctAnswers && correctAnswers.length > 0) {
-                Object.keys(finalAnswers).forEach(q => {
-                    const questionIndex = parseInt(q, 10) - 1;
-                    if (questionIndex < totalItems && finalAnswers[q] === correctAnswers[questionIndex]) {
-                        score++;
+                for (let i = 0; i < totalItems; i++) {
+                    const weight = (itemPoints && typeof itemPoints[i] === 'number') ? itemPoints[i] : 1;
+                    maxPossibleScore += weight;
+                    const qNum = (i + 1).toString();
+                    if (finalAnswers[qNum] === correctAnswers[i]) {
+                        score += weight;
                     }
-                });
+                }
+            } else {
+                maxPossibleScore = totalItems;
             }
             const rawAnswersArray: string[] = [];
             for (let i = 1; i <= totalItems; i++) {
                 rawAnswersArray.push(finalAnswers[i.toString()] || "BLANK");
             }
 
-            setLastSuccess({ studentNo: studentNo || '?', score: score, total: totalItems, answers: finalAnswers });
+            setLastSuccess({ studentNo: studentNo || '?', score: score, total: maxPossibleScore || totalItems, answers: finalAnswers });
             playSuccessBeep();
             setIsPaused(true);
             setIsProcessing(false);
@@ -146,7 +152,7 @@ export const OMRScanner = forwardRef<OMRScannerRef, OMRScannerProps>(
             if (onScanComplete) {
                 onScanComplete(score, rawAnswersArray, examCode, studentNo);
             }
-        }, [correctAnswers, onScanComplete, playSuccessBeep]);
+        }, [correctAnswers, itemPoints, onScanComplete, playSuccessBeep]);
 
         const resetAutoScan = useCallback(() => {
             setScanSessionId(prev => prev + 1);
