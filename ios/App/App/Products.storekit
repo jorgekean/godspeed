@@ -1,0 +1,35 @@
+{
+  "identifier" : "E2B38361",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "8.99",
+      "familyShareable" : true,
+      "internalID" : "C7E92A14",
+      "localizations" : [
+        {
+          "description" : "Unlock permanent, unlimited bubble sheet scanning for Godspeed Grader.",
+          "displayName" : "Godspeed Grader Lifetime Access",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.godspeedgrader.lifetime",
+      "referenceName" : "Lifetime Access",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA"
+  },
+  "subscriptionGroups" : [
+
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

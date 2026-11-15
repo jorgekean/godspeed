@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import StoreKit
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -7,31 +8,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
         return true
     }
 
-    func applicationWillResignActive(_ application: UIApplication) {
-        // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
-        // Use this method to pause ongoing tasks, disable timers, and invalidate graphics rendering callbacks. Games should use this method to pause the game.
-    }
-
-    func applicationDidEnterBackground(_ application: UIApplication) {
-        // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
-        // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
-    }
-
-    func applicationWillEnterForeground(_ application: UIApplication) {
-        // Called as part of the transition from the background to the active state; here you can undo many of the changes made on entering the background.
-    }
-
-    func applicationDidBecomeActive(_ application: UIApplication) {
-        // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
-    }
-
-    func applicationWillTerminate(_ application: UIApplication) {
-        // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
-    }
+    func applicationWillResignActive(_ application: UIApplication) {}
+    func applicationDidEnterBackground(_ application: UIApplication) {}
+    func applicationWillEnterForeground(_ application: UIApplication) {}
+    func applicationDidBecomeActive(_ application: UIApplication) {}
+    func applicationWillTerminate(_ application: UIApplication) {}
 
     func application(_ application: UIApplication,
                      configurationForConnecting connectingSceneSession: UISceneSession,
@@ -42,3 +26,108 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         return config
     }
 }
+
+// =============================================================================
+// NATIVE APPLE STOREKIT 2 CAPACITOR PLUGIN
+// Direct integration with Apple StoreKit 2 (No third-party SDKs or accounts needed)
+// =============================================================================
+@objc(NativeStoreKitPlugin)
+public class NativeStoreKitPlugin: CAPPlugin, CAPBridgedPlugin {
+    public let identifier = "NativeStoreKitPlugin"
+    public let jsName = "NativeStoreKit"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "purchaseProduct", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "restorePurchases", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "checkPurchases", returnType: CAPPluginReturnPromise)
+    ]
+
+    @objc func purchaseProduct(_ call: CAPPluginCall) {
+        guard let productId = call.getString("productId") else {
+            call.reject("Product ID is required")
+            return
+        }
+
+        Task { @MainActor in
+            do {
+                let products = try await Product.products(for: [productId])
+                guard let product = products.first else {
+                    call.reject("Product '\(productId)' not found in App Store. Ensure it is configured in App Store Connect.")
+                    return
+                }
+
+                let result = try await product.purchase()
+
+                switch result {
+                case .success(let verification):
+                    switch verification {
+                    case .verified(let transaction):
+                        await transaction.finish()
+                        call.resolve([
+                            "success": true,
+                            "productId": transaction.productID,
+                            "transactionId": String(transaction.id)
+                        ])
+                    case .unverified(_, let error):
+                        call.reject("Transaction unverified: \(error.localizedDescription)")
+                    }
+                case .userCancelled:
+                    call.reject("Purchase cancelled by user", "USER_CANCELLED")
+                case .pending:
+                    call.resolve([
+                        "success": false,
+                        "pending": true,
+                        "message": "Purchase pending authorization (Ask to Buy)."
+                    ])
+                @unknown default:
+                    call.reject("Unknown StoreKit response")
+                }
+            } catch {
+                call.reject("Purchase failed: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    @objc func restorePurchases(_ call: CAPPluginCall) {
+        Task { @MainActor in
+            do {
+                try await AppStore.sync()
+                var hasLifetime = false
+
+                for await result in Transaction.currentEntitlements {
+                    if case .verified(let transaction) = result {
+                        if transaction.productID == "com.godspeedgrader.lifetime" {
+                            hasLifetime = true
+                            break
+                        }
+                    }
+                }
+
+                call.resolve([
+                    "success": true,
+                    "restored": hasLifetime
+                ])
+            } catch {
+                call.reject("Restore failed: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    @objc func checkPurchases(_ call: CAPPluginCall) {
+        Task { @MainActor in
+            var hasLifetime = false
+            for await result in Transaction.currentEntitlements {
+                if case .verified(let transaction) = result {
+                    if transaction.productID == "com.godspeedgrader.lifetime" {
+                        hasLifetime = true
+                        break
+                    }
+                }
+            }
+
+            call.resolve([
+                "isLifetime": hasLifetime
+            ])
+        }
+    }
+}
+

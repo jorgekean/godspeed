@@ -1,5 +1,13 @@
-import { Capacitor } from '@capacitor/core';
-import { Purchases } from '@revenuecat/purchases-capacitor';
+import { registerPlugin, Capacitor } from '@capacitor/core';
+
+interface NativeStoreKitPlugin {
+    purchaseProduct(options: { productId: string }): Promise<{ success: boolean; productId?: string; transactionId?: string; pending?: boolean }>;
+    restorePurchases(): Promise<{ success: boolean; restored: boolean }>;
+    checkPurchases(): Promise<{ isLifetime: boolean }>;
+}
+
+// Native Apple StoreKit 2 Plugin Bridge
+const NativeStoreKit = registerPlugin<NativeStoreKitPlugin>('NativeStoreKit');
 
 const STORAGE_KEY_TRIAL_START = 'godspeed_trial_start_time';
 const STORAGE_KEY_LIFETIME = 'godspeed_lifetime_unlocked';
@@ -25,7 +33,7 @@ class LicenseService {
     private isInitialized = false;
 
     /**
-     * Initializes RevenueCat / StoreKit if on native iOS
+     * Initializes StoreKit and checks existing Apple ID entitlements
      */
     async initialize() {
         if (this.isInitialized) return;
@@ -35,16 +43,7 @@ class LicenseService {
         this.getTrialStartDate();
 
         if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios') {
-            try {
-                // If a public RevenueCat API key is provided via env, configure it
-                const apiKey = import.meta.env.VITE_REVENUECAT_IOS_KEY;
-                if (apiKey) {
-                    await Purchases.configure({ apiKey });
-                    await this.syncNativeCustomerInfo();
-                }
-            } catch (err) {
-                console.warn('Native purchases initialization deferred:', err);
-            }
+            await this.syncNativeStoreKitStatus();
         }
     }
 
@@ -121,89 +120,75 @@ class LicenseService {
     }
 
     /**
-     * Checks native customer info from RevenueCat / StoreKit
+     * Checks native Apple StoreKit 2 transactions for active lifetime purchase
      */
-    private async syncNativeCustomerInfo(): Promise<boolean> {
+    private async syncNativeStoreKitStatus(): Promise<boolean> {
         try {
-            if (Capacitor.isNativePlatform()) {
-                const { customerInfo } = await Purchases.getCustomerInfo();
-                const hasLifetime = customerInfo.entitlements.active['lifetime'] !== undefined ||
-                    customerInfo.allPurchasedProductIdentifiers.includes(LIFETIME_PRODUCT_ID);
-
-                if (hasLifetime) {
+            if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios') {
+                const res = await NativeStoreKit.checkPurchases();
+                if (res.isLifetime) {
                     localStorage.setItem(STORAGE_KEY_LIFETIME, 'true');
                     return true;
                 }
             }
         } catch (err) {
-            console.warn('Customer info check failed:', err);
+            console.warn('Native StoreKit check error:', err);
         }
         return false;
     }
 
     /**
-     * Triggers the one-time $8.99 lifetime purchase
+     * Triggers the real native Apple StoreKit 2 purchase sheet ($8.99 lifetime)
      */
     async purchaseLifetime(): Promise<{ success: boolean; error?: string }> {
-        // Native StoreKit Purchase
-        if (Capacitor.isNativePlatform()) {
+        // Native iOS StoreKit 2
+        if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios') {
             try {
-                const apiKey = import.meta.env.VITE_REVENUECAT_IOS_KEY;
-                if (apiKey) {
-                    const { customerInfo } = await Purchases.purchaseProduct({
-                        productIdentifier: LIFETIME_PRODUCT_ID
-                    });
+                const result = await NativeStoreKit.purchaseProduct({
+                    productId: LIFETIME_PRODUCT_ID
+                });
 
-                    const hasLifetime = customerInfo.entitlements.active['lifetime'] !== undefined ||
-                        customerInfo.allPurchasedProductIdentifiers.includes(LIFETIME_PRODUCT_ID);
-
-                    if (hasLifetime) {
-                        localStorage.setItem(STORAGE_KEY_LIFETIME, 'true');
-                        localStorage.removeItem(STORAGE_KEY_SIMULATED_EXPIRED);
-                        return { success: true };
-                    }
+                if (result.success) {
+                    localStorage.setItem(STORAGE_KEY_LIFETIME, 'true');
+                    localStorage.removeItem(STORAGE_KEY_SIMULATED_EXPIRED);
+                    return { success: true };
+                } else if (result.pending) {
+                    return { success: false, error: 'Purchase pending approval (Ask to Buy).' };
                 }
             } catch (err: any) {
-                // User cancelled purchase
-                if (err.code === '1' || err.message?.includes('cancelled')) {
+                if (err.code === 'USER_CANCELLED' || err.message?.includes('cancelled')) {
                     return { success: false, error: 'Purchase cancelled.' };
                 }
-                console.warn('Native purchase error, falling back to simulated:', err);
+                return { success: false, error: err.message || 'StoreKit purchase could not be completed.' };
             }
         }
 
-        // Web or development sandbox simulation
+        // Web or development simulation fallback
         localStorage.setItem(STORAGE_KEY_LIFETIME, 'true');
         localStorage.removeItem(STORAGE_KEY_SIMULATED_EXPIRED);
         return { success: true };
     }
 
     /**
-     * Restores existing purchases (Mandatory for App Store Review Guideline 3.1.1)
+     * Restores existing purchases via Apple StoreKit 2 (Mandatory Guideline 3.1.1)
      */
     async restorePurchases(): Promise<{ success: boolean; restored: boolean; message: string }> {
-        if (Capacitor.isNativePlatform()) {
+        if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios') {
             try {
-                const apiKey = import.meta.env.VITE_REVENUECAT_IOS_KEY;
-                if (apiKey) {
-                    const { customerInfo } = await Purchases.restorePurchases();
-                    const hasLifetime = customerInfo.entitlements.active['lifetime'] !== undefined ||
-                        customerInfo.allPurchasedProductIdentifiers.includes(LIFETIME_PRODUCT_ID);
-
-                    if (hasLifetime) {
-                        localStorage.setItem(STORAGE_KEY_LIFETIME, 'true');
-                        localStorage.removeItem(STORAGE_KEY_SIMULATED_EXPIRED);
-                        return { success: true, restored: true, message: 'Lifetime license successfully restored!' };
-                    } else {
-                        return { success: true, restored: false, message: 'No prior purchases found for this Apple ID.' };
-                    }
+                const result = await NativeStoreKit.restorePurchases();
+                if (result.restored) {
+                    localStorage.setItem(STORAGE_KEY_LIFETIME, 'true');
+                    localStorage.removeItem(STORAGE_KEY_SIMULATED_EXPIRED);
+                    return { success: true, restored: true, message: 'Lifetime license successfully restored!' };
+                } else {
+                    return { success: true, restored: false, message: 'No prior purchases found for this Apple ID.' };
                 }
             } catch (err: any) {
                 return { success: false, restored: false, message: err.message || 'Failed to connect to App Store.' };
             }
         }
 
-        // Web / dev mode
+        // Web mode fallback
         const isLifetime = localStorage.getItem(STORAGE_KEY_LIFETIME) === 'true';
         if (isLifetime) {
             return { success: true, restored: true, message: 'Lifetime license verified and restored!' };
