@@ -1,6 +1,7 @@
 import { useRef, useState, useCallback, useEffect, useMemo, forwardRef, useImperativeHandle } from 'react';
 import Webcam from 'react-webcam';
-import { Camera, CheckCircle, AlertTriangle, RefreshCw, HelpCircle, Zap } from 'lucide-react';
+import { Camera, CheckCircle, AlertTriangle, RefreshCw, HelpCircle, Zap, Lock, Sparkles } from 'lucide-react';
+import { useLicense } from '../../contexts/LicenseContext';
 
 interface OMRScannerProps {
     correctAnswers?: string[];
@@ -25,6 +26,7 @@ export interface OMRScannerRef {
 
 export const OMRScanner = forwardRef<OMRScannerRef, OMRScannerProps>(
     ({ correctAnswers, itemPoints, onScanComplete, enabled = true, allStudentsGraded = false, onViewResults }, ref) => {
+        const { licenseStatus, openPaywall, restorePurchases } = useLicense();
         const webcamRef = useRef<Webcam>(null);
         const workerRef = useRef<Worker | null>(null);
         const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -350,6 +352,39 @@ export const OMRScanner = forwardRef<OMRScannerRef, OMRScannerProps>(
                 <RefreshCw className="w-10 h-10 animate-spin mb-4" />
                 Initializing CV Engine...
             </div>;
+        }
+
+        if (!licenseStatus.canScan) {
+            return (
+                <div className="flex flex-col items-center justify-center p-8 text-center h-full bg-slate-950 text-white min-h-[450px]">
+                    <div className="w-16 h-16 rounded-3xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center mb-4">
+                        <Lock className="w-8 h-8" />
+                    </div>
+                    <span className="px-3 py-1 bg-amber-500/10 text-amber-400 rounded-full text-[10px] font-black uppercase tracking-wider mb-2">
+                        Free Trial Concluded
+                    </span>
+                    <h2 className="text-2xl font-black mb-2 tracking-tight">Unlock Lifetime Grading</h2>
+                    <p className="text-slate-400 text-xs max-w-sm mb-6 leading-relaxed">
+                        Your 3-month free trial has ended. To continue scanning bubble sheets and auto-grading exams, unlock Lifetime Access for a single one-time payment.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
+                        <button
+                            type="button"
+                            onClick={() => openPaywall('Unlock Lifetime Access to continue grading exams.')}
+                            className="w-full py-3.5 px-4 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-black text-xs rounded-xl shadow-lg shadow-violet-500/25 active:scale-95 transition-all flex items-center justify-center gap-2"
+                        >
+                            <Sparkles className="w-4 h-4 fill-white" /> Unlock Lifetime • {licenseStatus.priceDisplay}
+                        </button>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => restorePurchases()}
+                        className="mt-4 text-xs font-bold text-slate-500 hover:text-slate-300 transition-colors"
+                    >
+                        Restore Purchases
+                    </button>
+                </div>
+            );
         }
 
         return (

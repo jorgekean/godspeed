@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useBackup } from '../contexts/SyncContext';
+import { useLicense } from '../contexts/LicenseContext';
 import { db } from '../services/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { backupService } from '../services/backupService';
@@ -20,12 +21,16 @@ import {
     FileJson,
     Save,
     CheckCircle2,
-    X
+    X,
+    Sparkles,
+    Award,
+    Lock
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function AccountPage() {
     const { currentUser, updateProfile } = useAuth();
+    const { licenseStatus, openPaywall, restorePurchases, simulateExpireTrial, resetTrial } = useLicense();
     const {
         lastBackupTimestamp,
         isBackingUp,
@@ -250,7 +255,110 @@ export default function AccountPage() {
                 </div>
 
                 {/* ========================================== */}
-                {/* 2. GOOGLE DRIVE BACKUP & RESTORE (HERO) */}
+                {/* 2. LICENSE & SUBSCRIPTION STATUS */}
+                {/* ========================================== */}
+                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/50 dark:border-white/5 p-6 md:p-8 shadow-sm">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div className="flex items-start gap-4">
+                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${
+                                licenseStatus.isLifetime
+                                    ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                    : licenseStatus.isInTrial
+                                        ? 'bg-amber-100 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                                        : 'bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400'
+                            }`}>
+                                {licenseStatus.isLifetime ? <Award className="w-7 h-7" /> : licenseStatus.isInTrial ? <Sparkles className="w-7 h-7" /> : <Lock className="w-7 h-7" />}
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                                        License Status
+                                    </h3>
+                                    {licenseStatus.isLifetime ? (
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
+                                            <Award className="w-3.5 h-3.5" /> Lifetime Unlocked
+                                        </span>
+                                    ) : licenseStatus.isInTrial ? (
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">
+                                            <Sparkles className="w-3.5 h-3.5" /> 3-Month Free Trial ({licenseStatus.daysRemaining} days left)
+                                        </span>
+                                    ) : (
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20">
+                                            <Lock className="w-3.5 h-3.5" /> Trial Concluded
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-sm text-slate-500 font-medium mt-1 max-w-xl">
+                                    {licenseStatus.isLifetime
+                                        ? 'You own full, permanent access to Godspeed Grader. Enjoy unlimited exam scanning and reports forever.'
+                                        : licenseStatus.isInTrial
+                                            ? `You are enjoying full access under your 90-day free trial. After ${licenseStatus.daysRemaining} days, a one-time payment of ${licenseStatus.priceDisplay} unlocks lifetime access.`
+                                            : `Your 90-day trial has concluded. Unlock Lifetime Access for ${licenseStatus.priceDisplay} to resume unlimited test scanning.`}
+                                </p>
+
+                                <div className="flex items-center gap-3 mt-3 flex-wrap">
+                                    <span className="text-xs font-bold text-slate-400">
+                                        Pricing: <span className="text-slate-700 dark:text-slate-300 font-black">{licenseStatus.priceDisplay}</span> (One-time payment • No subscriptions)
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row gap-3 shrink-0">
+                            {!licenseStatus.isLifetime && (
+                                <button
+                                    type="button"
+                                    onClick={() => openPaywall()}
+                                    className="px-6 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-black rounded-xl text-sm transition-all shadow-md shadow-violet-500/20 flex items-center justify-center gap-2 active:scale-95"
+                                >
+                                    <Sparkles className="w-4 h-4" /> Unlock Lifetime • {licenseStatus.priceDisplay}
+                                </button>
+                            )}
+
+                            <button
+                                type="button"
+                                onClick={() => restorePurchases()}
+                                className="px-5 py-3 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2"
+                            >
+                                <RefreshCw className="w-4 h-4" /> Restore Purchases
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Developer / Reviewer Testing Controls */}
+                    <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+                        <span className="text-slate-400 font-semibold">Testing Controls:</span>
+                        <div className="flex items-center gap-2">
+                            {licenseStatus.isInTrial ? (
+                                <button
+                                    type="button"
+                                    onClick={simulateExpireTrial}
+                                    className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-red-500 rounded-lg font-bold transition-colors"
+                                >
+                                    Simulate Trial Expired
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={resetTrial}
+                                    className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-emerald-500 rounded-lg font-bold transition-colors"
+                                >
+                                    Reset Trial to 90 Days
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => openPaywall()}
+                                className="px-3 py-1.5 bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 rounded-lg font-bold hover:bg-violet-100 transition-colors"
+                            >
+                                Preview Paywall
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ========================================== */}
+                {/* 3. GOOGLE DRIVE BACKUP & RESTORE (HERO) */}
                 {/* ========================================== */}
                 <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-900/90 rounded-3xl border-2 border-violet-500/20 dark:border-violet-500/30 p-6 md:p-8 shadow-xl shadow-violet-500/5 relative overflow-hidden">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">

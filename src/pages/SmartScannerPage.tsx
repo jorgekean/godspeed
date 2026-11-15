@@ -6,6 +6,7 @@ import { Camera, X, CheckCircle2, Search, UserCheck, Zap, ArrowLeft, Loader2, Us
 import { toast } from 'sonner';
 import { OMRScanner } from '../components/omr/OMRScanner';
 import { useAuth } from '../contexts/AuthContext';
+import { useLicense } from '../contexts/LicenseContext';
 import { sortStudents } from '../utils/studentUtils';
 
 type ScanMode = 'setup' | 'scanning' | 'tagging';
@@ -14,6 +15,7 @@ export default function SmartScannerPage() {
     const { examId } = useParams();
     const navigate = useNavigate();
     const { currentUser } = useAuth();
+    const { licenseStatus, openPaywall } = useLicense();
 
     // ---------------------------------------------------------
     // 1. STATE & DATA FETCHING
@@ -25,6 +27,15 @@ export default function SmartScannerPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [scannedStudentIds, setScannedStudentIds] = useState<Set<string>>(new Set());
     const scannerRef = React.useRef<any>(null);
+
+    const handleStartScan = (sectionId: string) => {
+        if (!licenseStatus.canScan) {
+            openPaywall('Your 90-day free trial has concluded. Please unlock Lifetime Access to scan exams.');
+            return;
+        }
+        setSelectedSectionId(sectionId);
+        setScanMode('scanning');
+    };
 
     // NEW: Initialize scanned student IDs from DB
     React.useEffect(() => {
@@ -91,12 +102,16 @@ export default function SmartScannerPage() {
     // ---------------------------------------------------------
 
     const handleRescan = useCallback(() => {
+        if (!licenseStatus.canScan) {
+            openPaywall('Your 90-day free trial has concluded. Please unlock Lifetime Access to scan exams.');
+            return;
+        }
         setCurrentScore(null);
         setCurrentRawAnswers([]);
         setShowDetails(false);
         setScanMode('scanning');
         scannerRef.current?.reset();
-    }, []);
+    }, [licenseStatus.canScan, openPaywall]);
 
     const handleTagStudent = useCallback(async (studentId: string, studentName: string, scoreOverride?: number, answersOverride?: string[]) => {
         if (!exam || !currentUser) return;
@@ -250,7 +265,7 @@ export default function SmartScannerPage() {
                     <div className="space-y-4">
                         {/* Quick Scan: Always shown */}
                         <button
-                            onClick={() => { setSelectedSectionId('anonymous'); setScanMode('scanning'); }}
+                            onClick={() => handleStartScan('anonymous')}
                             className="w-full flex items-center p-6 rounded-2xl border-2 border-amber-400 bg-amber-50 dark:bg-amber-500/10 hover:shadow-lg transition-all active:scale-[0.98]"
                         >
                             <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 mr-4 bg-amber-100 dark:bg-amber-500/20">
@@ -277,7 +292,7 @@ export default function SmartScannerPage() {
                                             className="w-full flex items-center justify-between p-5 bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-200 dark:border-slate-800 hover:border-violet-400 transition-all shadow-sm"
                                         >
                                             <button
-                                                onClick={() => { setSelectedSectionId(section.id); setScanMode('scanning'); }}
+                                                onClick={() => handleStartScan(section.id)}
                                                 className="flex-1 flex items-center text-left focus:outline-none animate-in fade-in duration-300"
                                             >
                                                 <div className={`p-2.5 rounded-xl mr-4 ${isCompleted ? 'bg-emerald-50 dark:bg-emerald-500/10' : 'bg-slate-50 dark:bg-slate-800'}`}>
@@ -300,7 +315,7 @@ export default function SmartScannerPage() {
 
                                             <div className="flex gap-2">
                                                 <button
-                                                    onClick={() => { setSelectedSectionId(section.id); setScanMode('scanning'); }}
+                                                    onClick={() => handleStartScan(section.id)}
                                                     className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-xs font-bold transition-all active:scale-95 shadow-sm"
                                                 >
                                                     {gradedCount > 0 ? 'Resume' : 'Grade'}

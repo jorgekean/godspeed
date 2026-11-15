@@ -17,10 +17,14 @@ import {
     Cloud,
     Loader2,
     Upload,
-    ShieldCheck
+    ShieldCheck,
+    Sparkles,
+    Award,
+    Lock
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useBackup } from '../../contexts/SyncContext';
+import { useLicense } from '../../contexts/LicenseContext';
 import NoticesModal from './NoticesModal';
 
 export default function AppLayout() {
@@ -29,6 +33,7 @@ export default function AppLayout() {
         triggerBackupToDrive,
         isBackingUp
     } = useBackup();
+    const { licenseStatus, openPaywall } = useLicense();
     const location = useLocation();
 
     const [isManageMenuOpen, setIsManageMenuOpen] = useState(false);
@@ -217,6 +222,37 @@ export default function AppLayout() {
                         </div>
 
                         <div className="flex items-center gap-2 md:gap-3">
+                            {/* License & Trial Pill */}
+                            {licenseStatus.isLifetime ? (
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 md:py-2 rounded-xl md:rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-bold shrink-0">
+                                    <Award className="w-3.5 h-3.5" />
+                                    <span className="hidden sm:inline">Lifetime License</span>
+                                    <span className="sm:hidden">Lifetime</span>
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={() => openPaywall()}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 md:py-2 rounded-xl md:rounded-2xl border text-xs font-bold transition-all active:scale-95 shadow-sm shrink-0 ${
+                                        licenseStatus.isInTrial
+                                            ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                                            : 'bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/20 animate-pulse'
+                                    }`}
+                                    title="View Lifetime Access Options"
+                                >
+                                    {licenseStatus.isInTrial ? (
+                                        <>
+                                            <Sparkles className="w-3.5 h-3.5" />
+                                            <span>Trial: {licenseStatus.daysRemaining}d</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Lock className="w-3.5 h-3.5" />
+                                            <span>Trial Ended</span>
+                                        </>
+                                    )}
+                                </button>
+                            )}
+
                             {/* Prominent GDrive Backup Action Button */}
                             <button
                                 onClick={handleQuickDriveBackup}

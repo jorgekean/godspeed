@@ -23,6 +23,8 @@ import GlobalScannerPage from './pages/GlobalScannerPage'
 import LandingPage from './pages/LandingPage'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { SyncProvider } from './contexts/SyncContext'
+import { LicenseProvider } from './contexts/LicenseContext'
+import { PaywallModal } from './components/licensing/PaywallModal'
 import AccountPage from './pages/AccountPage'
 import ExamResultsPage from './pages/ExamResultsPage'
 import SmartScannerPage from './pages/SmartScannerPage'
@@ -49,11 +51,13 @@ function App() {
       <ConfirmProvider>
         <AuthProvider>
           <SyncProvider>
-            {/* Set the basename so React Router handles the Vite subpath automatically */}
-            <BrowserRouter basename="">
-              <Toaster position="top-center" richColors theme="system" />
+            <LicenseProvider>
+              {/* Set the basename so React Router handles the Vite subpath automatically */}
+              <BrowserRouter basename="">
+                <Toaster position="top-center" richColors theme="system" />
+                <PaywallModal />
 
-              <Routes>
+                <Routes>
 
                 <Route path="/landing" element={<LandingPage />} />
 
@@ -100,7 +104,8 @@ function App() {
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
-          </SyncProvider>
+          </LicenseProvider>
+        </SyncProvider>
         </AuthProvider>
       </ConfirmProvider>
     </ThemeProvider>
