@@ -266,13 +266,13 @@ export default function SmartScannerPage() {
                     </div>
                 </header>
 
-                <div className="flex-1 flex flex-col justify-center max-w-xl mx-auto w-full p-4 md:p-8 animate-in zoom-in-95 duration-300 pb-12">
-                    <div className="text-center mb-10">
-                        <div className="w-16 h-16 bg-violet-100 dark:bg-violet-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-violet-200 dark:border-violet-500/20">
-                            <Camera className="w-8 h-8 text-violet-600 dark:text-violet-400" />
+                <div className="flex-1 flex flex-col max-w-xl mx-auto w-full px-4 pt-3 pb-12 md:px-8 animate-in zoom-in-95 duration-300">
+                    <div className="text-center mb-5">
+                        <div className="w-14 h-14 bg-violet-100 dark:bg-violet-500/10 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-violet-200 dark:border-violet-500/20">
+                            <Camera className="w-7 h-7 text-violet-600 dark:text-violet-400" />
                         </div>
-                        <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-2">Scanner Setup</h1>
-                        <p className="text-slate-500 font-medium">{exam.title}</p>
+                        <h1 className="text-2xl font-black text-slate-900 dark:text-white mb-1">Scanner Setup</h1>
+                        <p className="text-sm text-slate-500 font-medium">{exam.title}</p>
                     </div>
 
                     <div className="space-y-4">
