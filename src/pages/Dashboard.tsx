@@ -216,14 +216,23 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    {/* New User Tip Banner: If user has exams but 0 scans */}
+                    {/* Onboarding Guide Banner: If user has exams but 0 scans */}
                     {exams && exams.length > 0 && exams.every(e => (e.scannedCount || 0) === 0) && (
-                        <div className="flex items-center gap-3.5 p-4 bg-violet-50 dark:bg-violet-500/10 border border-violet-200/80 dark:border-violet-500/20 rounded-2xl text-violet-900 dark:text-violet-200 text-xs sm:text-sm animate-in fade-in duration-300">
-                            <div className="w-9 h-9 rounded-xl bg-violet-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-violet-500/20">
-                                <Camera className="w-4 h-4" />
+                        <div className="flex items-center gap-3.5 p-4 bg-violet-50 dark:bg-violet-500/10 border border-violet-200/80 dark:border-violet-500/20 rounded-2xl text-violet-900 dark:text-violet-200 text-xs sm:text-sm animate-in fade-in duration-300 shadow-sm">
+                            <div className="relative flex items-center justify-center shrink-0">
+                                <span className="animate-ping absolute inline-flex h-8 w-8 rounded-xl bg-violet-400 opacity-40"></span>
+                                <div className="w-9 h-9 rounded-xl bg-violet-600 text-white flex items-center justify-center relative shadow-sm">
+                                    <Camera className="w-4.5 h-4.5" />
+                                </div>
                             </div>
                             <div className="flex-1 leading-snug">
-                                <span className="font-bold">Ready to grade?</span> Tap the <span className="font-black underline decoration-violet-400">Scan</span> button on your exam below to start scanning bubble sheets!
+                                <div className="flex items-center gap-2">
+                                    <span className="font-extrabold text-violet-950 dark:text-white">Ready to grade?</span>
+                                    <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-violet-200/80 dark:bg-violet-400/20 text-violet-800 dark:text-violet-300">Tap below</span>
+                                </div>
+                                <p className="text-slate-600 dark:text-slate-300 text-xs mt-0.5">
+                                    Tap on your exam below to start scanning bubble sheets with your camera.
+                                </p>
                             </div>
                         </div>
                     )}
@@ -273,18 +282,7 @@ export default function Dashboard() {
                                     </div>
                                 </button>
 
-                                <div className="flex items-center gap-1.5 ml-3 sm:ml-4">
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            navigate(`/scan/${exam.id}`);
-                                        }}
-                                        className="inline-flex items-center gap-1.5 px-3 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-xs font-bold shadow-sm shadow-violet-500/20 active:scale-95 transition-all"
-                                        title="Scan Papers"
-                                    >
-                                        <Camera className="w-3.5 h-3.5" />
-                                        <span>Scan</span>
-                                    </button>
+                                <div className="flex items-center gap-1 ml-3 sm:ml-4">
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -305,6 +303,7 @@ export default function Dashboard() {
                                     >
                                         <BarChart3 className="w-4 h-4" />
                                     </button>
+                                    <ChevronRight className="w-5 h-5 text-slate-300 dark:text-slate-600 ml-0.5 group-hover:translate-x-0.5 transition-transform" />
                                 </div>
                             </div>
                         );
