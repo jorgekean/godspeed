@@ -51,10 +51,14 @@ export default function StudentProfilePage() {
 
     return (
         <div className="min-h-screen flex flex-col bg-slate-100 dark:bg-slate-950 font-sans">
-            <header className="sticky top-0 z-40 bg-slate-100/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-white/5 pt-safe-top">
-                <div className="w-full max-w-5xl mx-auto flex items-center justify-between px-4 py-4">
+            <header className="sticky top-0 z-40 bg-slate-100/90 dark:bg-slate-950/90 backdrop-blur-xl border-b border-slate-200/50 dark:border-white/5 pt-safe-top">
+                <div className="w-full max-w-5xl mx-auto flex items-center justify-between px-4 py-3">
                     <div className="flex items-center gap-3">
-                        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors rounded-full">
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] -ml-2 p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-xl active:bg-slate-200/60 dark:active:bg-slate-800 transition-colors"
+                            aria-label="Back"
+                        >
                             <ArrowLeft className="w-6 h-6" />
                         </button>
                         <h1 className="text-lg font-bold text-slate-900 dark:text-white">Student Profile</h1>

@@ -6,10 +6,12 @@ import { Camera, CheckCircle2, ArrowLeft, Loader2, AlertCircle } from 'lucide-re
 import { toast } from 'sonner';
 import { OMRScanner, type OMRScannerRef } from '../components/omr/OMRScanner';
 import { useAuth } from '../contexts/AuthContext';
+import { useLicense } from '../contexts/LicenseContext';
 
 export default function GlobalScannerPage() {
     const navigate = useNavigate();
     const { currentUser } = useAuth();
+    const { licenseStatus, openPaywall, recordScan } = useLicense();
     const userEmail = currentUser?.email!;
     const scannerRef = useRef<OMRScannerRef>(null);
 
@@ -30,6 +32,16 @@ export default function GlobalScannerPage() {
     // ---------------------------------------------------------
 
     const handleScanSuccess = useCallback(async (_initialScore: number, rawAnswers: string[], examCode?: string, studentNo?: string) => {
+        if (!licenseStatus.canScan) {
+            openPaywall(
+                licenseStatus.isMonthlyQuotaActive
+                    ? 'You have reached your 100 free scans for this month. Unlock Lifetime Access for unlimited grading forever!'
+                    : 'Your 90-day free trial has concluded. Please unlock Lifetime Access to scan exams.'
+            );
+            scannerRef.current?.reset();
+            return;
+        }
+
         if (!allExams) return;
 
         setIsSearchingExam(true);
@@ -111,6 +123,7 @@ export default function GlobalScannerPage() {
                     await db.scanResults.update(existing.id, baseData);
                 } else {
                     await db.scanResults.add({ id: crypto.randomUUID(), ...baseData });
+                    recordScan();
                 }
                 
                 toast.success(`Scored ${accurateScore}/${finalExamTotal} for ${studentName}`, {
@@ -156,9 +169,13 @@ export default function GlobalScannerPage() {
     return (
         <div className="min-h-screen flex flex-col bg-slate-100 dark:bg-slate-950 font-sans relative overflow-hidden">
 
-            <header className="sticky top-0 z-40 bg-slate-100/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-white/5 pt-safe-top">
-                <div className="w-full max-w-5xl mx-auto flex items-center justify-between px-4 md:px-8 py-4">
-                    <button onClick={() => navigate('/')} className="p-2 -ml-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors rounded-full">
+            <header className="sticky top-0 z-40 bg-slate-100/90 dark:bg-slate-950/90 backdrop-blur-xl border-b border-slate-200/50 dark:border-white/5 pt-safe-top">
+                <div className="w-full max-w-5xl mx-auto flex items-center justify-between px-4 md:px-8 py-3">
+                    <button
+                        onClick={() => navigate('/')}
+                        className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] -ml-2 p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-xl active:bg-slate-200/60 dark:active:bg-slate-800 transition-colors"
+                        aria-label="Back to Dashboard"
+                    >
                         <ArrowLeft className="w-6 h-6" />
                     </button>
                     <div className="text-center">

@@ -318,6 +318,7 @@ export const Document100Item = (props: { studentNo?: string, studentName?: strin
 );
 
 import { Printer, Loader2 } from 'lucide-react';
+import { exportFile } from '../../utils/fileExport';
 
 export function OMRTemplateGenerator() {
     const [isGenerating, setIsGenerating] = React.useState<'20' | '50' | '100' | null>(null);
@@ -328,12 +329,12 @@ export function OMRTemplateGenerator() {
             const fileName = `${type}_Item_Sheet_Blank.pdf`;
             const doc = type === '20' ? <Document20Item /> : type === '50' ? <Document50Item /> : <Document100Item />;
             const blob = await pdf(doc).toBlob();
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = fileName;
-            link.click();
-            URL.revokeObjectURL(url);
+            await exportFile({
+                blob,
+                filename: fileName,
+                mimeType: 'application/pdf',
+                dialogTitle: 'Save Answer Sheet PDF'
+            });
         } catch (error) {
             console.error("Failed to generate PDF", error);
         } finally {

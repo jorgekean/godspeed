@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { BookOpen, Plus, Edit3, Trash2, X, Sparkles } from 'lucide-react';
 import { db } from '../services/db';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { toast } from 'sonner';
 
 const DEFAULT_SUBJECTS = ["Mathematics", "Science", "English", "History", "Filipino"];
 
@@ -44,6 +45,7 @@ export default function SubjectsPage() {
                 updatedAt: Date.now(),
                 isSynced: false
             });
+            toast.success('Subject updated');
         } else {
             await db.subjects.add({
                 id: crypto.randomUUID(),
@@ -54,6 +56,7 @@ export default function SubjectsPage() {
                 isSynced: false,
                 isDeleted: false
             });
+            toast.success('Subject added');
         }
         handleCloseModal();
     };
@@ -61,6 +64,7 @@ export default function SubjectsPage() {
     const handleDelete = async (id: string, subjectTitle: string) => {
         if (window.confirm(`Are you sure you want to delete "${subjectTitle}"?`)) {
             await db.subjects.update(id, { isDeleted: true, updatedAt: Date.now(), isSynced: false });
+            toast.success('Subject deleted');
         }
     };
 
@@ -76,6 +80,7 @@ export default function SubjectsPage() {
                 isDeleted: false
             }));
             await db.subjects.bulkAdd(newSubjects);
+            toast.success('Default subjects added');
         }
     };
 

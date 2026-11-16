@@ -15,7 +15,7 @@ export default function SmartScannerPage() {
     const { examId } = useParams();
     const navigate = useNavigate();
     const { currentUser } = useAuth();
-    const { licenseStatus, openPaywall } = useLicense();
+    const { licenseStatus, openPaywall, recordScan } = useLicense();
 
     // ---------------------------------------------------------
     // 1. STATE & DATA FETCHING
@@ -30,7 +30,11 @@ export default function SmartScannerPage() {
 
     const handleStartScan = (sectionId: string) => {
         if (!licenseStatus.canScan) {
-            openPaywall('Your 90-day free trial has concluded. Please unlock Lifetime Access to scan exams.');
+            openPaywall(
+                licenseStatus.isMonthlyQuotaActive
+                    ? 'You have reached your 100 free scans for this month. Unlock Lifetime Access for unlimited grading forever!'
+                    : 'Your 90-day free trial has concluded. Please unlock Lifetime Access to scan exams.'
+            );
             return;
         }
         setSelectedSectionId(sectionId);
@@ -152,6 +156,7 @@ export default function SmartScannerPage() {
                 id: crypto.randomUUID(),
                 ...baseData
             });
+            recordScan();
         }
 
         // Update the scanner overlay to show GREEN "Saved" state
@@ -246,14 +251,22 @@ export default function SmartScannerPage() {
     // ---------------------------------------------------------
     if (scanMode === 'setup') {
         return (
-            <div className="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950 p-4 md:p-8 relative">
-                <div className="flex items-center justify-between mb-8 max-w-xl mx-auto w-full">
-                    <button onClick={() => navigate('/')} className="p-2 -ml-2 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors">
-                        <ArrowLeft className="w-6 h-6" />
-                    </button>
-                </div>
+            <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors">
+                {/* Native iOS Safe Header */}
+                <header className="sticky top-0 z-40 bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-xl border-b border-slate-200/50 dark:border-white/5 pt-safe-top">
+                    <div className="flex items-center justify-between max-w-xl mx-auto w-full px-4 py-3">
+                        <button
+                            onClick={() => navigate('/')}
+                            className="inline-flex items-center gap-2 min-h-[44px] min-w-[44px] -ml-2 px-3 py-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold rounded-xl active:bg-slate-200/60 dark:active:bg-slate-800 transition-colors"
+                            aria-label="Back to Exams"
+                        >
+                            <ArrowLeft className="w-6 h-6 shrink-0" />
+                            <span className="text-sm">Back</span>
+                        </button>
+                    </div>
+                </header>
 
-                <div className="flex-1 flex flex-col justify-center max-w-xl mx-auto w-full animate-in zoom-in-95 duration-300 pb-12">
+                <div className="flex-1 flex flex-col justify-center max-w-xl mx-auto w-full p-4 md:p-8 animate-in zoom-in-95 duration-300 pb-12">
                     <div className="text-center mb-10">
                         <div className="w-16 h-16 bg-violet-100 dark:bg-violet-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-violet-200 dark:border-violet-500/20">
                             <Camera className="w-8 h-8 text-violet-600 dark:text-violet-400" />
@@ -351,9 +364,13 @@ export default function SmartScannerPage() {
     return (
         <div className="min-h-screen flex flex-col bg-slate-100 dark:bg-slate-950 font-sans selection:bg-violet-500/30 pb-8 md:pb-12 relative overflow-hidden">
 
-            <header className="sticky top-0 z-40 bg-slate-100/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-white/5 pt-safe-top">
-                <div className="w-full max-w-5xl mx-auto flex items-center justify-between px-4 py-4">
-                    <button onClick={() => setScanMode('setup')} className="p-2 -ml-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors rounded-full">
+            <header className="sticky top-0 z-40 bg-slate-100/90 dark:bg-slate-950/90 backdrop-blur-xl border-b border-slate-200/50 dark:border-white/5 pt-safe-top">
+                <div className="w-full max-w-5xl mx-auto flex items-center justify-between px-4 py-3">
+                    <button
+                        onClick={() => setScanMode('setup')}
+                        className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] -ml-2 p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-xl active:bg-slate-200/60 dark:active:bg-slate-800 transition-colors"
+                        aria-label="Back to Setup"
+                    >
                         <ArrowLeft className="w-6 h-6" />
                     </button>
                     <div className="text-center flex flex-col items-center">

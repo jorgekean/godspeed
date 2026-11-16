@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../services/db';
 import { Plus, Folder, Edit3, Trash2, X, Calendar } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'sonner';
 
 export default function PeriodsPage() {
     const { currentUser } = useAuth();
@@ -44,6 +45,7 @@ export default function PeriodsPage() {
                 updatedAt: Date.now(),
                 isSynced: false
             });
+            toast.success('Period updated');
         } else {
             await db.periods.add({
                 id: crypto.randomUUID(),
@@ -54,6 +56,7 @@ export default function PeriodsPage() {
                 isSynced: false,
                 isDeleted: false
             });
+            toast.success('Period added');
         }
         handleCloseModal();
     };
@@ -61,6 +64,7 @@ export default function PeriodsPage() {
     const handleDelete = async (id: string, periodName: string) => {
         if (window.confirm(`Are you sure you want to delete the academic term "${periodName}"?`)) {
             await db.periods.update(id, { isDeleted: true });
+            toast.success('Period deleted');
         }
     };
 

@@ -22,28 +22,29 @@
 }
 
 @utility pt-safe-top {
-  padding-top: max(env(safe-area-inset-top, 0px), var(--safe-area-top, 0px));
+  padding-top: max(env(safe-area-inset-top, 0px), 48px);
 }
 @utility pb-safe-bottom {
-  padding-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-bottom, 0px));
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 24px);
 }
 @utility pb-safe {
-  padding-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-bottom, 0px));
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 24px);
 }
 
 /* Explicit CSS class rules ensuring headers and footers clear iOS hardware elements */
 .pt-safe-top {
-  padding-top: max(env(safe-area-inset-top, 0px), var(--safe-area-top, 0px));
+  padding-top: max(env(safe-area-inset-top, 0px), 48px) !important;
 }
 .pb-safe, .pb-safe-bottom {
-  padding-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-bottom, 0px));
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 24px) !important;
 }
 
 /* iOS Specific Guarantee: guarantees clearance of notch, Dynamic Island, and status bar */
 html.plt-ios .pt-safe-top,
 html.ios-device .pt-safe-top,
-body.platform-ios .pt-safe-top {
-  padding-top: max(env(safe-area-inset-top, 0px), 48px) !important;
+body.platform-ios .pt-safe-top,
+.ios .pt-safe-top {
+  padding-top: max(env(safe-area-inset-top, 0px), 54px) !important;
 }
 
 html.plt-ios .pb-safe,
@@ -210,4 +211,18 @@ body {
     page-break-inside: avoid;
     break-inside: avoid;
   }
+}
+
+/* ==========================================================================
+   iOS Native Pill Toasts (Sonner)
+   ========================================================================== */
+[data-sonner-toaster] {
+  top: max(env(safe-area-inset-top, 0px), 54px) !important;
+}
+
+[data-sonner-toast] {
+  border-radius: 20px !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.35) !important;
 }

@@ -54,7 +54,23 @@ function App() {
             <LicenseProvider>
               {/* Set the basename so React Router handles the Vite subpath automatically */}
               <BrowserRouter basename="">
-                <Toaster position="top-center" richColors theme="system" />
+                {/* Native iOS Floating Pill Toaster with Safe-Area Offset */}
+                <Toaster 
+                  position="top-center" 
+                  theme="system"
+                  style={{
+                    top: 'max(env(safe-area-inset-top, 0px), 54px)',
+                  }}
+                  toastOptions={{
+                    className: '!rounded-2xl !backdrop-blur-2xl !border !shadow-2xl font-medium text-xs sm:text-sm',
+                    style: {
+                      background: 'rgba(15, 23, 42, 0.92)',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      color: '#ffffff',
+                      boxShadow: '0 20px 30px -10px rgba(0, 0, 0, 0.4)',
+                    }
+                  }}
+                />
                 <PaywallModal />
 
                 <Routes>

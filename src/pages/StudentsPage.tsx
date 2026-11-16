@@ -5,6 +5,7 @@ import { Plus, Users, Edit3, Trash2, X, ClipboardPaste, AlertTriangle, FolderKan
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { sortStudents } from '../utils/studentUtils';
+import { toast } from 'sonner';
 
 export default function StudentsPage() {
     const { currentUser } = useAuth();
@@ -117,6 +118,7 @@ export default function StudentsPage() {
                 updatedAt: Date.now(),
                 isSynced: false
             });
+            toast.success('Student profile updated!');
         } else {
             await db.students.add({
                 id: crypto.randomUUID(),
@@ -128,6 +130,7 @@ export default function StudentsPage() {
                 isSynced: false,
                 isDeleted: false
             });
+            toast.success('Student added successfully!');
         }
         setIsSingleModalOpen(false);
     };
@@ -227,6 +230,7 @@ export default function StudentsPage() {
         }));
 
         await db.students.bulkAdd(newStudents);
+        toast.success(`Imported ${newStudents.length} students successfully!`);
 
         setSelectedFilterSection(targetId);
         setIsBulkModalOpen(false);
@@ -239,6 +243,7 @@ export default function StudentsPage() {
     const handleDelete = async (id: string, name: string) => {
         if (window.confirm(`Are you sure you want to remove "${name}" from this class?`)) {
             await db.students.update(id, { isDeleted: true, updatedAt: Date.now(), isSynced: false });
+            toast.success(`Removed "${name}" from class.`);
         }
     };
 

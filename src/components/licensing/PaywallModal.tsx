@@ -67,7 +67,9 @@ export const PaywallModal: React.FC = () => {
 
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 rounded-full text-[11px] font-black uppercase tracking-wider mb-2">
                         <Award className="w-3.5 h-3.5" />
-                        {licenseStatus.isInTrial ? `Trial Active: ${licenseStatus.daysRemaining} Days Left` : '3-Month Free Trial Concluded'}
+                        {licenseStatus.isInTrial 
+                            ? `Trial Active: ${licenseStatus.daysRemaining} Days Left` 
+                            : `Monthly Quota: ${licenseStatus.monthlyScansUsed}/${licenseStatus.monthlyScanLimit} Used`}
                     </div>
 
                     <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">

@@ -14,8 +14,11 @@ const STORAGE_KEY_LIFETIME = 'godspeed_lifetime_unlocked';
 const STORAGE_KEY_SIMULATED_EXPIRED = 'godspeed_trial_simulated_expired';
 
 export const TRIAL_DURATION_DAYS = 90; // 3 months free trial
+export const MONTHLY_FREE_SCANS_AFTER_TRIAL = 100; // Free scans per month after 90-day trial expires
 export const LIFETIME_PRODUCT_ID = 'com.godspeedgrader.lifetime';
 export const LIFETIME_PRICE_DISPLAY = '$8.99';
+
+const STORAGE_KEY_MONTHLY_SCANS_PREFIX = 'godspeed_scans_m_';
 
 export interface LicenseStatus {
     isLifetime: boolean;
@@ -27,6 +30,10 @@ export interface LicenseStatus {
     canScan: boolean;
     priceDisplay: string;
     isSimulatedExpired?: boolean;
+    monthlyScansUsed: number;
+    monthlyScanLimit: number;
+    monthlyScansRemaining: number;
+    isMonthlyQuotaActive: boolean;
 }
 
 class LicenseService {
@@ -65,11 +72,57 @@ class LicenseService {
     }
 
     /**
+     * Gets the current month key for scan tracking, e.g. "2026_11"
+     */
+    getCurrentMonthKey(): string {
+        const d = new Date();
+        return `${d.getFullYear()}_${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+    }
+
+    /**
+     * Gets the number of scans performed in the current calendar month
+     */
+    getMonthlyScansUsed(): number {
+        const key = `${STORAGE_KEY_MONTHLY_SCANS_PREFIX}${this.getCurrentMonthKey()}`;
+        const val = localStorage.getItem(key);
+        return val ? parseInt(val, 10) : 0;
+    }
+
+    /**
+     * Records a completed exam scan and increments the monthly count
+     */
+    recordScan(): number {
+        const key = `${STORAGE_KEY_MONTHLY_SCANS_PREFIX}${this.getCurrentMonthKey()}`;
+        const current = this.getMonthlyScansUsed();
+        const next = current + 1;
+        localStorage.setItem(key, next.toString());
+        return next;
+    }
+
+    /**
+     * Resets current month scan count (for testing)
+     */
+    resetMonthlyScans() {
+        const key = `${STORAGE_KEY_MONTHLY_SCANS_PREFIX}${this.getCurrentMonthKey()}`;
+        localStorage.removeItem(key);
+    }
+
+    /**
+     * Sets current month scans to the 100 limit (for testing limit reached state)
+     */
+    simulateReachMonthlyLimit() {
+        const key = `${STORAGE_KEY_MONTHLY_SCANS_PREFIX}${this.getCurrentMonthKey()}`;
+        localStorage.setItem(key, MONTHLY_FREE_SCANS_AFTER_TRIAL.toString());
+    }
+
+    /**
      * Returns the full license and trial status
      */
     getLicenseStatus(): LicenseStatus {
         const isLifetime = localStorage.getItem(STORAGE_KEY_LIFETIME) === 'true';
         const isSimulatedExpired = localStorage.getItem(STORAGE_KEY_SIMULATED_EXPIRED) === 'true';
+        const monthlyScansUsed = this.getMonthlyScansUsed();
+        const monthlyScansRemaining = Math.max(0, MONTHLY_FREE_SCANS_AFTER_TRIAL - monthlyScansUsed);
 
         if (isLifetime) {
             return {
@@ -81,7 +134,11 @@ class LicenseService {
                 trialStartDate: this.getTrialStartDate(),
                 canScan: true,
                 priceDisplay: LIFETIME_PRICE_DISPLAY,
-                isSimulatedExpired: false
+                isSimulatedExpired: false,
+                monthlyScansUsed,
+                monthlyScanLimit: MONTHLY_FREE_SCANS_AFTER_TRIAL,
+                monthlyScansRemaining: Infinity,
+                isMonthlyQuotaActive: false
             };
         }
 
@@ -93,9 +150,13 @@ class LicenseService {
                 daysElapsed: TRIAL_DURATION_DAYS,
                 trialDurationDays: TRIAL_DURATION_DAYS,
                 trialStartDate: this.getTrialStartDate(),
-                canScan: false,
+                canScan: monthlyScansRemaining > 0,
                 priceDisplay: LIFETIME_PRICE_DISPLAY,
-                isSimulatedExpired: true
+                isSimulatedExpired: true,
+                monthlyScansUsed,
+                monthlyScanLimit: MONTHLY_FREE_SCANS_AFTER_TRIAL,
+                monthlyScansRemaining,
+                isMonthlyQuotaActive: true
             };
         }
 
@@ -106,6 +167,9 @@ class LicenseService {
         const daysRemaining = Math.max(0, TRIAL_DURATION_DAYS - daysElapsed);
         const isInTrial = daysRemaining > 0;
 
+        // If trial is still active, unlimited scans. If expired, allow 100 scans per month.
+        const canScan = isInTrial || (monthlyScansRemaining > 0);
+
         return {
             isLifetime: false,
             isInTrial,
@@ -113,9 +177,13 @@ class LicenseService {
             daysElapsed,
             trialDurationDays: TRIAL_DURATION_DAYS,
             trialStartDate: startDate,
-            canScan: isInTrial,
+            canScan,
             priceDisplay: LIFETIME_PRICE_DISPLAY,
-            isSimulatedExpired: false
+            isSimulatedExpired: false,
+            monthlyScansUsed,
+            monthlyScanLimit: MONTHLY_FREE_SCANS_AFTER_TRIAL,
+            monthlyScansRemaining: isInTrial ? Infinity : monthlyScansRemaining,
+            isMonthlyQuotaActive: !isInTrial
         };
     }
 

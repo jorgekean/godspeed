@@ -12,6 +12,9 @@ interface LicenseContextType {
     restorePurchases: () => Promise<boolean>;
     simulateExpireTrial: () => void;
     resetTrial: () => void;
+    recordScan: () => number;
+    resetMonthlyScans: () => void;
+    simulateReachMonthlyLimit: () => void;
     refreshLicense: () => void;
 }
 
@@ -102,6 +105,28 @@ export const LicenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
         });
     }, [refreshLicense]);
 
+    const recordScan = useCallback((): number => {
+        const count = licenseService.recordScan();
+        refreshLicense();
+        return count;
+    }, [refreshLicense]);
+
+    const resetMonthlyScans = useCallback(() => {
+        licenseService.resetMonthlyScans();
+        refreshLicense();
+        toast.success('Monthly Scans Reset', {
+            description: '100 free scans available for this month.'
+        });
+    }, [refreshLicense]);
+
+    const simulateReachMonthlyLimit = useCallback(() => {
+        licenseService.simulateReachMonthlyLimit();
+        refreshLicense();
+        toast.info('Monthly Limit Reached', {
+            description: 'Simulated 100/100 scans used for this month.'
+        });
+    }, [refreshLicense]);
+
     return (
         <LicenseContext.Provider
             value={{
@@ -114,6 +139,9 @@ export const LicenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 restorePurchases,
                 simulateExpireTrial,
                 resetTrial,
+                recordScan,
+                resetMonthlyScans,
+                simulateReachMonthlyLimit,
                 refreshLicense
             }}
         >

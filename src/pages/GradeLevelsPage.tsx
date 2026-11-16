@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { GraduationCap, Plus, Edit3, Trash2, X, Sparkles } from 'lucide-react';
 import { db } from '../services/db';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { toast } from 'sonner';
 
 const DEFAULT_GRADE_LEVELS = ["Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12", "College 1"];
 
@@ -44,6 +45,7 @@ export default function GradeLevelsPage() {
                 updatedAt: Date.now(),
                 isSynced: false
             });
+            toast.success('Grade level updated');
         } else {
             await db.gradeLevels.add({
                 id: crypto.randomUUID(),
@@ -54,6 +56,7 @@ export default function GradeLevelsPage() {
                 isSynced: false,
                 isDeleted: false
             });
+            toast.success('Grade level added');
         }
         handleCloseModal();
     };
@@ -61,6 +64,7 @@ export default function GradeLevelsPage() {
     const handleDelete = async (id: string, gradeTitle: string) => {
         if (window.confirm(`Are you sure you want to delete "${gradeTitle}"?`)) {
             await db.gradeLevels.update(id, { isDeleted: true, updatedAt: Date.now(), isSynced: false });
+            toast.success('Grade level deleted');
         }
     };
 
@@ -76,6 +80,7 @@ export default function GradeLevelsPage() {
                 isDeleted: false
             }));
             await db.gradeLevels.bulkAdd(newGrades);
+            toast.success('Default grade levels added');
         }
     };
 

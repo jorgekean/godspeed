@@ -6,6 +6,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { pdf, Document } from '@react-pdf/renderer';
 import { sortStudents } from '../utils/studentUtils';
 import { Page20Item, Page50Item, Page100Item } from '../components/omr/OMRTemplate';
+import { toast } from 'sonner';
+import { exportFile } from '../utils/fileExport';
 
 const MultiStudentDocument = ({ students, examType }: { students: any[], examType: '20' | '50' | '100' }) => (
     <Document>
@@ -93,12 +95,12 @@ export default function SectionsPage() {
             const fileName = `Prefilled_${type}Items_${currentSectionName}.pdf`;
 
             const blob = await pdf(<MultiStudentDocument students={printStudents} examType={type} />).toBlob();
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = fileName;
-            link.click();
-            URL.revokeObjectURL(url);
+            await exportFile({
+                blob,
+                filename: fileName,
+                mimeType: 'application/pdf',
+                dialogTitle: 'Save Answer Sheets PDF'
+            });
         } catch (error) {
             console.error("Failed to generate PDF", error);
         } finally {
@@ -116,6 +118,7 @@ export default function SectionsPage() {
                 updatedAt: Date.now(),
                 isSynced: false
             });
+            toast.success('Class section updated!');
         } else {
             await db.sections.add({
                 id: crypto.randomUUID(),
@@ -127,6 +130,7 @@ export default function SectionsPage() {
                 isSynced: false,
                 isDeleted: false
             });
+            toast.success('Class section created!');
         }
         handleCloseModal();
     };
@@ -134,6 +138,7 @@ export default function SectionsPage() {
     const handleDelete = async (id: string, name: string) => {
         if (window.confirm(`Are you sure you want to delete the class "${name}"? This will not delete the students, but they will become unassigned.`)) {
             await db.sections.update(id, { isDeleted: true });
+            toast.success(`Class "${name}" deleted.`);
         }
     };
 

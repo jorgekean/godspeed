@@ -9,6 +9,17 @@
 
   <title>Godspeed Grader | Offline Mobile OMR Scanner</title>
 
+  <script>
+    (function() {
+      var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ||
+                  window.Capacitor?.getPlatform() === 'ios';
+      if (isIOS) {
+        document.documentElement.classList.add('plt-ios', 'ios-device', 'ios');
+      }
+    })();
+  </script>
+
   <meta name="description"
     content="Godspeed Grader is an offline-first OMR scanner for teachers. Grade bubble sheet exams instantly using your phone’s camera. 100% private, no cloud required." />
   <meta name="keywords"

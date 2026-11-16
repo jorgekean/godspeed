@@ -9,6 +9,7 @@ import { ItemAnalysisPDF, type ItemAnalysisData } from '../components/omr/ItemAn
 import { useAuth } from '../contexts/AuthContext';
 import { sortStudents } from '../utils/studentUtils';
 import { toast } from 'sonner';
+import { exportFile } from '../utils/fileExport';
 
 type ViewMode = 'summary' | 'detailed' | 'mastery';
 
@@ -150,12 +151,12 @@ export default function ExamResultsPage() {
                 />
             );
             const blob = await pdf(doc).toBlob();
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = fileName;
-            link.click();
-            URL.revokeObjectURL(url);
+            await exportFile({
+                blob,
+                filename: fileName,
+                mimeType: 'application/pdf',
+                dialogTitle: 'Save Item Analysis PDF'
+            });
         } catch (error) {
             console.error("Failed to generate PDF", error);
         } finally {
@@ -317,12 +318,13 @@ export default function ExamResultsPage() {
         // Generate and download
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `Detailed_Report_${exam.title.replace(/\s+/g, '_')}_${currentSectionName}.xlsx`;
-        link.click();
-        URL.revokeObjectURL(url);
+        const fileName = `Detailed_Report_${exam.title.replace(/\s+/g, '_')}_${currentSectionName}.xlsx`;
+        await exportFile({
+            blob,
+            filename: fileName,
+            mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            dialogTitle: 'Export Excel Report'
+        });
     };
 
     const handleCopyScores = () => {
@@ -352,57 +354,85 @@ export default function ExamResultsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 transition-colors">
-            <div className="max-w-6xl mx-auto">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors">
+            {/* Native iOS Safe Header */}
+            <header className="sticky top-0 z-40 bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-xl border-b border-slate-200/50 dark:border-white/5 pt-safe-top">
+                <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
                     <button
                         onClick={() => navigate('/')}
-                        className="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-bold transition-colors"
+                        className="inline-flex items-center gap-2 min-h-[44px] min-w-[44px] -ml-2 px-3 py-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold rounded-xl active:bg-slate-200/60 dark:active:bg-slate-800 transition-colors"
+                        aria-label="Back to Exams"
                     >
-                        <ArrowLeft className="w-5 h-5" /> Back to Exams
+                        <ArrowLeft className="w-5 h-5 shrink-0" />
+                        <span className="text-sm">Back to Exams</span>
                     </button>
 
                     {totalScanned > 0 && (
-                        <div className="flex flex-col sm:flex-row gap-2">
-                            <div className="flex bg-slate-200 dark:bg-slate-800 p-1 rounded-xl">
-                                <button
-                                    onClick={() => setViewMode('summary')}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'summary' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-                                >
-                                    <List className="w-4 h-4" /> Summary
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('mastery')}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'mastery' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-                                >
-                                    <Target className="w-4 h-4" /> Mastery
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('detailed')}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'detailed' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-                                >
-                                    <LayoutGrid className="w-4 h-4" /> Detailed
-                                </button>
-                            </div>
-
+                        <div className="hidden sm:flex items-center gap-2">
                             <button
                                 onClick={handleDownload}
                                 disabled={isGenerating}
-                                className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/20 active:scale-95 transition-all disabled:opacity-50"
+                                className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/20 active:scale-95 transition-all disabled:opacity-50"
                             >
                                 {isGenerating ? (
-                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    <Loader2 className="w-4 h-4 animate-spin" />
                                 ) : (
-                                    <FileDown className="w-5 h-5" />
+                                    <FileDown className="w-4 h-4" />
                                 )}
-                                {isGenerating ? 'Preparing Report...' : 'Download Item Analysis'}
+                                {isGenerating ? 'Preparing...' : 'Item Analysis PDF'}
                             </button>
                         </div>
                     )}
                 </div>
+            </header>
 
-                <div className="mb-8">
-                    <h1 className="text-3xl font-black text-slate-900 dark:text-white">{exam.title}</h1>
+            <div className="flex-1 max-w-6xl mx-auto w-full p-4 md:p-8">
+                {/* Mobile action bar */}
+                {totalScanned > 0 && (
+                    <div className="flex sm:hidden justify-between items-center gap-2 mb-4">
+                        <button
+                            onClick={handleDownload}
+                            disabled={isGenerating}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl text-xs shadow-md shadow-indigo-500/20 active:scale-95 transition-all disabled:opacity-50"
+                        >
+                            {isGenerating ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <FileDown className="w-4 h-4" />
+                            )}
+                            {isGenerating ? 'Preparing Report...' : 'Download Item Analysis'}
+                        </button>
+                    </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{exam.title}</h1>
+                    </div>
+
+                    {totalScanned > 0 && (
+                        <div className="flex bg-slate-200 dark:bg-slate-800 p-1 rounded-xl shrink-0 self-start sm:self-auto">
+                            <button
+                                onClick={() => setViewMode('summary')}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'summary' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                            >
+                                <List className="w-4 h-4" /> Summary
+                            </button>
+                            <button
+                                onClick={() => setViewMode('mastery')}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'mastery' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                            >
+                                <Target className="w-4 h-4" /> Mastery
+                            </button>
+                            <button
+                                onClick={() => setViewMode('detailed')}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'detailed' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                            >
+                                <LayoutGrid className="w-4 h-4" /> Detailed
+                            </button>
+                        </div>
+                    )}
+                </div>
 
                     {/* SECTION FILTERS - Dark Mode Styled */}
                     <div className="flex gap-2 mt-4 overflow-x-auto pb-2 scrollbar-hide">
@@ -428,7 +458,6 @@ export default function ExamResultsPage() {
                             </button>
                         ))}
                     </div>
-                </div>
 
                 {/* STATS CARDS - Dark Mode Styled */}
                 <div className="grid grid-cols-2 gap-4 mb-8">
