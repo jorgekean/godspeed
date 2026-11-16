@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [
     tailwindcss(),
     react(),
-    basicSsl(),
+    ...(process.env.VITE_SSL === 'true' ? [basicSsl()] : []),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['app-logo.png', 'icons.svg', 'opencv.js', 'omr.worker.js'],
