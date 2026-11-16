@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
-    "cap:build": "npm run build && npx cap sync ios",
+    "cap:build": "npm run build && npx cap sync ios && node scripts/patch-capacitor-config.js",
     "cap:open:ios": "npx cap open ios"
   },
   "dependencies": {
