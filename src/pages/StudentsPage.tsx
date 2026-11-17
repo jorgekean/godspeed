@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../services/db';
-import { Plus, Users, Edit3, Trash2, X, ClipboardPaste, AlertTriangle, FolderKanban, Search, UserPlus, TrendingUp, ChevronDown } from 'lucide-react';
+import { Plus, Users, Edit3, Trash2, X, ClipboardPaste, AlertTriangle, FolderKanban, Search, UserPlus, TrendingUp, ChevronDown, Laptop } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { sortStudents } from '../utils/studentUtils';
@@ -282,7 +282,7 @@ export default function StudentsPage() {
 
     return (
         <div className="min-h-full flex flex-col font-sans selection:bg-violet-500/30 animate-in fade-in duration-300">
-            <div className="flex-1 w-full max-w-5xl mx-auto px-4 md:px-8 py-6 flex flex-col gap-6">
+            <div className="flex-1 w-full max-w-5xl mx-auto px-4 md:px-8 py-6 pb-28 md:pb-6 flex flex-col gap-6">
 
                 {/* ========================================== */}
                 {/* 1. UNIFIED PAGE HEADER & ACTIONS */}
@@ -325,6 +325,21 @@ export default function StudentsPage() {
                             <Plus className="w-4 h-4" />
                             <span>Add Student</span>
                         </button>
+                    </div>
+                </div>
+
+                {/* DESKTOP ROSTER UPLOAD TIP BANNER */}
+                <div className="bg-gradient-to-r from-violet-50/80 via-indigo-50/60 to-slate-50 dark:from-violet-950/20 dark:via-indigo-950/20 dark:to-slate-900/40 border border-violet-100 dark:border-violet-500/20 rounded-2xl p-4 flex items-start sm:items-center gap-3.5 shadow-sm">
+                    <div className="p-2.5 bg-violet-600 dark:bg-violet-500 text-white rounded-xl shadow-md shadow-violet-500/20 shrink-0">
+                        <Laptop className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                            Uploading rosters from a laptop or computer?
+                        </h4>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
+                            Visit <span className="font-bold text-violet-600 dark:text-violet-400">godspeedgrader.com</span> on your browser to easily copy & paste spreadsheets from Excel or Google Sheets, then sync seamlessly to your phone via Google Drive.
+                        </p>
                     </div>
                 </div>
 
@@ -616,6 +631,13 @@ export default function StudentsPage() {
                                         </select>
                                         <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                                     </div>
+                                </div>
+
+                                <div className="p-3 bg-violet-50/80 dark:bg-violet-950/30 border border-violet-100 dark:border-violet-500/20 rounded-xl flex items-start gap-2.5">
+                                    <Laptop className="w-4 h-4 text-violet-600 dark:text-violet-400 shrink-0 mt-0.5" />
+                                    <p className="text-xs text-slate-600 dark:text-slate-300">
+                                        <strong>Teacher Tip:</strong> You can also access <strong className="text-violet-600 dark:text-violet-400">godspeedgrader.com</strong> on your laptop/computer to paste entire class lists directly from Excel with keyboard shortcuts.
+                                    </p>
                                 </div>
 
                                 <div>

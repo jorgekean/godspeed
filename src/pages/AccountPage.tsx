@@ -172,7 +172,7 @@ export default function AccountPage() {
     };
 
     return (
-        <div className="min-h-full flex flex-col p-4 md:p-8 animate-in fade-in duration-300">
+        <div className="min-h-full flex flex-col p-4 md:p-8 pb-32 md:pb-8 animate-in fade-in duration-300">
             <div className="max-w-4xl mx-auto w-full space-y-6">
 
                 {/* ========================================== */}
@@ -547,7 +547,7 @@ export default function AccountPage() {
                 {/* 5. PRIVACY POLICY & COMPLIANCE */}
                 {/* ========================================== */}
                 <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/50 dark:border-white/5 p-6 md:p-8 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 w-full sm:w-auto">
                         <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
                             <ShieldCheck className="w-6 h-6" />
                         </div>
@@ -558,11 +558,14 @@ export default function AccountPage() {
                     </div>
                     <Link
                         to="/privacy"
-                        className="px-5 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-xl text-xs transition-all flex items-center gap-1.5 shrink-0"
+                        className="w-full sm:w-auto px-5 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 shrink-0"
                     >
                         Read Privacy Policy
                     </Link>
                 </div>
+
+                {/* Extra breathing room on mobile so bottom cards never collide with floating scan button */}
+                <div className="h-16 md:hidden" aria-hidden="true" />
 
             </div>
 

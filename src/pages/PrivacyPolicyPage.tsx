@@ -162,7 +162,7 @@ export default function PrivacyPolicyPage() {
                             If you have questions about this Privacy Policy or data privacy in Godspeed Grader, please contact us:
                         </p>
                         <p className="text-xs sm:text-sm font-semibold text-violet-600 dark:text-violet-400">
-                            Email: privacy@godspeedgrader.app
+                            Email: privacy@godspeedgrader.com
                         </p>
                     </section>
                 </div>
