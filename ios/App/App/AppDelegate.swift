@@ -89,26 +89,39 @@ public class NativeStoreKitPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func restorePurchases(_ call: CAPPluginCall) {
         Task { @MainActor in
-            do {
-                try await AppStore.sync()
-                var hasLifetime = false
+            var hasLifetime = false
 
-                for await result in Transaction.currentEntitlements {
-                    if case .verified(let transaction) = result {
-                        if transaction.productID == "com.godspeedgrader.lifetime" {
-                            hasLifetime = true
-                            break
-                        }
+            // 1. Check local entitlements first (instant, works offline, no prompt)
+            for await result in Transaction.currentEntitlements {
+                if case .verified(let transaction) = result {
+                    if transaction.productID == "com.godspeedgrader.lifetime" {
+                        hasLifetime = true
+                        break
                     }
                 }
-
-                call.resolve([
-                    "success": true,
-                    "restored": hasLifetime
-                ])
-            } catch {
-                call.reject("Restore failed: \(error.localizedDescription)")
             }
+
+            // 2. If not found locally, attempt AppStore.sync() to refresh from Apple servers
+            if !hasLifetime {
+                do {
+                    try await AppStore.sync()
+                    for await result in Transaction.currentEntitlements {
+                        if case .verified(let transaction) = result {
+                            if transaction.productID == "com.godspeedgrader.lifetime" {
+                                hasLifetime = true
+                                break
+                            }
+                        }
+                    }
+                } catch {
+                    print("AppStore.sync() notice: \(error.localizedDescription)")
+                }
+            }
+
+            call.resolve([
+                "success": true,
+                "restored": hasLifetime
+            ])
         }
     }
 
