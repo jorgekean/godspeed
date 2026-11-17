@@ -43,7 +43,7 @@ export default function AppLayout() {
         if (path === '/') return 'Dashboard';
         if (path.startsWith('/sections')) return 'Classes';
         if (path.startsWith('/students')) return 'Students';
-        if (path.startsWith('/periods')) return 'Terms';
+        if (path.startsWith('/periods')) return 'Terms & Folders';
         if (path.startsWith('/subjects')) return 'Subjects';
         if (path.startsWith('/grades')) return 'Grade/Year Levels';
         if (path.startsWith('/templates')) return 'Answer Sheets';
@@ -59,7 +59,7 @@ export default function AppLayout() {
         if (path === '/') return 'Local Workspace • 100% Offline';
         if (path.startsWith('/sections')) return 'Manage your classes, sections, and student rosters.';
         if (path.startsWith('/students')) return 'Manage your student rosters.';
-        if (path.startsWith('/periods')) return 'Manage your academic terms, quarters, and semesters.';
+        if (path.startsWith('/periods')) return 'Manage your academic terms, quarters, semesters, and folders.';
         if (path.startsWith('/subjects')) return 'Manage your subjects.';
         if (path.startsWith('/grades')) return 'Manage your grade/year levels.';
         if (path.startsWith('/templates')) return 'Download and print empty bubble sheet templates.';
@@ -76,7 +76,7 @@ export default function AppLayout() {
         { path: '/', label: 'Overview', icon: LayoutDashboard, protected: true },
         { path: '/scan', label: 'Instant Scan', icon: Camera, protected: true },
         { path: '/templates', label: 'Answer Sheets', icon: Printer, protected: true },
-        { path: '/periods', label: 'Terms', icon: Folder, protected: true },
+        { path: '/periods', label: 'Terms / Folders', icon: Folder, protected: true },
         { path: '/grades', label: 'Grade/Year Levels', icon: GraduationCap, protected: true },
         { path: '/subjects', label: 'Subjects', icon: BookOpen, protected: true },
         { path: '/sections', label: 'Classes', icon: FolderKanban, protected: true },
@@ -98,7 +98,7 @@ export default function AppLayout() {
         { path: '/grades', label: 'Grade/Year Levels', icon: GraduationCap, protected: true },
         { path: '/sections', label: 'Classes', icon: FolderKanban, protected: true },
         { path: '/students', label: 'Students', icon: Users, protected: true },
-        { path: '/periods', label: 'Terms', icon: Folder, protected: true },
+        { path: '/periods', label: 'Terms / Folders', icon: Folder, protected: true },
         { path: '/subjects', label: 'Subjects', icon: BookOpen, protected: true },
         { path: '/help', label: 'Help & Guide', icon: HelpCircle },
     ].filter(item => !item.protected || currentUser);

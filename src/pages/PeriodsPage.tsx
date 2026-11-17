@@ -87,14 +87,14 @@ export default function PeriodsPage() {
                         <div>
                             <div className="flex items-center gap-2 flex-wrap">
                                 <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                                    Academic Terms
+                                    Terms & Folders
                                 </h2>
                                 <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700">
-                                    {sortedPeriods.length} {sortedPeriods.length === 1 ? 'Term' : 'Terms'}
+                                    {sortedPeriods.length} {sortedPeriods.length === 1 ? 'Term / Folder' : 'Terms / Folders'}
                                 </span>
                             </div>
                             <p className="text-xs text-slate-500 mt-0.5">
-                                Manage grading quarters, semesters, and testing periods for your exams.
+                                Manage grading quarters, semesters, and folder categories for your exams.
                             </p>
                         </div>
                     </div>
@@ -105,7 +105,7 @@ export default function PeriodsPage() {
                             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-xl md:rounded-2xl font-bold text-sm shadow-lg shadow-violet-500/20 active:scale-95 transition-all"
                         >
                             <Plus className="w-4 h-4" />
-                            <span>Add Term</span>
+                            <span>Add Term / Folder</span>
                         </button>
                     </div>
                 </div>
@@ -118,16 +118,16 @@ export default function PeriodsPage() {
                         <div className="w-16 h-16 bg-violet-50 dark:bg-violet-500/10 rounded-2xl flex items-center justify-center mb-4 text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-500/20 shadow-sm">
                             <Folder className="w-8 h-8" />
                         </div>
-                        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">No academic terms yet</h3>
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">No terms or folders yet</h3>
                         <p className="text-sm text-slate-500 max-w-sm mb-6">
-                            Create academic terms or quarters (e.g. 1st Quarter, Midterms, Fall Semester) to organize your exams and grades.
+                            Create academic terms or folders (e.g. 2026 1st Quarter, 2026-2027 1st Sem) to organize your exams and grades.
                         </p>
                         <button
                             onClick={() => handleOpenModal()}
                             className="flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-xl md:rounded-2xl font-bold shadow-lg shadow-violet-500/20 active:scale-95 transition-all text-sm"
                         >
                             <Plus className="w-4 h-4" />
-                            <span>Add Your First Term</span>
+                            <span>Add First Term / Folder</span>
                         </button>
                     </div>
                 )}
@@ -152,7 +152,7 @@ export default function PeriodsPage() {
                                                 {period.name}
                                             </h3>
                                             <p className="text-xs font-medium text-slate-500">
-                                                Academic Term
+                                                Term / Folder
                                             </p>
                                         </div>
                                     </div>
@@ -161,7 +161,7 @@ export default function PeriodsPage() {
                                         <button
                                             onClick={() => handleOpenModal(period)}
                                             className="p-2 text-slate-400 hover:text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-500/10 rounded-xl transition-all"
-                                            title="Edit Term"
+                                            title="Edit Term / Folder"
                                         >
                                             <Edit3 className="w-4 h-4" />
                                         </button>
@@ -199,9 +199,9 @@ export default function PeriodsPage() {
                                     </div>
                                     <div>
                                         <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                                            {editingId ? 'Edit Term' : 'Add New Term'}
+                                            {editingId ? 'Edit Term / Folder' : 'Add New Term / Folder'}
                                         </h2>
-                                        <p className="text-xs text-slate-500">Grading quarter or academic period</p>
+                                        <p className="text-xs text-slate-500">Grading quarter, semester, or folder</p>
                                     </div>
                                 </div>
                                 <button
@@ -215,13 +215,13 @@ export default function PeriodsPage() {
                             <div className="p-6 space-y-4">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2 ml-1">
-                                        Term / Quarter Name
+                                        Term / Folder Name
                                     </label>
                                     <input
                                         type="text"
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
-                                        placeholder="e.g. 1st Quarter, Fall 2026, Midterm"
+                                        placeholder="e.g. 2026 1st Quarter, 2026-2027 1st Sem, Midterm"
                                         className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
                                         autoFocus
                                         onKeyDown={(e) => e.key === 'Enter' && handleSave()}
