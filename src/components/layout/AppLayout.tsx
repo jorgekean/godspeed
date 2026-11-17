@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
     Users,
     FolderKanban,
@@ -20,7 +20,8 @@ import {
     ShieldCheck,
     Sparkles,
     Award,
-    Lock
+    Lock,
+    AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useBackup } from '../../contexts/SyncContext';
@@ -35,9 +36,33 @@ export default function AppLayout() {
     } = useBackup();
     const { licenseStatus, openPaywall } = useLicense();
     const location = useLocation();
+    const navigate = useNavigate();
 
     const [isManageMenuOpen, setIsManageMenuOpen] = useState(false);
     const [isNoticesModalOpen, setIsNoticesModalOpen] = useState(false);
+    const [isScanGuideOpen, setIsScanGuideOpen] = useState(false);
+
+    const handlePrimaryScanClick = (e: React.MouseEvent) => {
+        e.preventDefault();
+        const hasSeenNotice = localStorage.getItem('has_seen_instant_scan_notice');
+        if (!hasSeenNotice) {
+            setIsScanGuideOpen(true);
+        } else {
+            navigate('/scan');
+        }
+    };
+
+    const handleConfirmInstantScan = () => {
+        localStorage.setItem('has_seen_instant_scan_notice', 'true');
+        setIsScanGuideOpen(false);
+        navigate('/scan');
+    };
+
+    const handleGoToDashboard = () => {
+        localStorage.setItem('has_seen_instant_scan_notice', 'true');
+        setIsScanGuideOpen(false);
+        navigate('/');
+    };
 
     const getPageTitle = (path: string) => {
         if (path === '/') return 'Dashboard';
@@ -360,20 +385,21 @@ export default function AppLayout() {
                             const isActive = item.isAction ? (isManageActive || isManageMenuOpen) : location.pathname.startsWith(item.path);
 
                             if (item.isPrimary) {
+                                const isScanActive = location.pathname.startsWith('/scan');
                                 return (
-                                    <NavLink
+                                    <button
                                         key={item.path}
-                                        to={item.path}
-                                        className={({ isActive }) =>
-                                            `flex flex-col items-center justify-center -mt-8 w-16 h-16 rounded-full transition-all shadow-lg active:scale-90 ${isActive
+                                        type="button"
+                                        onClick={handlePrimaryScanClick}
+                                        className={`flex flex-col items-center justify-center -mt-8 w-16 h-16 rounded-full transition-all shadow-lg active:scale-90 ${
+                                            isScanActive
                                                 ? 'bg-violet-600 text-white shadow-violet-500/40'
                                                 : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 shadow-black/10'
-                                            }`
-                                        }
+                                        }`}
                                     >
                                         <item.icon className="w-8 h-8" />
                                         <span className="text-[9px] font-black uppercase tracking-tighter mt-0.5">{item.label}</span>
-                                    </NavLink>
+                                    </button>
                                 );
                             }
 
@@ -411,6 +437,61 @@ export default function AppLayout() {
                         })}
                     </div>
                 </nav>
+            )}
+
+            {/* FIRST-TIME INSTANT SCANNER ONBOARDING DIALOG */}
+            {isScanGuideOpen && (
+                <div 
+                    className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200"
+                    onClick={() => setIsScanGuideOpen(false)}
+                >
+                    <div 
+                        className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[28px] shadow-2xl border border-slate-200/80 dark:border-white/10 overflow-hidden animate-in zoom-in-95 duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="p-6 text-center">
+                            <div className="w-14 h-14 bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-sm">
+                                <Camera className="w-7 h-7" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                                Instant Universal Scanner
+                            </h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                Multi-exam automatic grading
+                            </p>
+
+                            <div className="mt-4 p-4 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/20 text-left space-y-1.5">
+                                <div className="flex items-start gap-2.5">
+                                    <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                                    <div className="text-xs text-amber-900 dark:text-amber-200 leading-snug">
+                                        <strong>Expected on Answer Sheets:</strong> Both the <strong>Exam Code</strong> and <strong>Student No.</strong> must be shaded on the bubble sheet so Godspeed can automatically recognize the exam and record the grade.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mt-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 text-left text-xs text-slate-600 dark:text-slate-300 leading-relaxed border border-slate-100 dark:border-slate-800">
+                                💡 <strong>Alternative:</strong> You can also tap any specific exam from your <strong>Dashboard</strong> and tap <em>"Scan Papers"</em> to scan directly without needing an Exam Code!
+                            </div>
+                        </div>
+
+                        <div className="p-5 pt-0 space-y-2">
+                            <button
+                                type="button"
+                                onClick={handleConfirmInstantScan}
+                                className="w-full py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-violet-500/20 active:scale-95 transition-all"
+                            >
+                                Got it, Start Scanner
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleGoToDashboard}
+                                className="w-full py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+                            >
+                                Select Exam from Dashboard
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
 
         </div>

@@ -167,7 +167,14 @@ export const PaywallModal: React.FC = () => {
                             Privacy Policy
                         </Link>
                         <span>•</span>
-                        <span>Processed securely via Apple App Store</span>
+                        <a
+                            href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-slate-600 dark:hover:text-slate-300 underline"
+                        >
+                            Terms of Use (EULA)
+                        </a>
                     </div>
                 </div>
 

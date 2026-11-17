@@ -314,52 +314,54 @@ export default function AccountPage() {
                         </div>
                     </div>
 
-                    {/* Developer / Reviewer Testing Controls */}
-                    <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
-                        <span className="text-slate-400 font-semibold">Testing Controls:</span>
-                        <div className="flex items-center gap-2 flex-wrap">
-                            {licenseStatus.isInTrial ? (
+                    {/* Developer / Reviewer Testing Controls - hidden in production builds */}
+                    {import.meta.env.DEV && (
+                        <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+                            <span className="text-slate-400 font-semibold">Testing Controls:</span>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                {licenseStatus.isInTrial ? (
+                                    <button
+                                        type="button"
+                                        onClick={simulateExpireTrial}
+                                        className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-red-500 rounded-lg font-bold transition-colors"
+                                    >
+                                        Simulate Trial Expired
+                                    </button>
+                                ) : (
+                                    <>
+                                        <button
+                                            type="button"
+                                            onClick={resetTrial}
+                                            className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-emerald-500 rounded-lg font-bold transition-colors"
+                                        >
+                                            Reset Trial to 90 Days
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={simulateReachMonthlyLimit}
+                                            className="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 hover:bg-amber-100 rounded-lg font-bold transition-colors"
+                                        >
+                                            Simulate 100/100 Limit
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={resetMonthlyScans}
+                                            className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 rounded-lg font-bold transition-colors"
+                                        >
+                                            Reset Monthly Count
+                                        </button>
+                                    </>
+                                )}
                                 <button
                                     type="button"
-                                    onClick={simulateExpireTrial}
-                                    className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-red-500 rounded-lg font-bold transition-colors"
+                                    onClick={() => openPaywall()}
+                                    className="px-3 py-1.5 bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 rounded-lg font-bold hover:bg-violet-100 transition-colors"
                                 >
-                                    Simulate Trial Expired
+                                    Preview Paywall
                                 </button>
-                            ) : (
-                                <>
-                                    <button
-                                        type="button"
-                                        onClick={resetTrial}
-                                        className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-emerald-500 rounded-lg font-bold transition-colors"
-                                    >
-                                        Reset Trial to 90 Days
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={simulateReachMonthlyLimit}
-                                        className="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 hover:bg-amber-100 rounded-lg font-bold transition-colors"
-                                    >
-                                        Simulate 100/100 Limit
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={resetMonthlyScans}
-                                        className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 rounded-lg font-bold transition-colors"
-                                    >
-                                        Reset Monthly Count
-                                    </button>
-                                </>
-                            )}
-                            <button
-                                type="button"
-                                onClick={() => openPaywall()}
-                                className="px-3 py-1.5 bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 rounded-lg font-bold hover:bg-violet-100 transition-colors"
-                            >
-                                Preview Paywall
-                            </button>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* ========================================== */}

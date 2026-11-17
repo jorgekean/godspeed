@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../services/db';
-import { Camera, CheckCircle2, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
+import { Camera, CheckCircle2, ArrowLeft, Loader2, AlertCircle, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { OMRScanner, type OMRScannerRef } from '../components/omr/OMRScanner';
 import { useAuth } from '../contexts/AuthContext';
@@ -19,6 +19,17 @@ export default function GlobalScannerPage() {
     // 1. STATE
     // ---------------------------------------------------------
     const [isSearchingExam, setIsSearchingExam] = useState(false);
+    const [isGuideOpen, setIsGuideOpen] = useState(() => !localStorage.getItem('has_seen_instant_scan_notice'));
+
+    const handleConfirmInstantScan = () => {
+        localStorage.setItem('has_seen_instant_scan_notice', 'true');
+        setIsGuideOpen(false);
+    };
+
+    const handleGoToDashboard = () => {
+        localStorage.setItem('has_seen_instant_scan_notice', 'true');
+        navigate('/');
+    };
 
     // ---------------------------------------------------------
     // 2. DATA
@@ -182,7 +193,13 @@ export default function GlobalScannerPage() {
                         <h1 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">Instant Scanner</h1>
                         <p className="text-[10px] font-bold text-violet-600 dark:text-violet-400 uppercase tracking-widest">Automatic Exam Detection</p>
                     </div>
-                    <div className="w-10" />
+                    <button
+                        onClick={() => setIsGuideOpen(true)}
+                        className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] -mr-2 p-2 text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 rounded-xl transition-colors"
+                        title="How Instant Scan Works"
+                    >
+                        <HelpCircle className="w-5 h-5" />
+                    </button>
                 </div>
             </header>
 
@@ -217,6 +234,61 @@ export default function GlobalScannerPage() {
                     </div>
                 </div>
             </main>
+
+            {/* FIRST-TIME / HELP INSTANT SCANNER ONBOARDING DIALOG */}
+            {isGuideOpen && (
+                <div 
+                    className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200"
+                    onClick={() => setIsGuideOpen(false)}
+                >
+                    <div 
+                        className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[28px] shadow-2xl border border-slate-200/80 dark:border-white/10 overflow-hidden animate-in zoom-in-95 duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="p-6 text-center">
+                            <div className="w-14 h-14 bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-sm">
+                                <Camera className="w-7 h-7" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                                Instant Universal Scanner
+                            </h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                Multi-exam automatic grading
+                            </p>
+
+                            <div className="mt-4 p-4 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/20 text-left space-y-1.5">
+                                <div className="flex items-start gap-2.5">
+                                    <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                                    <div className="text-xs text-amber-900 dark:text-amber-200 leading-snug">
+                                        <strong>Expected on Answer Sheets:</strong> Both the <strong>Exam Code</strong> and <strong>Student No.</strong> must be shaded on the bubble sheet so Godspeed can automatically recognize the exam and record the grade.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mt-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 text-left text-xs text-slate-600 dark:text-slate-300 leading-relaxed border border-slate-100 dark:border-slate-800">
+                                💡 <strong>Alternative:</strong> You can also tap any specific exam from your <strong>Dashboard</strong> and tap <em>"Scan Papers"</em> to scan directly without needing an Exam Code!
+                            </div>
+                        </div>
+
+                        <div className="p-5 pt-0 space-y-2">
+                            <button
+                                type="button"
+                                onClick={handleConfirmInstantScan}
+                                className="w-full py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-violet-500/20 active:scale-95 transition-all"
+                            >
+                                Got it, Start Scanner
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleGoToDashboard}
+                                className="w-full py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+                            >
+                                Select Exam from Dashboard
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
