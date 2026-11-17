@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../services/db';
-import { ArrowLeft, BarChart3, TrendingUp, UserCheck, FileDown, Loader2, List, LayoutGrid, Target, Award, AlertCircle, FileSpreadsheet, Copy } from 'lucide-react';
+import { ArrowLeft, BarChart3, TrendingUp, UserCheck, FileDown, Loader2, List, LayoutGrid, Target, Award, AlertCircle, FileSpreadsheet, Copy, Laptop } from 'lucide-react';
 import { pdf } from '@react-pdf/renderer';
 import { Workbook } from 'exceljs';
 import { ItemAnalysisPDF, type ItemAnalysisData } from '../components/omr/ItemAnalysisPDF';
@@ -386,7 +386,7 @@ export default function ExamResultsPage() {
                 </div>
             </header>
 
-            <div className="flex-1 max-w-6xl mx-auto w-full p-4 md:p-8">
+            <div className="flex-1 max-w-6xl mx-auto w-full p-4 md:p-8 pb-28 md:pb-8">
                 {/* Mobile action bar */}
                 {totalScanned > 0 && (
                     <div className="flex sm:hidden justify-between items-center gap-2 mb-4">
@@ -404,6 +404,21 @@ export default function ExamResultsPage() {
                         </button>
                     </div>
                 )}
+
+                {/* Desktop Viewing Recommendation Banner */}
+                <div className="mb-6 bg-gradient-to-r from-violet-50/80 via-indigo-50/60 to-slate-50 dark:from-violet-950/20 dark:via-indigo-950/20 dark:to-slate-900/40 border border-violet-100 dark:border-violet-500/20 rounded-2xl p-4 flex items-start sm:items-center gap-3.5 shadow-sm">
+                    <div className="p-2.5 bg-violet-600 dark:bg-violet-500 text-white rounded-xl shadow-md shadow-violet-500/20 shrink-0">
+                        <Laptop className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                            Viewing detailed analytics & spreadsheets?
+                        </h4>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
+                            Detailed item analysis and mastery tables are best viewed on a computer. Just navigate to <span className="font-bold text-violet-600 dark:text-violet-400">godspeedgrader.com</span> on your laptop/computer, select this exam, and click <strong className="font-semibold text-slate-800 dark:text-slate-200">View Results</strong>.
+                        </p>
+                    </div>
+                </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div>
