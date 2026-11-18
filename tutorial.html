@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Setup Guide & Video Walkthrough - Godspeed Grader</title>
+  <link rel="icon" type="image/png" href="./app-logo.png">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: #111827;
+      --card-inner: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #8b5cf6;
+      --accent-hover: #7c3aed;
+      --accent-light: rgba(139, 92, 246, 0.15);
+      --accent-gradient: linear-gradient(135deg, #8b5cf6 0%, #38bdf8 100%);
+      --border: #1f293d;
+      --border-light: rgba(255, 255, 255, 0.08);
+      --emerald: #10b981;
+      --emerald-bg: rgba(16, 185, 129, 0.15);
+      --blue: #38bdf8;
+      --blue-bg: rgba(56, 189, 248, 0.15);
+      --amber: #f59e0b;
+      --amber-bg: rgba(245, 158, 11, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.5;
+      padding: 0 0.75rem 4rem;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* STICKY HEADER */
+    .header-wrapper {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(9, 13, 22, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-light);
+      margin: 0 -0.75rem 1rem -0.75rem;
+      padding: 0.75rem 1rem;
+    }
+    .header {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      text-decoration: none;
+      color: inherit;
+    }
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35);
+      flex-shrink: 0;
+    }
+    .brand-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+    .brand-tag {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .copy-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--accent-gradient);
+      color: #ffffff;
+      border: none;
+      padding: 0.45rem 0.85rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 2px 10px rgba(139, 92, 246, 0.35);
+      white-space: nowrap;
+    }
+    .copy-btn:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+    .copy-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* CONTAINER */
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.75rem;
+    }
+
+    /* HERO */
+    .hero {
+      text-align: center;
+      padding: 1rem 0.5rem 0.5rem;
+    }
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--emerald-bg);
+      color: var(--emerald);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      padding: 0.3rem 0.8rem;
+      border-radius: 9999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      letter-spacing: 0.02em;
+    }
+    .hero h1 {
+      font-size: 1.75rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+      margin-bottom: 0.6rem;
+      background: linear-gradient(135deg, #ffffff 30%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      max-width: 540px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+
+    /* QUICK STEP JUMP NAV (Mobile Optimized) */
+    .step-nav {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding: 0.25rem 0.25rem 0.75rem;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .step-nav::-webkit-scrollbar {
+      display: none;
+    }
+    .step-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.45rem 0.8rem;
+      border-radius: 9999px;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .step-chip:hover, .step-chip:focus {
+      background: var(--card-inner);
+      color: var(--text-main);
+      border-color: var(--accent);
+    }
+    .step-chip .num {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent-light);
+      color: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.68rem;
+      font-weight: 800;
+    }
+
+    /* STEPS SECTION */
+    .steps-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* STEP CARD */
+    .step-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      scroll-margin-top: 5rem;
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.35rem;
+    }
+    .step-badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #a78bfa;
+      background: var(--accent-light);
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+    }
+    .step-tag-pill {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--emerald);
+      background: var(--emerald-bg);
+      padding: 0.2rem 0.55rem;
+      border-radius: 9999px;
+    }
+    .step-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.015em;
+      color: #ffffff;
+      margin-bottom: 0.35rem;
+      line-height: 1.25;
+    }
+    .step-desc {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      line-height: 1.5;
+      margin-bottom: 0.85rem;
+    }
+
+    /* ACTION STEPS LIST */
+    .action-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      font-size: 0.82rem;
+      color: #cbd5e1;
+    }
+    .action-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      background: rgba(30, 41, 59, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      padding: 0.65rem 0.75rem;
+      border-radius: 12px;
+      line-height: 1.45;
+    }
+    .action-dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent-light);
+      color: #a78bfa;
+      font-size: 0.7rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 0.05rem;
+    }
+    .action-item strong {
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    /* ZERO-CROP SLEEK PHONE FRAME */
+    .step-media-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+    .phone-container {
+      width: 100%;
+      max-width: 250px;
+      margin: 0 auto;
+      background: #000000;
+      border: 2px solid #334155;
+      border-radius: 10px;
+      padding: 2px;
+      box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      position: relative;
+    }
+    .phone-container video {
+      width: 100%;
+      height: auto;
+      display: block;
+      object-fit: contain;
+      border-radius: 4px;
+      background: #000000;
+    }
+    .video-subcaption {
+      margin-top: 0.45rem;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    /* DESKTOP ENHANCEMENT */
+    @media (min-width: 768px) {
+      body {
+        padding: 0 1.5rem 5rem;
+      }
+      .header-wrapper {
+        margin: 0 -1.5rem 1.5rem -1.5rem;
+        padding: 1rem 1.5rem;
+      }
+      .hero {
+        padding: 1.5rem 0.5rem 1rem;
+      }
+      .hero h1 {
+        font-size: 2.4rem;
+      }
+      .hero p {
+        font-size: 1.05rem;
+      }
+      .step-nav {
+        justify-content: center;
+      }
+      .step-card {
+        padding: 2rem;
+        display: grid;
+        grid-template-columns: 1fr 270px;
+        gap: 2.25rem;
+        align-items: center;
+        border-radius: 24px;
+      }
+      .phone-container {
+        max-width: 270px;
+      }
+    }
+
+    /* PRO TIPS */
+    .tip-box {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      border-radius: 18px;
+      padding: 1.25rem;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+    .tip-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: #fbbf24;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .tip-content {
+      color: #cbd5e1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .tip-content strong {
+      color: #ffffff;
+    }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translate(-50%, 30px);
+      background: #10b981;
+      color: #ffffff;
+      padding: 0.65rem 1.25rem;
+      border-radius: 9999px;
+      font-weight: 700;
+      font-size: 0.82rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+      opacity: 0;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+      z-index: 100;
+      white-space: nowrap;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    /* FOOTER */
+    footer {
+      max-width: 960px;
+      margin: 3rem auto 0;
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      border-top: 1px solid var(--border);
+      padding-top: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    footer a {
+      color: #a78bfa;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- STICKY TOP BAR -->
+  <div class="header-wrapper">
+    <header class="header">
+      <a href="https://godspeedgrader.com" class="brand">
+        <img src="./app-logo.png" alt="Godspeed Grader Logo" class="brand-icon">
+        <div>
+          <div class="brand-title">GodSpeed Grader</div>
+          <div class="brand-tag">Visual Setup & Video Guide</div>
+        </div>
+      </a>
+      <div class="header-actions">
+        <button class="copy-btn" id="copyLinkBtn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+          </svg>
+          <span>Copy Link</span>
+        </button>
+      </div>
+    </header>
+  </div>
+
+  <main class="container">
+    <!-- HERO HEADER -->
+    <section class="hero">
+      <div class="hero-pill">
+        <span>🛡️ 100% Offline • Instant Video Guide</span>
+      </div>
+      <h1>Visual Setup Walkthrough</h1>
+      <p>Follow the 5 step-by-step videos below to set up classes, create exams, print bubble sheets, and grade papers with your camera.</p>
+    </section>
+
+    <!-- QUICK JUMP NAV (Mobile Chips) -->
+    <nav class="step-nav" aria-label="Step Navigation">
+      <a href="#step-1" class="step-chip"><span class="num">1</span> Setup & Manage</a>
+      <a href="#step-2" class="step-chip"><span class="num">2</span> Create Exam</a>
+      <a href="#step-3" class="step-chip"><span class="num">3</span> Answer Sheets</a>
+      <a href="#step-4" class="step-chip"><span class="num">4</span> Scan & Grade</a>
+      <a href="#step-5" class="step-chip"><span class="num">5</span> Reports & Item Analysis</a>
+    </nav>
+
+    <!-- 5 STEP CARDS WITH FULL VISIBILITY VIDEOS -->
+    <section class="steps-section">
+
+      <!-- STEP 1 -->
+      <article class="step-card" id="step-1">
+        <div class="step-text-col">
+          <div class="step-header">
+            <span class="step-badge">Step 1</span>
+            <span class="step-tag-pill">Quick Setup</span>
+          </div>
+          <h2 class="step-title">Setup and Manage</h2>
+          <p class="step-desc">Organize your school structure, grade levels, classes, and student rosters.</p>
+          <div class="action-list">
+            <div class="action-item">
+              <span class="action-dot">1</span>
+              <div>Go to <strong>Manage</strong> in the bottom tab to create your Grade Levels and Sections (e.g. <em>Grade 10</em>, <em>Section Rizal</em>).</div>
+            </div>
+            <div class="action-item">
+              <span class="action-dot">2</span>
+              <div>Add your Subjects (e.g. <em>Math</em>, <em>Science</em>, <em>English</em>).</div>
+            </div>
+            <div class="action-item">
+              <span class="action-dot">3</span>
+              <div>Add students with unique numbers, or import your whole class roster at once via Excel or spreadsheet copy-paste!</div>
+            </div>
+            <div class="action-item" style="background: rgba(139, 92, 246, 0.15); border-color: rgba(139, 92, 246, 0.3);">
+              <span class="action-dot" style="background: #8b5cf6; color: #fff;">💡</span>
+              <div><strong>Computer/Web Tip:</strong> Go to <a href="https://godspeedgrader.com/students" target="_blank" style="color: #38bdf8; text-decoration: underline; font-weight: 700;">godspeedgrader.com/students</a> on your computer to drag & drop your Excel file (<code style="background: rgba(0,0,0,0.3); padding: 1px 4px; border-radius: 4px;">.xlsx</code>, <code style="background: rgba(0,0,0,0.3); padding: 1px 4px; border-radius: 4px;">.csv</code>) or copy-paste directly from Google Sheets. <strong>Don't forget to click "Sync with Google Drive" on your computer, so on your phone you can simply tap "Sync" to pick up the data!</strong></div>
+            </div>
+          </div>
+        </div>
+        <div class="step-media-col">
+          <div class="phone-container">
+            <video controls playsinline preload="metadata" poster="./tutorial_assets/poster_step1.jpg">
+              <source src="./tutorial_assets/step1_video.mp4" type="video/mp4">
+              <source src="./tutorial_assets/step1_video.mov" type="video/quicktime">
+            </video>
+          </div>
+          <div class="video-subcaption">
+            <span>📱 Setup & Manage Demo (0:43)</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- STEP 2 -->
+      <article class="step-card" id="step-2">
+        <div class="step-text-col">
+          <div class="step-header">
+            <span class="step-badge">Step 2</span>
+            <span class="step-tag-pill">1-Minute Exam</span>
+          </div>
+          <h2 class="step-title">Creation of Exam</h2>
+          <p class="step-desc">Create your exam and tap in your answer key in seconds.</p>
+          <div class="action-list">
+            <div class="action-item">
+              <span class="action-dot">1</span>
+              <div>Tap <strong>+ Create New Exam</strong> on the Home dashboard.</div>
+            </div>
+            <div class="action-item">
+              <span class="action-dot">2</span>
+              <div>Enter your exam title (e.g. <em>Midterm Math</em>), select Grade Level and Subject.</div>
+            </div>
+            <div class="action-item">
+              <span class="action-dot">3</span>
+              <div>Choose <strong>10, 20, 50, or 100 questions</strong>.</div>
+            </div>
+            <div class="action-item">
+              <span class="action-dot">4</span>
+              <div>Tap the bubbles to input your Answer Key (A, B, C, D) and tap <strong>Save Exam</strong>.</div>
+            </div>
+          </div>
+        </div>
+        <div class="step-media-col">
+          <div class="phone-container">
+            <video controls playsinline preload="metadata" poster="./tutorial_assets/poster_step2.jpg">
+              <source src="./tutorial_assets/step2_video.mp4" type="video/mp4">
+              <source src="./tutorial_assets/step2_video.mov" type="video/quicktime">
+            </video>
+          </div>
+          <div class="video-subcaption">
+            <span>📱 Exam Creation Demo (0:50)</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- STEP 3 -->
+      <article class="step-card" id="step-3">
+        <div class="step-text-col">
+          <div class="step-header">
+            <span class="step-badge">Step 3</span>
+            <span class="step-tag-pill">Print Sheets</span>
+          </div>
+          <h2 class="step-title">Downloading Answer Sheet</h2>
+          <p class="step-desc">Generate and print optical bubble sheets on standard printer paper.</p>
+          <div class="action-list">
+            <div class="action-item">
+              <span class="action-dot">1</span>
+              <div>Tap the <strong>Sheets</strong> tab in the bottom bar.</div>
+            </div>
+            <div class="action-item">
+              <span class="action-dot">2</span>
+              <div>Select <strong>Generate 20-Item, 50-Item, or 100-Item Sheet</strong>.</div>
+            </div>
+            <div class="action-item">
+              <span class="action-dot">3</span>
+              <div>AirPrint directly from iPhone or visit <strong>godspeedgrader.com</strong> on your laptop to print to a desktop printer.</div>
+            </div>
+            <div class="action-item">
+              <span class="action-dot">4</span>
+              <div><strong>Print Rule:</strong> Print at <strong>100% scale</strong> on regular Letter or A4 paper (do not shrink to fit).</div>
+            </div>
+          </div>
+        </div>
+        <div class="step-media-col">
+          <div class="phone-container">
+            <video controls playsinline preload="metadata" poster="./tutorial_assets/poster_step3.jpg">
+              <source src="./tutorial_assets/step3_video.mp4" type="video/mp4">
+              <source src="./tutorial_assets/step3_video.mov" type="video/quicktime">
+            </video>
+          </div>
+          <div class="video-subcaption">
+            <span>📱 Answer Sheet Demo (0:56)</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- STEP 4 -->
+      <article class="step-card" id="step-4">
+        <div class="step-text-col">
+          <div class="step-header">
+            <span class="step-badge">Step 4</span>
+            <span class="step-tag-pill">1 Sec / Paper</span>
+          </div>
+          <h2 class="step-title">Scanning / Grading</h2>
+          <p class="step-desc">Grade tests automatically in 1 second per paper using your device's camera.</p>
+          <div class="action-list">
+            <div class="action-item">
+              <span class="action-dot">1</span>
+              <div>On Home screen, tap your exam card and select the target section.</div>
+            </div>
+            <div class="action-item">
+              <span class="action-dot">2</span>
+              <div>Tap <strong>Scan</strong> to activate the high-speed camera scanner.</div>
+            </div>
+            <div class="action-item">
+              <span class="action-dot">3</span>
+              <div>Align all <strong>4 corner square markers</strong> inside the guide box.</div>
+            </div>
+            <div class="action-item">
+              <span class="action-dot">4</span>
+              <div>The app scores automatically with zero button presses needed!</div>
+            </div>
+          </div>
+        </div>
+        <div class="step-media-col">
+          <div class="phone-container">
+            <video controls playsinline preload="metadata" poster="./tutorial_assets/poster_step4.jpg">
+              <source src="./tutorial_assets/step4_video.mp4" type="video/mp4">
+              <source src="./tutorial_assets/step4_video.mov" type="video/quicktime">
+            </video>
+          </div>
+          <div class="video-subcaption">
+            <span>📱 Live Scanning Demo (1:13)</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- STEP 5 -->
+      <article class="step-card" id="step-5">
+        <div class="step-text-col">
+          <div class="step-header">
+            <span class="step-badge">Step 5</span>
+            <span class="step-tag-pill">Instant Analytics</span>
+          </div>
+          <h2 class="step-title">Reports / Item Analysis</h2>
+          <p class="step-desc">Instantly review score analytics, question difficulty, and export grades.</p>
+          <div class="action-list">
+            <div class="action-item">
+              <span class="action-dot">1</span>
+              <div>Exam status automatically updates to <strong style="color: var(--emerald);">GRADED</strong> on the dashboard.</div>
+            </div>
+            <div class="action-item">
+              <span class="action-dot">2</span>
+              <div>Tap the <strong>Analytics icon</strong> to view class average, score distribution, and question accuracy.</div>
+            </div>
+            <div class="action-item">
+              <span class="action-dot">3</span>
+              <div>Instantly spot the hardest questions to guide your next review session.</div>
+            </div>
+            <div class="action-item">
+              <span class="action-dot">4</span>
+              <div>Export grades directly to <strong>CSV / Excel</strong> for your school portal.</div>
+            </div>
+          </div>
+        </div>
+        <div class="step-media-col">
+          <div class="phone-container">
+            <video controls playsinline preload="metadata" poster="./tutorial_assets/poster_step5.jpg">
+              <source src="./tutorial_assets/step5_video.mp4" type="video/mp4">
+              <source src="./tutorial_assets/step5_video.mov" type="video/quicktime">
+            </video>
+          </div>
+          <div class="video-subcaption">
+            <span>📱 Reports & Item Analysis Demo (0:32)</span>
+          </div>
+        </div>
+      </article>
+
+    </section>
+
+    <!-- PRO TIPS -->
+    <div class="tip-box">
+      <div class="tip-title">💡 Pro-Tips for Perfect Scanning</div>
+      <div class="tip-content">
+        <div>• <strong>Lighting:</strong> Ensure even overhead light without harsh diagonal shadows across the 4 corner squares.</div>
+        <div>• <strong>Flat Paper:</strong> Smooth out any deep folds or curled edges so all 4 markers sit in a flat plane.</div>
+        <div>• <strong>Dark Markings:</strong> Works with standard HB/2B pencils and dark black or blue ballpoint pens.</div>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast" id="toast">✓ Tutorial link copied to clipboard!</div>
+
+  <footer>
+    <p>Godspeed Grader is an offline-first tool built for educators worldwide.</p>
+    <p>
+      <a href="./privacy.html">Privacy Policy</a> • 
+      <a href="https://godspeedgrader.com">Official Website</a> • 
+      <a href="mailto:support@godspeedgrader.com">Support</a>
+    </p>
+    <p>© 2026 Jorge Kean De los Reyes. All rights reserved.</p>
+  </footer>
+
+  <script>
+    const copyBtn = document.getElementById('copyLinkBtn');
+    const toast = document.getElementById('toast');
+
+    copyBtn.addEventListener('click', async () => {
+      const url = window.location.href;
+      try {
+        await navigator.clipboard.writeText(url);
+      } catch (err) {
+        const textarea = document.createElement('textarea');
+        textarea.value = url;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    });
+  </script>
+</body>
+</html>

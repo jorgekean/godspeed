@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Godspeed Grader - Promo Hook Video Studio</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #090d16;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    h1 {
+      font-size: 26px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #a855f7, #6366f1, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+    p.subtitle {
+      color: #94a3b8;
+      font-size: 14px;
+    }
+    .main-container {
+      display: flex;
+      flex-direction: row;
+      gap: 32px;
+      align-items: flex-start;
+      max-width: 1200px;
+      width: 100%;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .preview-card {
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    canvas {
+      width: 360px;
+      height: 640px;
+      border-radius: 16px;
+      background: #030712;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      display: block;
+    }
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: 360px;
+      margin-top: 16px;
+    }
+    .scrubber-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: #94a3b8;
+      font-variant-numeric: tabular-nums;
+    }
+    input[type=range] {
+      flex: 1;
+      accent-color: #8b5cf6;
+      cursor: pointer;
+    }
+    .btn-row {
+      display: flex;
+      gap: 10px;
+    }
+    button {
+      flex: 1;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: none;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+    button.primary {
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      color: white;
+      box-shadow: 0 4px 14px rgba(124, 58, 237, 0.4);
+    }
+    button.primary:hover {
+      background: linear-gradient(135deg, #6d28d9, #4338ca);
+      transform: translateY(-1px);
+    }
+    button.secondary {
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid #334155;
+    }
+    button.secondary:hover {
+      background: #334155;
+    }
+    button.record-btn {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+    }
+    button.record-btn:hover {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+    .info-panel {
+      flex: 1;
+      min-width: 320px;
+      max-width: 480px;
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    .info-panel h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #f8fafc;
+    }
+    .timeline-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .timeline-item {
+      padding: 12px;
+      border-radius: 10px;
+      background: #1e293b;
+      border-left: 4px solid #6366f1;
+      font-size: 13px;
+      transition: all 0.2s ease;
+    }
+    .timeline-item.active {
+      background: #2e1065;
+      border-left-color: #a855f7;
+      box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
+    }
+    .timeline-time {
+      font-weight: 700;
+      color: #38bdf8;
+      margin-bottom: 4px;
+    }
+    .timeline-desc {
+      color: #cbd5e1;
+    }
+    .voiceover-tag {
+      display: inline-block;
+      margin-top: 4px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: #312e81;
+      color: #a5b4fc;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .recording-status {
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: 10px;
+      background: #1e1b4b;
+      border: 1px solid #4338ca;
+      font-size: 13px;
+      color: #c7d2fe;
+      display: none;
+      text-align: center;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Godspeed Grader Promo Video Studio</h1>
+    <p class="subtitle">High-Converting 9:16 Vertical Video with Spoken English Voiceover & Sound Effects</p>
+  </header>
+
+  <div class="main-container">
+    <div class="preview-card">
+      <canvas id="videoCanvas" width="1080" height="1920"></canvas>
+
+      <div class="controls">
+        <div class="scrubber-container">
+          <span id="currentTimeLabel">0:00</span>
+          <input type="range" id="timeScrubber" min="0" max="20" step="0.033" value="0">
+          <span>0:20</span>
+        </div>
+
+        <div class="btn-row">
+          <button id="playBtn" class="primary">
+            <span id="playIcon">▶</span> <span id="playText">Play with Audio</span>
+          </button>
+          <button id="resetBtn" class="secondary">↺ Reset</button>
+        </div>
+
+        <button id="recordBtn" class="record-btn">
+          ⏺ Render & Download Video (.webm)
+        </button>
+
+        <div id="recordingStatus" class="recording-status">
+          Rendering high-definition video with English voiceover... Please wait.
+        </div>
+      </div>
+    </div>
+
+    <div class="info-panel">
+      <h2>Storyboard & Spoken English Voiceover</h2>
+      <p style="font-size: 13px; color: #94a3b8;">
+        Each scene features synchronized spoken English narration, dynamic 3D mobile mockups, and sound effects:
+      </p>
+
+      <ul class="timeline-list">
+        <li class="timeline-item" id="scene-0">
+          <div class="timeline-time">0:00 - 0:04 • The Hook</div>
+          <div class="timeline-desc">Bold red warning & paper stack.</div>
+          <div class="voiceover-tag">🗣 "Stop grading bubble sheets by hand on your weekends."</div>
+        </li>
+        <li class="timeline-item" id="scene-1">
+          <div class="timeline-time">0:04 - 0:08 • The Solution</div>
+          <div class="timeline-desc">3D phone mockup tilts in with Godspeed Grader scanner active.</div>
+          <div class="voiceover-tag">🗣 "Meet Godspeed Grader. Point your camera, and you're done."</div>
+        </li>
+        <li class="timeline-item" id="scene-2">
+          <div class="timeline-time">0:08 - 0:13 • Live Optical Scan Demo</div>
+          <div class="timeline-desc">Laser beam scan with camera ding & instant score (48/50 - 96%).</div>
+          <div class="voiceover-tag">🗣 "Instant optical scanning. One second per student, with automatic item analysis."</div>
+        </li>
+        <li class="timeline-item" id="scene-3">
+          <div class="timeline-time">0:13 - 0:17 • Sheet Sizes & Management</div>
+          <div class="timeline-desc">Print 20, 50, or 100-item sheets on normal paper.</div>
+          <div class="voiceover-tag">🗣 "Print 20, 50, or 100-item answer sheets on any regular printer paper."</div>
+        </li>
+        <li class="timeline-item" id="scene-4">
+          <div class="timeline-time">0:17 - 0:20 • Call To Action</div>
+          <div class="timeline-desc">100% Offline • Lifetime License badge • App Store download.</div>
+          <div class="voiceover-tag">🗣 "100 percent offline, with zero monthly subscriptions. Get Godspeed Grader on the App Store today."</div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('videoCanvas');
+    const ctx = canvas.getContext('2d');
+    const scrubber = document.getElementById('timeScrubber');
+    const currentTimeLabel = document.getElementById('currentTimeLabel');
+    const playBtn = document.getElementById('playBtn');
+    const playIcon = document.getElementById('playIcon');
+    const playText = document.getElementById('playText');
+    const resetBtn = document.getElementById('resetBtn');
+    const recordBtn = document.getElementById('recordBtn');
+    const recordingStatus = document.getElementById('recordingStatus');
+
+    const TOTAL_DURATION = 20.0;
+    let currentTime = 0;
+    let isPlaying = false;
+    let lastTimestamp = null;
+    let isRecording = false;
+
+    // Load Real Screenshots
+    const images = {
+      dashboard: new Image(),
+      scannerSetup: new Image(),
+      cameraScan: new Image(),
+      answerSheets: new Image()
+    };
+    images.dashboard.src = '/promo/1_Dashboard.png';
+    images.scannerSetup.src = '/promo/2_ScannerSetup.png';
+    images.cameraScan.src = '/promo/3_CameraScanning.png';
+    images.answerSheets.src = '/promo/4_AnswerSheets.png';
+
+    // Web Audio Synthesizer & Voiceover Buffers
+    let audioCtx = null;
+    let audioDest = null;
+    const voiceBuffers = {};
+    const voiceUrls = {
+      scene1: '/promo/voice_scene1.wav',
+      scene2: '/promo/voice_scene2.wav',
+      scene3: '/promo/voice_scene3.wav',
+      scene4: '/promo/voice_scene4.wav',
+      scene5: '/promo/voice_scene5.wav'
+    };
+
+    async function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        audioDest = audioCtx.createMediaStreamDestination();
+        loadVoiceBuffers();
+      }
+      if (audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+      }
+    }
+
+    async function loadVoiceBuffers() {
+      for (const [key, url] of Object.entries(voiceUrls)) {
+        try {
+          const resp = await fetch(url);
+          const arrayBuffer = await resp.arrayBuffer();
+          voiceBuffers[key] = await audioCtx.decodeAudioData(arrayBuffer);
+        } catch (e) {
+          console.warn('Voice file load error:', key, e);
+        }
+      }
+    }
+
+    function playVoice(key) {
+      if (!audioCtx || !voiceBuffers[key]) return;
+      const source = audioCtx.createBufferSource();
+      source.buffer = voiceBuffers[key];
+      const gain = audioCtx.createGain();
+      gain.gain.value = 1.0;
+      source.connect(gain);
+      gain.connect(audioCtx.destination);
+      if (audioDest) gain.connect(audioDest);
+      source.start();
+    }
+
+    function playBeep(freq = 880, type = 'sine', duration = 0.15) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      if (audioDest) gain.connect(audioDest);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function playSuccessChime() {
+      if (!audioCtx) return;
+      playBeep(523.25, 'triangle', 0.1);
+      setTimeout(() => playBeep(659.25, 'triangle', 0.1), 80);
+      setTimeout(() => playBeep(783.99, 'triangle', 0.1), 160);
+      setTimeout(() => playBeep(1046.50, 'triangle', 0.3), 240);
+    }
+
+    function playWhoosh() {
+      if (!audioCtx) return;
+      const bufferSize = audioCtx.sampleRate * 0.3;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.4));
+      }
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(200, audioCtx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(1500, audioCtx.currentTime + 0.15);
+      filter.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      if (audioDest) gain.connect(audioDest);
+      noise.start();
+    }
+
+    // Audio & Voiceover Trigger Tracking
+    let triggered = {};
+    function checkAudioTriggers(t) {
+      if (t < 0.1) triggered = {};
+
+      if (t >= 0.2 && !triggered.voice1) {
+        triggered.voice1 = true;
+        playWhoosh();
+        playVoice('scene1');
+      }
+      if (t >= 4.2 && !triggered.voice2) {
+        triggered.voice2 = true;
+        playWhoosh();
+        playVoice('scene2');
+      }
+      if (t >= 8.3 && !triggered.voice3) {
+        triggered.voice3 = true;
+        playVoice('scene3');
+      }
+      if (t >= 8.8 && !triggered.chime) {
+        triggered.chime = true;
+        playSuccessChime();
+      }
+      if (t >= 13.2 && !triggered.voice4) {
+        triggered.voice4 = true;
+        playWhoosh();
+        playVoice('scene4');
+      }
+      if (t >= 17.2 && !triggered.voice5) {
+        triggered.voice5 = true;
+        playVoice('scene5');
+      }
+    }
+
+    // Drawing Helpers
+    function drawPhoneFrame(x, y, w, h, img, scale = 1, rotation = 0) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rotation);
+      ctx.scale(scale, scale);
+
+      ctx.shadowColor = 'rgba(99, 102, 241, 0.4)';
+      ctx.shadowBlur = 40;
+      ctx.shadowOffsetY = 20;
+
+      const r = 50;
+      ctx.fillStyle = '#1e1b2e';
+      ctx.beginPath();
+      ctx.roundRect(-w/2 - 16, -h/2 - 16, w + 32, h + 32, r + 8);
+      ctx.fill();
+
+      ctx.shadowColor = 'transparent';
+      ctx.strokeStyle = '#383254';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.roundRect(-w/2 - 6, -h/2 - 6, w + 12, h + 12, r + 2);
+      ctx.stroke();
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(-w/2, -h/2, w, h, r);
+      ctx.clip();
+
+      if (img && img.complete && img.naturalWidth > 0) {
+        ctx.drawImage(img, -w/2, -h/2, w, h);
+      } else {
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(-w/2, -h/2, w, h);
+      }
+      ctx.restore();
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(-w/2, -h/2, w, h, r);
+      ctx.stroke();
+
+      ctx.fillStyle = '#000000';
+      ctx.beginPath();
+      ctx.roundRect(-70, -h/2 + 20, 140, 36, 18);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function drawBadge(text, x, y, bg = '#7c3aed', icon = '⚡️') {
+      ctx.save();
+      ctx.font = 'bold 36px -apple-system, sans-serif';
+      const textWidth = ctx.measureText(text).width;
+      const padding = 28;
+      const w = textWidth + padding * 2 + 50;
+      const h = 72;
+
+      ctx.shadowColor = bg;
+      ctx.shadowBlur = 30;
+
+      ctx.fillStyle = bg;
+      ctx.beginPath();
+      ctx.roundRect(x - w/2, y - h/2, w, h, 36);
+      ctx.fill();
+
+      ctx.shadowColor = 'transparent';
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`${icon}  ${text}`, x, y);
+      ctx.restore();
+    }
+
+    function drawTextWithShadow(text, x, y, size = 64, weight = '900', color = '#ffffff') {
+      ctx.save();
+      ctx.font = `${weight} ${size}px -apple-system, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+      ctx.shadowBlur = 24;
+      ctx.shadowOffsetY = 6;
+
+      ctx.fillStyle = color;
+      ctx.fillText(text, x, y);
+      ctx.restore();
+    }
+
+    // Main Render Loop
+    function render(t) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, 1920);
+      bgGrad.addColorStop(0, '#060913');
+      bgGrad.addColorStop(0.5, '#0b0f1e');
+      bgGrad.addColorStop(1, '#05070d');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, 1080, 1920);
+
+      ctx.save();
+      const orbGrad1 = ctx.createRadialGradient(250, 450, 50, 250, 450, 500);
+      orbGrad1.addColorStop(0, 'rgba(124, 58, 237, 0.25)');
+      orbGrad1.addColorStop(1, 'transparent');
+      ctx.fillStyle = orbGrad1;
+      ctx.fillRect(0, 0, 1080, 1920);
+
+      const orbGrad2 = ctx.createRadialGradient(850, 1400, 50, 850, 1400, 600);
+      orbGrad2.addColorStop(0, 'rgba(56, 189, 248, 0.2)');
+      orbGrad2.addColorStop(1, 'transparent');
+      ctx.fillStyle = orbGrad2;
+      ctx.fillRect(0, 0, 1080, 1920);
+      ctx.restore();
+
+      let activeSceneIndex = 0;
+      if (t >= 17.0) activeSceneIndex = 4;
+      else if (t >= 13.0) activeSceneIndex = 3;
+      else if (t >= 8.0) activeSceneIndex = 2;
+      else if (t >= 4.0) activeSceneIndex = 1;
+
+      for (let i = 0; i < 5; i++) {
+        const el = document.getElementById(`scene-${i}`);
+        if (el) el.classList.toggle('active', i === activeSceneIndex);
+      }
+
+      // SCENE 1 (0.0s - 4.0s) • The Hook
+      if (t < 4.0) {
+        const p = t / 4.0;
+        const scale = 1 + p * 0.08;
+
+        ctx.save();
+        ctx.translate(540, 960);
+        ctx.scale(scale, scale);
+        ctx.translate(-540, -960);
+
+        drawBadge("SUNDAY NIGHT TEACHER ALERT", 540, 360, '#ef4444', '⚠️');
+        drawTextWithShadow("Still grading multiple choice", 540, 560, 58, '800', '#f8fafc');
+        drawTextWithShadow("PAPERS BY HAND?", 540, 640, 76, '900', '#f43f5e');
+
+        ctx.save();
+        ctx.translate(540, 1260);
+        ctx.rotate(-0.06);
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+        ctx.shadowBlur = 30;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.roundRect(-260, -360, 520, 720, 16);
+        ctx.fill();
+
+        if (images.answerSheets.complete && images.answerSheets.naturalWidth > 0) {
+          ctx.drawImage(images.answerSheets, -250, -350, 500, 700);
+        }
+
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 18;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(-160, -160);
+        ctx.lineTo(160, 160);
+        ctx.moveTo(160, -160);
+        ctx.lineTo(-160, 160);
+        ctx.stroke();
+        ctx.restore();
+
+        drawTextWithShadow("There is a 10x faster way 👇", 540, 1720, 48, '700', '#38bdf8');
+        ctx.restore();
+      }
+
+      // SCENE 2 (4.0s - 8.0s) • Meet Godspeed
+      else if (t >= 4.0 && t < 8.0) {
+        const p = (t - 4.0) / 4.0;
+        const enterY = Math.min(1, p * 2.5);
+        const yOffset = (1 - enterY) * 200;
+
+        drawBadge("MEET THE FUTURE OF GRADING", 540, 240, '#6366f1', '⚡️');
+        drawTextWithShadow("Godspeed Grader", 540, 350, 84, '900', '#a855f7');
+        drawTextWithShadow("Point your camera. Done.", 540, 430, 46, '600', '#94a3b8');
+
+        const phoneY = 1140 + yOffset;
+        drawPhoneFrame(540, phoneY, 560, 1180, images.scannerSetup, 0.95, 0.02 * Math.sin(t * 2));
+
+        drawBadge("100% Offline • High Accuracy", 540, 1760, '#10b981', '✓');
+      }
+
+      // SCENE 3 (8.0s - 13.0s) • Live Camera Scan
+      else if (t >= 8.0 && t < 13.0) {
+        const p = (t - 8.0) / 5.0;
+
+        drawBadge("INSTANT OPTICAL SCANNING", 540, 220, '#10b981', '📷');
+        drawTextWithShadow("1 Second Per Student", 540, 320, 74, '900', '#ffffff');
+        drawTextWithShadow("Grades 100 tests in under 3 minutes", 540, 390, 44, '600', '#38bdf8');
+
+        drawPhoneFrame(540, 1080, 600, 1260, images.cameraScan, 1.0, 0);
+
+        const scanY = 700 + Math.sin(t * 3.5) * 320;
+        ctx.save();
+        ctx.strokeStyle = '#00f5ff';
+        ctx.shadowColor = '#00f5ff';
+        ctx.shadowBlur = 25;
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(270, scanY);
+        ctx.lineTo(810, scanY);
+        ctx.stroke();
+
+        const laserGrad = ctx.createLinearGradient(0, scanY - 40, 0, scanY + 40);
+        laserGrad.addColorStop(0, 'transparent');
+        laserGrad.addColorStop(0.5, 'rgba(0, 245, 255, 0.35)');
+        laserGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = laserGrad;
+        ctx.fillRect(270, scanY - 40, 540, 80);
+        ctx.restore();
+
+        if (t >= 8.5) {
+          const cardP = Math.min(1, (t - 8.5) * 3);
+          const cardScale = 0.8 + cardP * 0.2;
+
+          ctx.save();
+          ctx.translate(540, 1420);
+          ctx.scale(cardScale, cardScale);
+          ctx.shadowColor = 'rgba(16, 185, 129, 0.6)';
+          ctx.shadowBlur = 40;
+
+          ctx.fillStyle = '#0f172a';
+          ctx.strokeStyle = '#10b981';
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.roundRect(-240, -100, 480, 200, 24);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.shadowColor = 'transparent';
+          ctx.fillStyle = '#10b981';
+          ctx.font = 'bold 32px -apple-system, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText("✓ SCAN COMPLETE", 0, -50);
+
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '900 64px -apple-system, sans-serif';
+          ctx.fillText("48 / 50", 0, 10);
+
+          ctx.fillStyle = '#38bdf8';
+          ctx.font = 'bold 36px -apple-system, sans-serif';
+          ctx.fillText("Score: 96%  •  Grade A", 0, 60);
+          ctx.restore();
+        }
+
+        drawTextWithShadow("No pencil calibration required", 540, 1800, 42, '700', '#94a3b8');
+      }
+
+      // SCENE 4 (13.0s - 17.0s) • Printable Sheets & Reports
+      else if (t >= 13.0 && t < 17.0) {
+        drawBadge("PRINT ON ANY REGULAR PRINTER", 540, 220, '#a855f7', '🖨️');
+        drawTextWithShadow("Standard Letter or A4", 540, 320, 72, '900', '#ffffff');
+        drawTextWithShadow("20, 50, or 100-item answer sheets", 540, 390, 44, '600', '#cbd5e1');
+
+        drawPhoneFrame(340, 1100, 500, 1080, images.answerSheets, 0.88, -0.06);
+        drawPhoneFrame(740, 1140, 500, 1080, images.dashboard, 0.92, 0.05);
+
+        drawBadge("Auto Item Analysis 📊", 540, 1680, '#3b82f6', '⚡️');
+        drawBadge("Zero Cloud Storage Required 🔒", 540, 1780, '#6366f1', '🛡️');
+      }
+
+      // SCENE 5 (17.0s - 20.0s) • Call to Action
+      else if (t >= 17.0) {
+        const pulse = 1 + Math.sin(t * 4) * 0.04;
+
+        ctx.save();
+        const pulseGrad = ctx.createRadialGradient(540, 780, 50, 540, 780, 500);
+        pulseGrad.addColorStop(0, 'rgba(124, 58, 237, 0.4)');
+        pulseGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = pulseGrad;
+        ctx.fillRect(0, 0, 1080, 1920);
+        ctx.restore();
+
+        drawBadge("OFFICIALLY ON THE APP STORE", 540, 320, '#10b981', '🚀');
+        drawTextWithShadow("Take Back Your", 540, 460, 68, '800', '#f8fafc');
+        drawTextWithShadow("WEEKENDS.", 540, 560, 110, '900', '#38bdf8');
+
+        drawPhoneFrame(540, 1120, 520, 1100, images.dashboard, pulse, 0);
+
+        ctx.save();
+        ctx.translate(540, 1560);
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+        ctx.strokeStyle = '#a855f7';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.roundRect(-340, -70, 680, 140, 24);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#a855f7';
+        ctx.font = 'bold 32px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText("💎 LIFETIME ACCESS AVAILABLE", 0, -20);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '700 38px -apple-system, sans-serif';
+        ctx.fillText("No Monthly Fees • Pay Once, Grade Forever", 0, 26);
+        ctx.restore();
+
+        drawBadge("SEARCH: GODSPEED GRADER ON iOS ", 540, 1780, '#2563eb', '📲');
+      }
+
+      if (isPlaying) {
+        checkAudioTriggers(t);
+      }
+    }
+
+    // Playback Engine
+    function step(timestamp) {
+      if (!isPlaying) return;
+      if (!lastTimestamp) lastTimestamp = timestamp;
+      const dt = (timestamp - lastTimestamp) / 1000;
+      lastTimestamp = timestamp;
+
+      currentTime += dt;
+      if (currentTime >= TOTAL_DURATION) {
+        currentTime = TOTAL_DURATION;
+        pause();
+      }
+
+      scrubber.value = currentTime;
+      updateTimeLabel(currentTime);
+      render(currentTime);
+
+      if (isPlaying) {
+        requestAnimationFrame(step);
+      }
+    }
+
+    async function play() {
+      await initAudio();
+      if (currentTime >= TOTAL_DURATION) {
+        currentTime = 0;
+        triggered = {};
+      }
+      isPlaying = true;
+      lastTimestamp = null;
+      playIcon.textContent = '⏸';
+      playText.textContent = 'Pause';
+      requestAnimationFrame(step);
+    }
+
+    function pause() {
+      isPlaying = false;
+      playIcon.textContent = '▶';
+      playText.textContent = 'Play with Audio';
+    }
+
+    function updateTimeLabel(t) {
+      const s = Math.floor(t);
+      const ms = Math.floor((t % 1) * 10);
+      currentTimeLabel.textContent = `0:${s.toString().padStart(2, '0')}.${ms}`;
+    }
+
+    playBtn.addEventListener('click', () => {
+      if (isPlaying) pause();
+      else play();
+    });
+
+    resetBtn.addEventListener('click', () => {
+      pause();
+      currentTime = 0;
+      triggered = {};
+      scrubber.value = 0;
+      updateTimeLabel(0);
+      render(0);
+    });
+
+    scrubber.addEventListener('input', (e) => {
+      pause();
+      currentTime = parseFloat(e.target.value);
+      triggered = {};
+      updateTimeLabel(currentTime);
+      render(currentTime);
+    });
+
+    // High-Definition Video Recording Engine
+    recordBtn.addEventListener('click', async () => {
+      if (isRecording) return;
+      await initAudio();
+      pause();
+      currentTime = 0;
+      triggered = {};
+      render(0);
+
+      isRecording = true;
+      recordBtn.disabled = true;
+      playBtn.disabled = true;
+      resetBtn.disabled = true;
+      recordingStatus.style.display = 'block';
+
+      const stream = canvas.captureStream(60);
+      if (audioDest && audioDest.stream && audioDest.stream.getAudioTracks().length > 0) {
+        stream.addTrack(audioDest.stream.getAudioTracks()[0]);
+      }
+
+      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+        ? 'video/webm;codecs=vp9'
+        : 'video/webm';
+
+      const recorder = new MediaRecorder(stream, {
+        mimeType: mimeType,
+        videoBitsPerSecond: 10000000
+      });
+
+      const chunks = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunks.push(e.data);
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Godspeed_Grader_Promo_Voiceover.webm';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        recordingStatus.textContent = '✅ Video with English Voiceover downloaded successfully!';
+        recordBtn.disabled = false;
+        playBtn.disabled = false;
+        resetBtn.disabled = false;
+        isRecording = false;
+
+        setTimeout(() => {
+          recordingStatus.style.display = 'none';
+          recordingStatus.textContent = 'Rendering high-definition video with English voiceover... Please wait.';
+        }, 5000);
+      };
+
+      recorder.start();
+      play();
+
+      const checkFinish = setInterval(() => {
+        if (currentTime >= TOTAL_DURATION) {
+          clearInterval(checkFinish);
+          pause();
+          recorder.stop();
+        }
+      }, 100);
+    });
+
+    // Initial Render
+    let imagesLoaded = 0;
+    Object.values(images).forEach(img => {
+      img.onload = () => {
+        imagesLoaded++;
+        if (imagesLoaded >= 4) render(0);
+      };
+    });
+    setTimeout(() => render(0), 200);
+  </script>
+</body>
+</html>
