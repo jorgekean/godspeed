@@ -106,7 +106,7 @@ export default function TutorialPage() {
                                 </div>
                                 <div className="flex items-start gap-2.5 bg-violet-950/30 p-2.5 rounded-xl border border-violet-500/30 text-slate-200">
                                     <span className="w-5 h-5 rounded-full bg-violet-600 text-white font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">💡</span>
-                                    <span><strong>Computer/Web Tip:</strong> Go to <a href="https://godspeedgrader.com/students" target="_blank" rel="noopener noreferrer" className="text-sky-400 underline font-bold">godspeedgrader.com/students</a> on your computer to drag & drop your Excel file (<code className="text-[10px] font-mono bg-slate-800 px-1 py-0.5 rounded">.xlsx</code>, <code className="text-[10px] font-mono bg-slate-800 px-1 py-0.5 rounded">.csv</code>) or copy-paste directly from Google Sheets. Everything syncs to your phone!</span>
+                                    <span><strong>Computer/Web Tip:</strong> Go to <a href="https://godspeedgrader.com/students" target="_blank" rel="noopener noreferrer" className="text-sky-400 underline font-bold">godspeedgrader.com/students</a> on your computer to drag & drop your Excel file (<code className="text-[10px] font-mono bg-slate-800 px-1 py-0.5 rounded">.xlsx</code>, <code className="text-[10px] font-mono bg-slate-800 px-1 py-0.5 rounded">.csv</code>) or copy-paste directly from Google Sheets. <strong>Don't forget to click "Sync with Google Drive" on your computer, so on your phone you can simply tap "Sync" to pick up the data!</strong></span>
                                 </div>
                             </div>
                         </div>

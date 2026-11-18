@@ -65,7 +65,7 @@ export default function Help() {
                             </p>
                             <ul className="list-disc pl-5 space-y-2.5">
                                 <li><strong>Manual Entry:</strong> You can type in student details one by one.</li>
-                                <li><strong>Excel Upload & Bulk Entry (Laptop/Web):</strong> The fastest way to add students: open <a href="https://godspeedgrader.com/students" target="_blank" rel="noopener noreferrer" className="text-violet-600 dark:text-violet-400 font-bold underline">godspeedgrader.com/students</a> on your computer. You can drag and drop your Excel file (<code>.xlsx</code>, <code>.csv</code>) or copy-paste columns directly from Excel or Google Sheets. Download our 1-click sample template for instant setup!</li>
+                                <li><strong>Excel Upload & Bulk Entry (Laptop/Web):</strong> The fastest way to add students: open <a href="https://godspeedgrader.com/students" target="_blank" rel="noopener noreferrer" className="text-violet-600 dark:text-violet-400 font-bold underline">godspeedgrader.com/students</a> on your computer. You can drag and drop your Excel file (<code>.xlsx</code>, <code>.csv</code>) or copy-paste columns directly from Excel or Google Sheets. <em>Don't forget to click <strong>"Sync with Google Drive"</strong> on your computer, so on your phone you can simply tap <strong>"Sync"</strong> to automatically pick up the data!</em></li>
                             </ul>
 
                             <div className="flex gap-3 p-4 bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/10 rounded-2xl mt-2 text-amber-850 dark:text-amber-400">

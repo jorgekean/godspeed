@@ -506,6 +506,10 @@ export default function StudentsPage() {
                             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl">
                                 Open <strong className="text-violet-600 dark:text-violet-400 font-bold">https://godspeedgrader.com/students</strong> on your computer's browser to drag & drop your Excel file (<code className="text-[11px] font-mono font-bold bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded">.xlsx</code>, <code className="text-[11px] font-mono font-bold bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded">.csv</code>) or copy-paste directly from Google Sheets!
                             </p>
+                            <div className="flex items-start gap-2 text-[11px] font-semibold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 px-3 py-1.5 rounded-xl mt-1.5">
+                                <span className="text-sm shrink-0">🔄</span>
+                                <span><strong>Don't forget to sync:</strong> Click <strong>Sync with Google Drive</strong> on your computer after uploading, so on your phone you can tap <strong>Sync</strong> to pick up the data!</span>
+                            </div>
                         </div>
                     </div>
                     <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
@@ -856,6 +860,14 @@ export default function StudentsPage() {
                                         </select>
                                         <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                                     </div>
+                                </div>
+
+                                {/* GDrive Sync Tip */}
+                                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-2.5">
+                                    <span className="text-amber-500 text-sm shrink-0 mt-0.5">🔄</span>
+                                    <p className="text-xs text-amber-900 dark:text-amber-300 leading-relaxed">
+                                        <strong>Phone Sync Reminder:</strong> After importing on your computer, remember to click <strong>Sync with Google Drive</strong> (under Account). Then on your phone, open Godspeed Grader and tap <strong>Sync</strong> to pick up the data!
+                                    </p>
                                 </div>
 
                                 {/* Tabs: Upload vs Paste */}
