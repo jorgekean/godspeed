@@ -1,15 +1,43 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../services/db';
-import { Plus, Users, Edit3, Trash2, X, ClipboardPaste, AlertTriangle, FolderKanban, Search, UserPlus, TrendingUp, ChevronDown, Laptop } from 'lucide-react';
+import { 
+    Plus, 
+    Users, 
+    Edit3, 
+    Trash2, 
+    X, 
+    ClipboardPaste, 
+    AlertTriangle, 
+    Search, 
+    UserPlus, 
+    TrendingUp, 
+    ChevronDown, 
+    Laptop, 
+    FileSpreadsheet, 
+    Upload, 
+    Download, 
+    Check, 
+    Copy, 
+    Sparkles, 
+    FileText 
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { sortStudents } from '../utils/studentUtils';
 import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
+
+interface ParsedStudentItem {
+    studentNo: string;
+    fullName: string;
+    isAutoId: boolean;
+}
 
 export default function StudentsPage() {
     const { currentUser } = useAuth();
     const navigate = useNavigate();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // ==========================================
     // 1. DATA FETCHING & FILTERING
@@ -19,6 +47,7 @@ export default function StudentsPage() {
 
     const [selectedFilterSection, setSelectedFilterSection] = useState<string>(() => localStorage.getItem('lastSelectedSection') || '');
     const [searchQuery, setSearchQuery] = useState('');
+    const [copiedWebLink, setCopiedWebLink] = useState(false);
 
     useEffect(() => {
         if (selectedFilterSection) {
@@ -56,15 +85,6 @@ export default function StudentsPage() {
         );
     }, [students, searchQuery]);
 
-    // ==========================================
-    // 2. SINGLE STUDENT MODAL (Manual Create/Edit)
-    // ==========================================
-    const [isSingleModalOpen, setIsSingleModalOpen] = useState(false);
-    const [editingId, setEditingId] = useState<string | null>(null);
-    const [studentNo, setStudentNo] = useState('');
-    const [fullName, setFullName] = useState('');
-    const [formSectionId, setFormSectionId] = useState('');
-
     const ensureGeneralClass = async () => {
         const existing = await db.sections.where('createdBy').equals(userEmail).filter(s => !s.isDeleted).first();
         if (existing) {
@@ -86,6 +106,15 @@ export default function StudentsPage() {
         setSelectedFilterSection(newId);
         return newId;
     };
+
+    // ==========================================
+    // 2. SINGLE STUDENT MODAL (Manual Create/Edit)
+    // ==========================================
+    const [isSingleModalOpen, setIsSingleModalOpen] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [studentNo, setStudentNo] = useState('');
+    const [fullName, setFullName] = useState('');
+    const [formSectionId, setFormSectionId] = useState('');
 
     const openSingleModal = (student?: any) => {
         if (student) {
@@ -136,17 +165,22 @@ export default function StudentsPage() {
     };
 
     // ==========================================
-    // 3. BULK IMPORT MODAL (The Magic Paste)
+    // 3. BULK / EXCEL IMPORT MODAL
     // ==========================================
-    const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
-    const [pasteData, setPasteData] = useState('');
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [importTab, setImportTab] = useState<'upload' | 'paste'>('upload');
     const [bulkSectionId, setBulkSectionId] = useState('');
-    const [nextGeneratedId, setNextGeneratedId] = useState<number>(10000000);
+    const [pasteData, setPasteData] = useState('');
+    const [uploadedFileName, setUploadedFileName] = useState('');
+    const [parsedItems, setParsedItems] = useState<ParsedStudentItem[]>([]);
+    const [isDragging, setIsDragging] = useState(false);
+    const [nextGeneratedId, setNextGeneratedId] = useState<number>(10000001);
 
+    // Determine next sequential ID starting point
     useEffect(() => {
         const determineNextId = async () => {
             const allStudents = await db.students.where('createdBy').equals(userEmail).toArray();
-            let maxId = 10000000;
+            let maxId = 10000001;
             for (const s of allStudents) {
                 if (s.studentNo && /^\d{8}$/.test(s.studentNo)) {
                     const parsed = parseInt(s.studentNo, 10);
@@ -158,67 +192,188 @@ export default function StudentsPage() {
             setNextGeneratedId(maxId);
         };
 
-        if (isBulkModalOpen) {
+        if (isImportModalOpen) {
             determineNextId();
         }
-    }, [isBulkModalOpen, userEmail]);
+    }, [isImportModalOpen, userEmail]);
 
-    const parsedBulkData = React.useMemo(() => {
-        if (!pasteData.trim()) return [];
+    // Smart Row Parser for both Excel files and Pasted text
+    const parseRosterRows = (rawRows: (string | number)[][], startingId: number): ParsedStudentItem[] => {
+        if (!rawRows || rawRows.length === 0) return [];
 
-        const lines = pasteData.trim().split(/\r?\n/);
-        const results: { studentNo: string; fullName: string }[] = [];
-        let runningId = nextGeneratedId;
+        const rows = rawRows
+            .map(r => Array.isArray(r) ? r.map(c => String(c ?? '').trim()) : [String(r ?? '').trim()])
+            .filter(r => r.some(c => c.length > 0));
 
-        for (const line of lines) {
-            const cleanLine = line.trim();
-            if (!cleanLine) continue;
+        if (rows.length === 0) return [];
 
-            const tabParts = cleanLine.split('\t').map(p => p.trim()).filter(Boolean);
+        let headerIndex = -1;
+        let idCol = -1;
+        let nameCol = -1;
+        let lastNameCol = -1;
+        let firstNameCol = -1;
 
-            if (tabParts.length >= 2) {
-                const part0IsNumeric = /^\d+$/.test(tabParts[0]);
-                const part1IsNumeric = /^\d+$/.test(tabParts[1]);
+        // Check first 3 rows for potential header words
+        for (let i = 0; i < Math.min(3, rows.length); i++) {
+            const row = rows[i];
+            const isHeaderRow = row.some(cell => 
+                /^(student(\s*no|\s*id|\s*number)?|id|lrn|no\.?|name|full\s*name|learner.*name|last\s*name|first\s*name)$/i.test(cell)
+            );
+            if (isHeaderRow) {
+                headerIndex = i;
+                row.forEach((cell, idx) => {
+                    const lower = cell.toLowerCase().trim();
+                    if (/^(student(\s*no|\s*id|\s*number)?|id|lrn|no\.?)$/i.test(lower)) idCol = idx;
+                    else if (/^(full\s*name|learner.*name|name)$/i.test(lower)) nameCol = idx;
+                    else if (/^last(\s*name)?$/i.test(lower)) lastNameCol = idx;
+                    else if (/^first(\s*name)?$/i.test(lower)) firstNameCol = idx;
+                });
+                break;
+            }
+        }
 
-                let id = '';
-                let name = '';
+        const dataRows = headerIndex >= 0 ? rows.slice(headerIndex + 1) : rows;
+        const results: ParsedStudentItem[] = [];
+        let currentId = startingId;
 
-                if (part0IsNumeric && !part1IsNumeric) {
-                    id = tabParts[0].slice(0, 8);
-                    name = tabParts.slice(1).join(' ');
-                } else if (!part0IsNumeric && part1IsNumeric) {
-                    id = tabParts[1].slice(0, 8);
-                    name = tabParts[0];
-                } else {
-                    id = tabParts[0].slice(0, 8);
-                    name = tabParts.slice(1).join(' ');
-                }
+        for (const row of dataRows) {
+            let studentNo = '';
+            let fullName = '';
+            let isAutoId = false;
 
-                if (name) {
-                    results.push({ studentNo: id, fullName: name });
-                    continue;
+            if (idCol !== -1 && row[idCol]) {
+                studentNo = row[idCol].replace(/\D/g, '').slice(0, 8);
+            }
+            if (nameCol !== -1 && row[nameCol]) {
+                fullName = row[nameCol];
+            } else if (lastNameCol !== -1 && firstNameCol !== -1 && (row[lastNameCol] || row[firstNameCol])) {
+                fullName = [row[lastNameCol], row[firstNameCol]].filter(Boolean).join(', ');
+            }
+
+            // Fallback heuristics when headers are absent
+            if (!fullName) {
+                const nonEmpties = row.filter(Boolean);
+                if (nonEmpties.length === 1) {
+                    fullName = nonEmpties[0];
+                } else if (nonEmpties.length >= 2) {
+                    const numericIdx = nonEmpties.findIndex(c => /^\d+$/.test(c.replace(/[-\s]/g, '')));
+                    if (numericIdx !== -1) {
+                        studentNo = nonEmpties[numericIdx].replace(/\D/g, '').slice(0, 8);
+                        const nameParts = nonEmpties.filter((_, idx) => idx !== numericIdx);
+                        fullName = nameParts.join(', ');
+                    } else {
+                        fullName = nonEmpties.join(', ');
+                    }
                 }
             }
 
-            results.push({
-                studentNo: String(runningId).slice(-8),
-                fullName: cleanLine
-            });
-            runningId++;
+            // Sanitize full name
+            fullName = fullName.replace(/[\r\n\t]+/g, ' ').trim();
+            if (!fullName || fullName.length < 2) continue;
+
+            if (!studentNo) {
+                studentNo = String(currentId).slice(-8);
+                currentId++;
+                isAutoId = true;
+            }
+
+            results.push({ studentNo, fullName, isAutoId });
         }
 
         return results;
-    }, [pasteData, nextGeneratedId]);
+    };
+
+    // Handle Excel File Drop / Upload
+    const handleProcessFile = async (file: File) => {
+        try {
+            const buffer = await file.arrayBuffer();
+            const workbook = XLSX.read(buffer, { type: 'array' });
+            if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+                toast.error('The selected Excel file has no readable sheets.');
+                return;
+            }
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rawRows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as (string | number)[][];
+            const parsed = parseRosterRows(rawRows, nextGeneratedId);
+
+            if (parsed.length === 0) {
+                toast.error('No valid student rows could be found in this file.');
+                return;
+            }
+
+            setUploadedFileName(file.name);
+            setParsedItems(parsed);
+            toast.success(`Loaded ${parsed.length} students from ${file.name}!`);
+        } catch (err) {
+            console.error('File parsing error:', err);
+            toast.error('Failed to parse file. Please upload a standard .xlsx, .xls, or .csv file.');
+        }
+    };
+
+    // Re-parse when text is pasted
+    useEffect(() => {
+        if (importTab === 'paste') {
+            if (!pasteData.trim()) {
+                setParsedItems([]);
+                return;
+            }
+            const lines = pasteData.trim().split(/\r?\n/);
+            const rawRows = lines.map(line => {
+                if (line.includes('\t')) return line.split('\t');
+                if (line.includes(',')) return line.split(',');
+                return [line];
+            });
+            const parsed = parseRosterRows(rawRows, nextGeneratedId);
+            setParsedItems(parsed);
+        }
+    }, [pasteData, importTab, nextGeneratedId]);
+
+    // Download Sample Excel Template
+    const handleDownloadSampleTemplate = () => {
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet([
+            ['Student Number', 'Full Name'],
+            ['20260001', 'Dela Cruz, Juan'],
+            ['20260002', 'Santos, Maria'],
+            ['20260003', 'Reyes, Jose'],
+            ['20260004', 'Aquino, Corazon'],
+            ['20260005', 'Bonifacio, Andres']
+        ]);
+        ws['!cols'] = [{ wch: 18 }, { wch: 30 }];
+        XLSX.utils.book_append_sheet(wb, ws, 'Roster Template');
+        XLSX.writeFile(wb, 'Godspeed_Students_Template.xlsx');
+        toast.success('Sample Excel template downloaded!');
+    };
+
+    const handleCopyWebLink = async () => {
+        const url = 'https://godspeedgrader.com/students';
+        try {
+            await navigator.clipboard.writeText(url);
+            setCopiedWebLink(true);
+            toast.success('Link copied! Open https://godspeedgrader.com/students on your computer.');
+            setTimeout(() => setCopiedWebLink(false), 3500);
+        } catch {
+            const ta = document.createElement('textarea');
+            ta.value = url;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            setCopiedWebLink(true);
+            toast.success('Link copied! Open https://godspeedgrader.com/students on your computer.');
+            setTimeout(() => setCopiedWebLink(false), 3500);
+        }
+    };
 
     const handleSaveBulk = async () => {
-        if (parsedBulkData.length === 0) return;
+        if (parsedItems.length === 0) return;
 
         let targetId = bulkSectionId;
         if (!targetId) {
             targetId = await ensureGeneralClass();
         }
 
-        const newStudents = parsedBulkData.map(student => ({
+        const newStudents = parsedItems.map(student => ({
             id: crypto.randomUUID(),
             sectionId: targetId,
             fullName: student.fullName,
@@ -230,11 +385,13 @@ export default function StudentsPage() {
         }));
 
         await db.students.bulkAdd(newStudents);
-        toast.success(`Imported ${newStudents.length} students successfully!`);
+        toast.success(`Imported ${newStudents.length} students successfully into this class!`);
 
         setSelectedFilterSection(targetId);
-        setIsBulkModalOpen(false);
+        setIsImportModalOpen(false);
         setPasteData('');
+        setUploadedFileName('');
+        setParsedItems([]);
     };
 
     // ==========================================
@@ -302,44 +459,70 @@ export default function StudentsPage() {
                                 </span>
                             </div>
                             <p className="text-xs text-slate-500 mt-0.5">
-                                Manage student profiles, track performance analytics, and import rosters.
+                                Manage student profiles, track performance analytics, and import rosters from Excel.
                             </p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 self-stretch sm:self-auto">
+                    <div className="flex items-center gap-2 self-stretch sm:self-auto flex-wrap sm:flex-nowrap">
                         <button
                             onClick={() => {
                                 setBulkSectionId(selectedFilterSection || sections?.[0]?.id || '');
-                                setIsBulkModalOpen(true);
+                                setImportTab('upload');
+                                setIsImportModalOpen(true);
                             }}
-                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl md:rounded-2xl font-bold text-sm transition-all active:scale-95"
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white rounded-xl md:rounded-2xl font-bold text-sm shadow-md shadow-violet-500/20 transition-all active:scale-95"
                         >
-                            <ClipboardPaste className="w-4 h-4 text-violet-600 dark:text-violet-400" />
-                            <span>Import Paste</span>
+                            <FileSpreadsheet className="w-4 h-4 text-white" />
+                            <span>Import Excel / Roster</span>
                         </button>
                         <button
                             onClick={() => openSingleModal()}
-                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-xl md:rounded-2xl font-bold text-sm shadow-lg shadow-violet-500/20 active:scale-95 transition-all"
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl md:rounded-2xl font-bold text-sm transition-all active:scale-95"
                         >
                             <Plus className="w-4 h-4" />
-                            <span>Add Student</span>
+                            <span>Add Single</span>
                         </button>
                     </div>
                 </div>
 
-                {/* DESKTOP ROSTER UPLOAD TIP BANNER */}
-                <div className="bg-gradient-to-r from-violet-50/80 via-indigo-50/60 to-slate-50 dark:from-violet-950/20 dark:via-indigo-950/20 dark:to-slate-900/40 border border-violet-100 dark:border-violet-500/20 rounded-2xl p-4 flex items-start sm:items-center gap-3.5 shadow-sm">
-                    <div className="p-2.5 bg-violet-600 dark:bg-violet-500 text-white rounded-xl shadow-md shadow-violet-500/20 shrink-0">
-                        <Laptop className="w-5 h-5" />
+                {/* ========================================== */}
+                {/* COMPUTER / WEB ROSTER PROMO BANNER */}
+                {/* ========================================== */}
+                <div className="bg-gradient-to-r from-violet-600/10 via-indigo-600/5 to-sky-600/10 border border-violet-500/20 dark:border-violet-500/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+                    <div className="flex items-start gap-3.5">
+                        <div className="p-2.5 bg-violet-600 text-white rounded-xl shadow-md shadow-violet-600/30 shrink-0 mt-0.5">
+                            <Laptop className="w-5 h-5" />
+                        </div>
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                                    Fastest Way: Upload Excel on Computer or Web
+                                </h4>
+                                <span className="text-[10px] font-black uppercase tracking-wider bg-violet-500/20 text-violet-600 dark:text-violet-400 px-2 py-0.5 rounded-full">
+                                    Desktop Friendly
+                                </span>
+                            </div>
+                            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl">
+                                Open <strong className="text-violet-600 dark:text-violet-400 font-bold">https://godspeedgrader.com/students</strong> on your computer's browser to drag & drop your Excel file (<code className="text-[11px] font-mono font-bold bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded">.xlsx</code>, <code className="text-[11px] font-mono font-bold bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded">.csv</code>) or copy-paste directly from Google Sheets!
+                            </p>
+                        </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                            Uploading rosters from a laptop or computer?
-                        </h4>
-                        <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
-                            Visit <span className="font-bold text-violet-600 dark:text-violet-400">godspeedgrader.com</span> on your browser to easily copy & paste spreadsheets from Excel or Google Sheets, then sync seamlessly to your phone via Google Drive.
-                        </p>
+                    <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                        <button
+                            onClick={handleCopyWebLink}
+                            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95"
+                        >
+                            {copiedWebLink ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                            <span>{copiedWebLink ? 'Link Copied!' : 'Copy Web Link'}</span>
+                        </button>
+                        <button
+                            onClick={handleDownloadSampleTemplate}
+                            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-violet-50 dark:bg-violet-500/10 hover:bg-violet-100 dark:hover:bg-violet-500/20 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-500/20 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95"
+                        >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Sample Excel</span>
+                        </button>
                     </div>
                 </div>
 
@@ -386,33 +569,62 @@ export default function StudentsPage() {
                 </div>
 
                 {/* ========================================== */}
-                {/* 3. STUDENTS TABLE */}
+                {/* 3. STUDENTS TABLE OR EMPTY STATE */}
                 {/* ========================================== */}
                 <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/50 dark:border-white/5 shadow-sm overflow-hidden flex flex-col">
                     {students?.length === 0 ? (
-                        <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
-                            <div className="w-14 h-14 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-3 text-slate-400">
-                                <Users className="w-7 h-7" />
+                        <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-12 text-center">
+                            <div className="w-14 h-14 bg-violet-50 dark:bg-violet-500/10 rounded-2xl flex items-center justify-center mb-3 text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-500/20">
+                                <FileSpreadsheet className="w-7 h-7" />
                             </div>
-                            <h3 className="font-bold text-slate-900 dark:text-white mb-1">No students in this class yet</h3>
-                            <p className="text-xs text-slate-500 max-w-sm mb-5">
-                                Add students manually or paste an entire roster directly from Excel or Google Sheets.
+                            <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-1">No students in this class yet</h3>
+                            <p className="text-xs text-slate-500 max-w-md mb-6 leading-relaxed">
+                                Set up your student roster in seconds. You can upload an Excel file, paste a spreadsheet, or add students one by one.
                             </p>
-                            <div className="flex gap-2">
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg mb-4">
                                 <button
                                     onClick={() => {
                                         setBulkSectionId(selectedFilterSection || sections?.[0]?.id || '');
-                                        setIsBulkModalOpen(true);
+                                        setImportTab('upload');
+                                        setIsImportModalOpen(true);
                                     }}
-                                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-all"
+                                    className="p-4 bg-violet-50/60 hover:bg-violet-100/60 dark:bg-violet-950/20 dark:hover:bg-violet-900/30 border border-violet-200 dark:border-violet-500/30 rounded-2xl flex flex-col items-center text-center gap-1.5 transition-all active:scale-95 group"
                                 >
-                                    Import Paste
+                                    <Upload className="w-5 h-5 text-violet-600 dark:text-violet-400 group-hover:-translate-y-0.5 transition-transform" />
+                                    <span className="text-sm font-bold text-violet-900 dark:text-violet-200">Upload Excel Spreadsheet</span>
+                                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Drag & drop .xlsx, .xls, or .csv</span>
                                 </button>
+
+                                <button
+                                    onClick={() => {
+                                        setBulkSectionId(selectedFilterSection || sections?.[0]?.id || '');
+                                        setImportTab('paste');
+                                        setIsImportModalOpen(true);
+                                    }}
+                                    className="p-4 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/40 dark:hover:bg-slate-800/70 border border-slate-200 dark:border-slate-700/60 rounded-2xl flex flex-col items-center text-center gap-1.5 transition-all active:scale-95 group"
+                                >
+                                    <ClipboardPaste className="w-5 h-5 text-slate-600 dark:text-slate-300 group-hover:-translate-y-0.5 transition-transform" />
+                                    <span className="text-sm font-bold text-slate-900 dark:text-white">Copy & Paste Roster</span>
+                                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Paste columns from Excel or Sheets</span>
+                                </button>
+                            </div>
+
+                            <div className="flex items-center gap-4 text-xs">
+                                <button
+                                    onClick={handleDownloadSampleTemplate}
+                                    className="text-violet-600 dark:text-violet-400 font-bold hover:underline flex items-center gap-1"
+                                >
+                                    <Download className="w-3.5 h-3.5" />
+                                    <span>Download Sample Template (.xlsx)</span>
+                                </button>
+                                <span className="text-slate-300 dark:text-slate-700">•</span>
                                 <button
                                     onClick={() => openSingleModal()}
-                                    className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-violet-500/20"
+                                    className="text-slate-600 dark:text-slate-400 font-bold hover:underline flex items-center gap-1"
                                 >
-                                    Add Student
+                                    <Plus className="w-3.5 h-3.5" />
+                                    <span>Add Single Student</span>
                                 </button>
                             </div>
                         </div>
@@ -587,45 +799,58 @@ export default function StudentsPage() {
                 )}
 
                 {/* ========================================== */}
-                {/* 5. BULK IMPORT MODAL */}
+                {/* 5. FIRST-CLASS EXCEL & BULK IMPORT MODAL */}
                 {/* ========================================== */}
-                {isBulkModalOpen && (
+                {isImportModalOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-                        <div className="bg-white dark:bg-slate-900 w-full max-w-xl rounded-[28px] shadow-2xl border border-slate-200/50 dark:border-white/10 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
-                            <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
+                        <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[28px] shadow-2xl border border-slate-200/50 dark:border-white/10 overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200">
+                            
+                            {/* Modal Header */}
+                            <div className="flex items-center justify-between p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2.5 bg-violet-50 dark:bg-violet-500/10 rounded-xl text-violet-600 dark:text-violet-400">
-                                        <ClipboardPaste className="w-5 h-5" />
+                                        <FileSpreadsheet className="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                                            Import Students from Excel / Sheets
+                                        <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                            <span>Import Students Roster</span>
+                                            <span className="text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full">
+                                                Excel & Sheets
+                                            </span>
                                         </h2>
-                                        <p className="text-xs text-slate-500">Paste student names and IDs in bulk</p>
+                                        <p className="text-xs text-slate-500">Upload a spreadsheet or paste directly from Excel</p>
                                     </div>
                                 </div>
                                 <button
-                                    onClick={() => { setIsBulkModalOpen(false); setPasteData(''); }}
+                                    onClick={() => { 
+                                        setIsImportModalOpen(false); 
+                                        setPasteData(''); 
+                                        setUploadedFileName(''); 
+                                        setParsedItems([]); 
+                                    }}
                                     className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 bg-slate-50 dark:bg-slate-800 rounded-full transition-colors"
                                 >
                                     <X className="w-4 h-4" />
                                 </button>
                             </div>
 
-                            <div className="p-6 space-y-4 overflow-y-auto">
+                            {/* Modal Body */}
+                            <div className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1">
+                                
+                                {/* Target Class Selection */}
                                 <div>
                                     <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2 ml-1">
-                                        Target Class
+                                        Target Class / Section
                                     </label>
                                     <div className="relative">
                                         <select
                                             value={bulkSectionId}
                                             onChange={(e) => setBulkSectionId(e.target.value)}
-                                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl font-bold text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all appearance-none cursor-pointer"
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl font-bold text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all appearance-none cursor-pointer"
                                         >
                                             {sections?.map(s => (
                                                 <option key={s.id} value={s.id}>
-                                                    {s.gradeLevel} - {s.sectionName}
+                                                    📁 {s.gradeLevel} - {s.sectionName}
                                                 </option>
                                             ))}
                                         </select>
@@ -633,52 +858,166 @@ export default function StudentsPage() {
                                     </div>
                                 </div>
 
-                                <div className="p-3 bg-violet-50/80 dark:bg-violet-950/30 border border-violet-100 dark:border-violet-500/20 rounded-xl flex items-start gap-2.5">
-                                    <Laptop className="w-4 h-4 text-violet-600 dark:text-violet-400 shrink-0 mt-0.5" />
-                                    <p className="text-xs text-slate-600 dark:text-slate-300">
-                                        <strong>Teacher Tip:</strong> You can also access <strong className="text-violet-600 dark:text-violet-400">godspeedgrader.com</strong> on your laptop/computer to paste entire class lists directly from Excel with keyboard shortcuts.
-                                    </p>
+                                {/* Tabs: Upload vs Paste */}
+                                <div className="flex bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
+                                    <button
+                                        type="button"
+                                        onClick={() => setImportTab('upload')}
+                                        className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                                            importTab === 'upload'
+                                                ? 'bg-white dark:bg-slate-900 text-violet-600 dark:text-violet-400 shadow-sm'
+                                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                                        }`}
+                                    >
+                                        <Upload className="w-3.5 h-3.5" />
+                                        <span>Upload Excel / CSV File</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setImportTab('paste')}
+                                        className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                                            importTab === 'paste'
+                                                ? 'bg-white dark:bg-slate-900 text-violet-600 dark:text-violet-400 shadow-sm'
+                                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                                        }`}
+                                    >
+                                        <ClipboardPaste className="w-3.5 h-3.5" />
+                                        <span>Copy & Paste Spreadsheet</span>
+                                    </button>
                                 </div>
 
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2 ml-1">
-                                        Paste Data from Spreadsheet
-                                    </label>
-                                    <textarea
-                                        value={pasteData}
-                                        onChange={(e) => setPasteData(e.target.value)}
-                                        placeholder={"Format 1: [Student No] [TAB] [Full Name]\nFormat 2: [Full Name] (one per line)"}
-                                        className="w-full h-36 bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm whitespace-pre font-mono"
-                                    />
-                                    <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-2 ml-1">
-                                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                                        <span>Student numbers are capped at 8 digits. Missing numbers are assigned automatically.</span>
-                                    </p>
-                                </div>
+                                {/* TAB 1: FILE UPLOAD */}
+                                {importTab === 'upload' && (
+                                    <div className="space-y-3">
+                                        <input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            accept=".xlsx, .xls, .csv"
+                                            className="hidden"
+                                            onChange={(e) => {
+                                                if (e.target.files && e.target.files[0]) {
+                                                    handleProcessFile(e.target.files[0]);
+                                                }
+                                            }}
+                                        />
 
-                                {/* Live Preview */}
-                                {parsedBulkData.length > 0 && (
-                                    <div className="mt-3 border rounded-2xl overflow-hidden border-violet-200 dark:border-violet-500/20 bg-violet-50/50 dark:bg-violet-950/20">
-                                        <div className="bg-violet-100/60 dark:bg-violet-900/30 px-4 py-2.5 text-xs font-bold text-violet-700 dark:text-violet-300 flex justify-between items-center">
-                                            <span>Roster Preview</span>
-                                            <span className="px-2 py-0.5 rounded-full bg-violet-200 dark:bg-violet-800/50 text-[11px]">
-                                                {parsedBulkData.length} detected
+                                        <div
+                                            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                                            onDragLeave={() => setIsDragging(false)}
+                                            onDrop={(e) => {
+                                                e.preventDefault();
+                                                setIsDragging(false);
+                                                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                                                    handleProcessFile(e.dataTransfer.files[0]);
+                                                }
+                                            }}
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className={`border-2 border-dashed rounded-2xl p-6 sm:p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
+                                                isDragging
+                                                    ? 'border-violet-500 bg-violet-50/50 dark:bg-violet-950/30 scale-[0.99]'
+                                                    : 'border-slate-200 dark:border-slate-800 hover:border-violet-400 hover:bg-slate-50 dark:hover:bg-slate-800/40'
+                                            }`}
+                                        >
+                                            <div className="w-12 h-12 rounded-2xl bg-violet-100 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center mb-3">
+                                                <Upload className="w-6 h-6" />
+                                            </div>
+                                            <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
+                                                {uploadedFileName ? `Uploaded: ${uploadedFileName}` : 'Choose or Drag & Drop Excel File'}
+                                            </h4>
+                                            <p className="text-xs text-slate-500 max-w-sm leading-relaxed mb-3">
+                                                Supports standard <strong className="text-slate-700 dark:text-slate-300">.xlsx, .xls, and .csv</strong> files. Auto-detects Student Number & Full Name columns.
+                                            </p>
+                                            <button
+                                                type="button"
+                                                className="px-4 py-1.5 bg-violet-600 text-white rounded-xl text-xs font-bold shadow-md shadow-violet-500/20 pointer-events-none"
+                                            >
+                                                {uploadedFileName ? 'Change File' : 'Browse Files'}
+                                            </button>
+                                        </div>
+
+                                        <div className="flex items-center justify-between text-xs px-1">
+                                            <span className="text-slate-500">Need a template?</span>
+                                            <button
+                                                type="button"
+                                                onClick={handleDownloadSampleTemplate}
+                                                className="text-violet-600 dark:text-violet-400 font-bold hover:underline flex items-center gap-1"
+                                            >
+                                                <Download className="w-3.5 h-3.5" />
+                                                <span>Download Sample Excel Template (.xlsx)</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* TAB 2: COPY & PASTE */}
+                                {importTab === 'paste' && (
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between text-xs px-1 mb-1">
+                                            <label className="font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                                                Paste Cells from Excel or Sheets
+                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setPasteData("Student No\tFull Name\n20260001\tDela Cruz, Juan\n20260002\tSantos, Maria\n20260003\tReyes, Jose\n20260004\tAquino, Corazon");
+                                                }}
+                                                className="text-violet-600 dark:text-violet-400 font-bold hover:underline flex items-center gap-1"
+                                            >
+                                                <Sparkles className="w-3 h-3" />
+                                                <span>Insert Sample Data</span>
+                                            </button>
+                                        </div>
+
+                                        <textarea
+                                            value={pasteData}
+                                            onChange={(e) => setPasteData(e.target.value)}
+                                            placeholder={"Copy columns from Excel / Google Sheets and press Ctrl+V / Cmd+V here.\n\nExamples accepted:\n• Column 1: [Student No], Column 2: [Full Name]\n• Column 1: [Full Name] (one student per row)"}
+                                            className="w-full h-36 bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 text-xs whitespace-pre font-mono"
+                                        />
+
+                                        <p className="text-[11px] text-slate-500 flex items-center gap-1.5 ml-1">
+                                            <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                            <span>Student numbers are capped at 8 digits. Missing numbers are generated sequentially.</span>
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* PARSED PREVIEW TABLE */}
+                                {parsedItems.length > 0 && (
+                                    <div className="border rounded-2xl overflow-hidden border-violet-200 dark:border-violet-500/30 bg-violet-50/40 dark:bg-violet-950/20">
+                                        <div className="bg-violet-100/70 dark:bg-violet-900/40 px-4 py-2.5 text-xs font-bold text-violet-800 dark:text-violet-200 flex justify-between items-center">
+                                            <span className="flex items-center gap-1.5">
+                                                <Check className="w-4 h-4 text-emerald-500" />
+                                                <span>Roster Preview</span>
+                                            </span>
+                                            <span className="px-2.5 py-0.5 rounded-full bg-violet-200 dark:bg-violet-800/60 text-[11px] font-black">
+                                                {parsedItems.length} Detected
                                             </span>
                                         </div>
-                                        <div className="max-h-36 overflow-y-auto p-2 divide-y divide-slate-100 dark:divide-slate-800">
-                                            {parsedBulkData.slice(0, 5).map((d, i) => (
-                                                <div key={i} className="text-xs text-slate-600 dark:text-slate-300 flex gap-4 py-1.5 px-3">
-                                                    <span className="w-24 font-mono font-bold text-violet-600 dark:text-violet-400">
-                                                        {d.studentNo || '(Auto-ID)'}
-                                                    </span>
-                                                    <span className="font-semibold text-slate-900 dark:text-white truncate">
-                                                        {d.fullName}
-                                                    </span>
+                                        <div className="max-h-40 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                                            {parsedItems.slice(0, 8).map((d, i) => (
+                                                <div key={i} className="flex items-center justify-between py-2 px-4 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-colors">
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="w-6 text-[10px] text-slate-400 font-mono">#{i + 1}</span>
+                                                        <span className="font-semibold text-slate-900 dark:text-white truncate max-w-xs">
+                                                            {d.fullName}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-mono font-bold text-violet-600 dark:text-violet-400">
+                                                            {d.studentNo}
+                                                        </span>
+                                                        {d.isAutoId && (
+                                                            <span className="text-[9px] bg-slate-200 dark:bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded font-semibold">
+                                                                Auto-ID
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             ))}
-                                            {parsedBulkData.length > 5 && (
-                                                <div className="text-xs text-center text-slate-400 py-2">
-                                                    ...and {parsedBulkData.length - 5} more students
+                                            {parsedItems.length > 8 && (
+                                                <div className="text-xs text-center text-slate-500 dark:text-slate-400 py-2 bg-slate-50/50 dark:bg-slate-900/50 font-semibold">
+                                                    ...and {parsedItems.length - 8} more students
                                                 </div>
                                             )}
                                         </div>
@@ -686,23 +1025,30 @@ export default function StudentsPage() {
                                 )}
                             </div>
 
-                            <div className="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex gap-3">
+                            {/* Modal Footer */}
+                            <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex gap-3">
                                 <button
-                                    onClick={() => { setIsBulkModalOpen(false); setPasteData(''); }}
-                                    className="flex-1 py-3 px-4 rounded-xl font-bold text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                    onClick={() => { 
+                                        setIsImportModalOpen(false); 
+                                        setPasteData(''); 
+                                        setUploadedFileName(''); 
+                                        setParsedItems([]); 
+                                    }}
+                                    className="flex-1 py-2.5 px-4 rounded-xl font-bold text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={handleSaveBulk}
-                                    disabled={parsedBulkData.length === 0}
-                                    className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all ${
-                                        parsedBulkData.length > 0
+                                    disabled={parsedItems.length === 0}
+                                    className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
+                                        parsedItems.length > 0
                                             ? 'bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-500/20 active:scale-95'
                                             : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
                                     }`}
                                 >
-                                    Import {parsedBulkData.length > 0 ? `${parsedBulkData.length} ` : ''}Students
+                                    <Check className="w-4 h-4" />
+                                    <span>Import {parsedItems.length > 0 ? `${parsedItems.length} ` : ''}Students</span>
                                 </button>
                             </div>
                         </div>

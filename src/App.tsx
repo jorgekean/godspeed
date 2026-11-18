@@ -32,6 +32,7 @@ import NoticesPage from './pages/NoticesPage'
 import UserManualPage from './pages/UserManualPage'
 import StudentProfilePage from './pages/StudentProfilePage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
+import TutorialPage from './pages/TutorialPage'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { currentUser, isLoading } = useAuth();
@@ -80,6 +81,7 @@ function App() {
                   <Route path="/manual" element={<UserManualPage />} />
                   <Route path="/notices" element={<NoticesPage />} />
                   <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                  <Route path="/tutorial" element={<TutorialPage />} />
 
                   {/* Protected core app routes */}
                   <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>

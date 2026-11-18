@@ -15,8 +15,12 @@ import {
     ArrowLeft,
     ListChecks,
     Info,
-    ShieldCheck
+    ShieldCheck,
+    Video,
+    Share2,
+    Check
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function Help() {
     const navigate = useNavigate();
@@ -61,7 +65,7 @@ export default function Help() {
                             </p>
                             <ul className="list-disc pl-5 space-y-2.5">
                                 <li><strong>Manual Entry:</strong> You can type in student details one by one.</li>
-                                <li><strong>Bulk Entry (Laptop/Web):</strong> If you are using a laptop and have your student list in an Excel file, you can simply copy and paste the data.</li>
+                                <li><strong>Excel Upload & Bulk Entry (Laptop/Web):</strong> The fastest way to add students: open <a href="https://godspeedgrader.com/students" target="_blank" rel="noopener noreferrer" className="text-violet-600 dark:text-violet-400 font-bold underline">godspeedgrader.com/students</a> on your computer. You can drag and drop your Excel file (<code>.xlsx</code>, <code>.csv</code>) or copy-paste columns directly from Excel or Google Sheets. Download our 1-click sample template for instant setup!</li>
                             </ul>
 
                             <div className="flex gap-3 p-4 bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/10 rounded-2xl mt-2 text-amber-850 dark:text-amber-400">
@@ -252,6 +256,40 @@ export default function Help() {
                     <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto text-sm leading-relaxed">
                         Welcome! This guide will walk you through everything you need to know to easily manage your classes, create exams, print answer sheets, and automatically grade them using our built-in scanner.
                     </p>
+                </div>
+
+                {/* Video Tutorial Banner */}
+                <div className="mb-10 bg-gradient-to-br from-violet-600 to-indigo-700 text-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-violet-500/10 flex flex-col sm:flex-row items-center justify-between gap-6">
+                    <div className="space-y-2 text-center sm:text-left">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/15 backdrop-blur-md rounded-full text-xs font-black tracking-wide">
+                            <Video className="w-3.5 h-3.5" /> Hands-on Video Guide
+                        </div>
+                        <h2 className="text-xl sm:text-2xl font-black tracking-tight">
+                            Watch the Video Walkthrough
+                        </h2>
+                        <p className="text-xs sm:text-sm text-violet-100/90 max-w-lg leading-relaxed">
+                            Prefer watching? See the 4-step interactive video tutorial on setting up exams, printing sheets, and camera scanning.
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-3 w-full sm:w-auto shrink-0">
+                        <button
+                            onClick={() => {
+                                navigator.clipboard.writeText('https://godspeedgrader.com/tutorial.html');
+                                toast.success('Tutorial link copied to clipboard!');
+                            }}
+                            className="px-4 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 backdrop-blur-sm border border-white/10"
+                            title="Copy link to tutorial"
+                        >
+                            <Share2 className="w-4 h-4" />
+                            <span>Copy Link</span>
+                        </button>
+                        <button
+                            onClick={() => navigate('/tutorial')}
+                            className="flex-1 sm:flex-initial px-6 py-3 bg-white text-violet-700 hover:bg-violet-50 font-black rounded-2xl text-xs transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5"
+                        >
+                            <span>Open Video Guide</span>
+                        </button>
+                    </div>
                 </div>
 
                 {/* Steps Section */}

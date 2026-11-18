@@ -24,7 +24,9 @@ import {
     X,
     Sparkles,
     Award,
-    Lock
+    Lock,
+    Video,
+    Share2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -546,7 +548,41 @@ export default function AccountPage() {
                 </div>
 
                 {/* ========================================== */}
-                {/* 5. PRIVACY POLICY & COMPLIANCE */}
+                {/* 5. VIDEO TUTORIAL & SETUP GUIDE */}
+                {/* ========================================== */}
+                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/50 dark:border-white/5 p-6 md:p-8 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-4 w-full sm:w-auto">
+                        <div className="w-12 h-12 bg-violet-100 dark:bg-violet-500/10 rounded-2xl flex items-center justify-center text-violet-600 dark:text-violet-400 shrink-0">
+                            <Video className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <h3 className="text-base font-bold text-slate-900 dark:text-white">Teacher Setup & Video Guide</h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Watch the video walkthrough on creating exams, printing sheets, and camera grading.</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                        <button
+                            onClick={() => {
+                                navigator.clipboard.writeText('https://godspeedgrader.com/tutorial.html');
+                                toast.success('Tutorial link copied to clipboard!');
+                            }}
+                            className="px-3.5 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-xl text-xs transition-all flex items-center justify-center gap-1.5"
+                            title="Copy link to tutorial"
+                        >
+                            <Share2 className="w-3.5 h-3.5" />
+                            <span>Copy Link</span>
+                        </button>
+                        <Link
+                            to="/tutorial"
+                            className="flex-1 sm:flex-initial px-5 py-3 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                        >
+                            View Tutorial
+                        </Link>
+                    </div>
+                </div>
+
+                {/* ========================================== */}
+                {/* 6. PRIVACY POLICY & COMPLIANCE */}
                 {/* ========================================== */}
                 <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/50 dark:border-white/5 p-6 md:p-8 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-4 w-full sm:w-auto">
