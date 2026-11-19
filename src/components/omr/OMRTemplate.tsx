@@ -36,7 +36,7 @@ export const SheetPage = ({ children, title, studentName }: { children: React.Re
         <View style={styles.markerBottomRight} />
 
         <Text style={[styles.title, { top: 60, fontSize: 24 }]}>{title}</Text>
-        <Text style={[styles.headerText, { top: 110, left: 100, fontSize: 13, maxWidth: 380 }]} numberOfLines={1}>
+        <Text style={[styles.headerText, { top: 110, left: 100, fontSize: 14 }]}>
             Name: {studentName ? studentName : '_________________________________'}
         </Text>
         <Text style={[styles.headerText, { top: 110, left: 500, fontSize: 14 }]}>Score: _______________</Text>
@@ -60,7 +60,7 @@ export const Page20Item = ({ studentNo, studentName }: { studentNo?: string, stu
     const gridSpacingX = 24;
     const gridSpacingY = 22;
 
-    const paddedStudentNo = studentNo ? studentNo.replace(/\D/g, '').slice(-8).padStart(8, '0') : '';
+    const paddedStudentNo = studentNo ? studentNo.padStart(8, '0') : '';
 
     return (
         <SheetPage title="20-Item Answer Sheet" studentName={studentName}>
@@ -142,7 +142,7 @@ export const Page50Item = ({ studentNo, studentName }: { studentNo?: string, stu
     const gridSpacingX = 24;
     const gridSpacingY = 22;
 
-    const paddedStudentNo = studentNo ? studentNo.replace(/\D/g, '').slice(-8).padStart(8, '0') : '';
+    const paddedStudentNo = studentNo ? studentNo.padStart(8, '0') : '';
 
     return (
         <SheetPage title="50-Item Answer Sheet" studentName={studentName}>
@@ -231,7 +231,7 @@ export const Page100Item = ({ studentNo, studentName }: { studentNo?: string, st
     const gridSpacingX = 18;
     const gridSpacingY = 16;
 
-    const paddedStudentNo = studentNo ? studentNo.replace(/\D/g, '').slice(-8).padStart(8, '0') : '';
+    const paddedStudentNo = studentNo ? studentNo.padStart(8, '0') : '';
 
     return (
         <SheetPage title="100-Item Answer Sheet" studentName={studentName}>
@@ -315,22 +315,6 @@ export const Document50Item = (props: { studentNo?: string, studentName?: string
 
 export const Document100Item = (props: { studentNo?: string, studentName?: string }) => (
     <Document><Page100Item {...props} /></Document>
-);
-
-export const MultiStudentDocument = ({ students, examType }: { students: any[], examType: '20' | '50' | '100' }) => (
-    <Document>
-        {students.map(s => {
-            const studentId = s.studentNo || s.studentNumber || '';
-            const studentName = s.fullName || `${s.firstName || ''} ${s.lastName || ''}`.trim();
-            if (examType === '20') {
-                return <Page20Item key={s.id} studentNo={studentId} studentName={studentName} />;
-            } else if (examType === '50') {
-                return <Page50Item key={s.id} studentNo={studentId} studentName={studentName} />;
-            } else {
-                return <Page100Item key={s.id} studentNo={studentId} studentName={studentName} />;
-            }
-        })}
-    </Document>
 );
 
 import { Printer, Loader2 } from 'lucide-react';
