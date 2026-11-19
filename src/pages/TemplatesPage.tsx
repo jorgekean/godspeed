@@ -1,6 +1,7 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { OMRTemplateGenerator } from '../components/omr/OMRTemplate';
-import { Printer, Laptop } from 'lucide-react';
+import { Printer, Laptop, Users, ArrowRight } from 'lucide-react';
 
 export default function TemplatesPage() {
     return (
@@ -20,13 +21,37 @@ export default function TemplatesPage() {
                     </p>
                 </div>
 
+                {/* Pre-Filled Class Sheets Tip Banner */}
+                <div className="bg-gradient-to-r from-violet-50/90 via-indigo-50/70 to-slate-50 dark:from-violet-950/20 dark:via-indigo-950/20 dark:to-slate-900/40 border border-violet-100 dark:border-violet-500/20 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+                    <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+                        <div className="p-2.5 bg-violet-600 dark:bg-violet-500 text-white rounded-xl shadow-md shadow-violet-500/20 shrink-0">
+                            <Users className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                                Want sheets pre-filled with student names & IDs?
+                            </h4>
+                            <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
+                                You can print customized sheets pre-bubbled for an entire class. Head over to your <Link to="/sections" className="font-semibold text-violet-600 dark:text-violet-400 hover:underline">Classes</Link> page and click the <strong className="font-semibold text-slate-800 dark:text-slate-200">"Print Sheets"</strong> button on any class card.
+                            </p>
+                        </div>
+                    </div>
+                    <Link
+                        to="/sections"
+                        className="self-start sm:self-center shrink-0 px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-violet-50 dark:hover:bg-slate-700/80 text-violet-600 dark:text-violet-400 border border-violet-200 dark:border-violet-500/30 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+                    >
+                        <span>Go to Classes</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                </div>
+
                 {/* Desktop Printing Tip Banner */}
-                <div className="bg-gradient-to-r from-violet-50/80 via-indigo-50/60 to-slate-50 dark:from-violet-950/20 dark:via-indigo-950/20 dark:to-slate-900/40 border border-violet-100 dark:border-violet-500/20 rounded-2xl p-4 flex items-start sm:items-center gap-3.5 shadow-sm">
-                    <div className="p-2.5 bg-violet-600 dark:bg-violet-500 text-white rounded-xl shadow-md shadow-violet-500/20 shrink-0">
-                        <Laptop className="w-5 h-5" />
+                <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-white/5 rounded-2xl p-4 flex items-start sm:items-center gap-3.5">
+                    <div className="p-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl shrink-0">
+                        <Laptop className="w-4 h-4" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white">
                             Printing sheets from a laptop or computer?
                         </h4>
                         <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
