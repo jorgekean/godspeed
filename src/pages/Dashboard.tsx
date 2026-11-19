@@ -447,6 +447,27 @@ export default function Dashboard() {
                         </div>
                     </div>
 
+                    {/* ONBOARDING GUIDE BANNER: When user has exams but 0 scans */}
+                    {exams && exams.length > 0 && totalScansCount === 0 && (
+                        <div className="flex items-center gap-3.5 p-4 bg-violet-50 dark:bg-violet-500/10 border border-violet-200/80 dark:border-violet-500/20 rounded-2xl text-violet-900 dark:text-violet-200 text-xs sm:text-sm animate-in fade-in duration-300 shadow-sm">
+                            <div className="relative flex items-center justify-center shrink-0">
+                                <span className="animate-ping absolute inline-flex h-8 w-8 rounded-xl bg-violet-400 opacity-40"></span>
+                                <div className="w-9 h-9 rounded-xl bg-violet-600 text-white flex items-center justify-center relative shadow-sm">
+                                    <Camera className="w-4.5 h-4.5" />
+                                </div>
+                            </div>
+                            <div className="flex-1 leading-snug">
+                                <div className="flex items-center gap-2">
+                                    <span className="font-extrabold text-violet-950 dark:text-white">Ready to grade?</span>
+                                    <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-violet-200/80 dark:bg-violet-400/20 text-violet-800 dark:text-violet-300">Tap below</span>
+                                </div>
+                                <p className="text-slate-600 dark:text-slate-300 text-xs mt-0.5">
+                                    Tap on your exam below to start scanning bubble sheets with your camera.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
                     {/* EMPTY STATE */}
                     {exams?.length === 0 && (
                         <div className="text-center py-12 px-4 bg-white/50 dark:bg-slate-900/50 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 space-y-3">
@@ -470,55 +491,41 @@ export default function Dashboard() {
                         </div>
                     )}
 
-                    {/* EXAM LIST WITH POINTER */}
-                    {exams?.map((exam, index) => {
+                    {/* EXAM LIST */}
+                    {exams?.map((exam) => {
                         const status = getStatusConfig(exam.status);
-                        const isFirstExamUnscanned = index === 0 && (exam.scannedCount || 0) === 0 && totalScansCount === 0;
 
                         return (
-                            <div key={exam.id} className="space-y-1">
-                                {isFirstExamUnscanned && (
-                                    <div className="flex items-center gap-2 px-3.5 py-1.5 bg-violet-600 text-white text-[11px] font-bold rounded-xl shadow-md shadow-violet-500/20 animate-bounce w-fit">
-                                        <span>👆</span>
-                                        <span>Tap this exam to start camera scanning papers!</span>
+                            <div
+                                key={exam.id}
+                                className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/50 dark:border-white/5 shadow-sm group hover:ring-2 hover:ring-violet-500/10 transition-all"
+                            >
+                                <button
+                                    onClick={() => navigate(`/scan/${exam.id}`)}
+                                    className="flex-1 flex items-center gap-4 text-left active:scale-95 transition-transform"
+                                >
+                                    <div className="p-3 bg-violet-50 dark:bg-violet-500/10 rounded-xl group-hover:bg-violet-100 transition-colors">
+                                        <FileText className="w-6 h-6 text-violet-600 dark:text-violet-400" />
                                     </div>
-                                )}
-
-                                <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/50 dark:border-white/5 shadow-sm group hover:ring-2 hover:ring-violet-500/20 transition-all">
-                                    <button
-                                        onClick={() => navigate(`/scan/${exam.id}`)}
-                                        className="flex-1 flex items-center gap-4 text-left active:scale-95 transition-transform"
-                                    >
-                                        <div className={`p-3 rounded-xl transition-colors ${
-                                            (exam.scannedCount || 0) === 0
-                                                ? 'bg-violet-600 text-white shadow-md shadow-violet-500/30'
-                                                : 'bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 group-hover:bg-violet-100'
-                                        }`}>
-                                            <FileText className="w-6 h-6" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-bold text-slate-900 dark:text-white leading-tight mb-0.5">{exam.title}</h3>
-                                            <p className="text-[12px] font-medium text-slate-500 dark:text-slate-400 flex items-center flex-wrap gap-x-1.5">
-                                                <span>{exam.gradeLevel}</span>
-                                                <span className="opacity-30">•</span>
-                                                <span>{exam.subject}</span>
-                                                <span className="opacity-30">•</span>
-                                                <span>{exam.itemCount} Items{exam.maxScore && exam.maxScore !== exam.itemCount ? ` (${exam.maxScore} pts)` : ''}</span>
-                                                <span className="opacity-30">•</span>
-                                                {exam.status === 'graded' ? (
-                                                    <span className="text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider text-[10px]">Graded</span>
-                                                ) : exam.scannedCount > 0 ? (
-                                                    <span className="text-violet-600 dark:text-violet-400 font-bold">
-                                                        {exam.scannedCount} Scanned
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-[10px] font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-500/20 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                                                        <Camera className="w-3 h-3" /> Tap to Scan
-                                                    </span>
-                                                )}
-                                            </p>
-                                        </div>
-                                    </button>
+                                    <div>
+                                        <h3 className="font-bold text-slate-900 dark:text-white leading-tight mb-0.5">{exam.title}</h3>
+                                        <p className="text-[12px] font-medium text-slate-500 dark:text-slate-400 flex items-center flex-wrap gap-x-1.5">
+                                            <span>{exam.gradeLevel}</span>
+                                            <span className="opacity-30">•</span>
+                                            <span>{exam.subject}</span>
+                                            <span className="opacity-30">•</span>
+                                            <span>{exam.itemCount} Items{exam.maxScore && exam.maxScore !== exam.itemCount ? ` (${exam.maxScore} pts)` : ''}</span>
+                                            <span className="opacity-30">•</span>
+                                            {exam.status === 'graded' ? (
+                                                <span className="text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider text-[10px]">Graded</span>
+                                            ) : (
+                                                <span className={`${(exam.scannedCount || 0) > 0 ? 'text-violet-600 dark:text-violet-400' : ''} font-bold`}>
+                                                    {exam.scannedCount || 0} Scanned
+                                                </span>
+                                            )}
+                                        </p>
+                                    </div>
+                                </button>
 
                                     <div className="flex items-center gap-1 ml-3 sm:ml-4">
                                         <button
@@ -544,7 +551,6 @@ export default function Dashboard() {
                                         <ChevronRight className="w-5 h-5 text-slate-300 dark:text-slate-600 ml-0.5 group-hover:translate-x-0.5 transition-transform" />
                                     </div>
                                 </div>
-                            </div>
                         );
                     })}
                 </div>
