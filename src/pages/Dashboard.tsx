@@ -6,14 +6,13 @@ import {
     Plus, 
     ChevronRight, 
     FileText, 
-    HelpCircle, 
     Edit3, 
     BarChart3, 
     ChevronDown, 
     Camera, 
     Play, 
     Sparkles, 
-    Check, 
+    Trash2, 
     X 
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -32,12 +31,17 @@ export default function Dashboard() {
     const storedSubjects = useLiveQuery(() => db.subjects.filter(s => !s.isDeleted && s.createdBy === userEmail).toArray(), [userEmail]);
     const allUserExams = useLiveQuery(() => db.exams.filter(e => !e.isDeleted && e.createdBy === userEmail).toArray(), [userEmail]);
 
-    // Overall user stats for onboarding checklists
+    // Overall user stats
     const totalExamsCount = allUserExams?.length || 0;
     const totalScansCount = useLiveQuery(
         () => db.scanResults.where('createdBy').equals(userEmail).filter(sr => !sr.isDeleted).count(),
         [userEmail]
     ) || 0;
+
+    // Check if demo exam exists
+    const hasDemoData = useMemo(() => {
+        return allUserExams?.some(e => e.title.includes('Sample Math Quiz'));
+    }, [allUserExams]);
 
     // 2. State for Filter
     const [selectedPeriod, setSelectedPeriod] = useState<string>('all');
@@ -47,12 +51,6 @@ export default function Dashboard() {
     // Onboarding UI state
     const [isTutorialBannerDismissed, setIsTutorialBannerDismissed] = useState<boolean>(() => {
         return localStorage.getItem('godspeed_hide_tutorial_banner') === 'true';
-    });
-    const [isChecklistDismissed, setIsChecklistDismissed] = useState<boolean>(() => {
-        return localStorage.getItem('godspeed_hide_checklist') === 'true';
-    });
-    const [hasVisitedSheets, setHasVisitedSheets] = useState<boolean>(() => {
-        return localStorage.getItem('godspeed_visited_sheets') === 'true';
     });
 
     // Aggregate unique active grade levels
@@ -148,7 +146,7 @@ export default function Dashboard() {
     // 1-Click Sample Demo Exam Creator
     const handleLoadDemoExam = async () => {
         try {
-            // 1. Ensure a default section exists
+            // 1. Ensure a demo section exists
             let demoSection = await db.sections.where('createdBy').equals(userEmail).filter(s => !s.isDeleted && s.sectionName === 'Demo Section').first();
             if (!demoSection) {
                 const sectionId = crypto.randomUUID();
@@ -218,24 +216,47 @@ export default function Dashboard() {
                 isDeleted: false
             });
 
-            toast.success('Sample Demo Exam created! Tap the exam card below to start scanning.');
+            toast.success('Sample Demo Exam loaded! Tap the exam card below to try scanning.');
         } catch (err) {
             console.error('Error loading demo exam:', err);
             toast.error('Failed to create demo exam.');
         }
     };
 
-    // Checklist logic: show if user hasn't graded exams yet and hasn't permanently closed it
-    const hasExams = totalExamsCount > 0;
-    const hasScans = totalScansCount > 0;
-    const showChecklist = !isChecklistDismissed && totalScansCount === 0;
+    // Clear Demo Data Handler
+    const handleClearDemoData = async () => {
+        if (window.confirm('Are you sure you want to remove the sample demo exam and demo students?')) {
+            try {
+                // Delete demo exams
+                const demoExams = await db.exams.where('createdBy').equals(userEmail).filter(e => !e.isDeleted && e.title.includes('Sample Math Quiz')).toArray();
+                for (const e of demoExams) {
+                    await db.exams.update(e.id, { isDeleted: true, updatedAt: Date.now(), isSynced: false });
+                }
+
+                // Delete demo section & students
+                const demoSections = await db.sections.where('createdBy').equals(userEmail).filter(s => !s.isDeleted && s.sectionName === 'Demo Section').toArray();
+                for (const s of demoSections) {
+                    await db.sections.update(s.id, { isDeleted: true, updatedAt: Date.now(), isSynced: false });
+                    const demoStudents = await db.students.where('sectionId').equals(s.id).toArray();
+                    for (const st of demoStudents) {
+                        await db.students.update(st.id, { isDeleted: true, updatedAt: Date.now(), isSynced: false });
+                    }
+                }
+
+                toast.success('Demo data cleared! Your dashboard is fresh.');
+            } catch (err) {
+                console.error('Error clearing demo data:', err);
+                toast.error('Failed to clear demo data.');
+            }
+        }
+    };
 
     return (
         <div className="min-h-full flex flex-col font-sans selection:bg-violet-500/30">
             <main className="flex-1 w-full max-w-5xl mx-auto px-4 md:px-8 py-6 flex flex-col gap-4">
 
                 {/* ========================================== */}
-                {/* 3. PROMINENT VIDEO TUTORIAL BANNER */}
+                {/* VIDEO TUTORIAL BANNER */}
                 {/* ========================================== */}
                 {!isTutorialBannerDismissed && (
                     <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-sky-600 text-white rounded-2xl p-3.5 px-4 shadow-md shadow-violet-500/20 flex items-center justify-between gap-3 animate-in fade-in duration-200">
@@ -281,147 +302,81 @@ export default function Dashboard() {
                 </div>
 
                 {/* ========================================== */}
-                {/* 1. INTERACTIVE QUICK-START CHECKLIST */}
+                {/* 3-STEP VISUAL WORKFLOW ROADMAP (LABEL ONLY) */}
                 {/* ========================================== */}
-                {showChecklist && (
-                    <div className="bg-gradient-to-br from-violet-600/10 via-indigo-600/5 to-slate-100 dark:to-slate-900 border border-violet-500/20 dark:border-violet-500/30 rounded-3xl p-4 sm:p-5 shadow-sm space-y-4 animate-in fade-in duration-300">
+                {(totalExamsCount === 0 || hasDemoData) && (
+                    <div className="bg-white/70 dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-4 sm:p-5 shadow-sm space-y-4 animate-in fade-in duration-300">
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-xl bg-violet-600 text-white flex items-center justify-center font-bold text-xs shadow-md shadow-violet-500/20">
-                                    <Sparkles className="w-4 h-4" />
-                                </div>
-                                <div>
-                                    <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                        <span>Quick-Start Guide</span>
-                                        <span className="text-[10px] font-black uppercase tracking-wider bg-violet-500/20 text-violet-600 dark:text-violet-400 px-2 py-0.5 rounded-full">
-                                            {hasScans ? '3 of 3 Complete' : hasExams ? (hasVisitedSheets ? '2 of 3 Done' : '1 of 3 Done') : '0 of 3 Done'}
-                                        </span>
-                                    </h3>
-                                    <p className="text-[11px] text-slate-500">Follow these 3 simple steps to grade your first test paper</p>
-                                </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">How GodSpeed Works</span>
+                                <span className="text-[10px] font-black uppercase tracking-wider bg-violet-500/10 text-violet-600 dark:text-violet-400 px-2 py-0.5 rounded-full">
+                                    3 Steps
+                                </span>
                             </div>
-                            <button
-                                onClick={() => {
-                                    localStorage.setItem('godspeed_hide_checklist', 'true');
-                                    setIsChecklistDismissed(true);
-                                }}
-                                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
-                                title="Dismiss checklist"
-                            >
-                                <X className="w-4 h-4" />
-                            </button>
-                        </div>
-
-                        {/* 3 Step Action Cards */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                            {/* Step 1 */}
-                            <div className={`p-3.5 rounded-2xl border transition-all ${
-                                hasExams 
-                                    ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-950 dark:text-emerald-300' 
-                                    : 'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800'
-                            }`}>
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Step 1</span>
-                                    {hasExams ? (
-                                        <span className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold">✓</span>
-                                    ) : (
-                                        <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center text-xs font-bold">1</span>
-                                    )}
-                                </div>
-                                <h4 className="text-xs font-bold text-slate-900 dark:text-white">Create Exam & Key</h4>
-                                <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">Set question count and tap in your answer key (A, B, C, D).</p>
-                                {!hasExams ? (
-                                    <button
-                                        onClick={() => navigate('/create')}
-                                        className="mt-2.5 w-full py-1.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-xs font-bold transition-all shadow-sm"
-                                    >
-                                        + Create Exam
-                                    </button>
-                                ) : (
-                                    <span className="inline-block mt-2 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                                        ✓ Exam ready
-                                    </span>
-                                )}
-                            </div>
-
-                            {/* Step 2 */}
-                            <div className={`p-3.5 rounded-2xl border transition-all ${
-                                hasVisitedSheets 
-                                    ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-950 dark:text-emerald-300' 
-                                    : 'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800'
-                            }`}>
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Step 2</span>
-                                    {hasVisitedSheets ? (
-                                        <span className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold">✓</span>
-                                    ) : (
-                                        <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center text-xs font-bold">2</span>
-                                    )}
-                                </div>
-                                <h4 className="text-xs font-bold text-slate-900 dark:text-white">Print Answer Sheets</h4>
-                                <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">Generate free 20, 50, or 100-item optical bubble sheets.</p>
+                            {hasDemoData && (
                                 <button
-                                    onClick={() => {
-                                        localStorage.setItem('godspeed_visited_sheets', 'true');
-                                        setHasVisitedSheets(true);
-                                        navigate('/sections');
-                                    }}
-                                    className="mt-2.5 w-full py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold transition-all"
+                                    onClick={handleClearDemoData}
+                                    className="text-[11px] font-bold text-red-500 hover:text-red-600 dark:hover:text-red-400 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-50 dark:bg-red-500/10 transition-colors"
+                                    title="Remove demo exam and sample students"
                                 >
-                                    View Sheets →
-                                </button>
-                            </div>
-
-                            {/* Step 3 */}
-                            <div className={`p-3.5 rounded-2xl border transition-all ${
-                                hasScans 
-                                    ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-950 dark:text-emerald-300' 
-                                    : 'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800'
-                            }`}>
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Step 3</span>
-                                    {hasScans ? (
-                                        <span className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold">✓</span>
-                                    ) : (
-                                        <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center text-xs font-bold">3</span>
-                                    )}
-                                </div>
-                                <h4 className="text-xs font-bold text-slate-900 dark:text-white">Camera Grade in 1s</h4>
-                                <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">Align 4 square markers inside guide box; scores automatically!</p>
-                                <button
-                                    onClick={() => {
-                                        if (exams && exams.length > 0) {
-                                            navigate(`/scan/${exams[0].id}`);
-                                        } else {
-                                            toast.info('Create an exam or load the demo exam first!');
-                                        }
-                                    }}
-                                    className={`mt-2.5 w-full py-1.5 rounded-lg text-xs font-bold transition-all ${
-                                        hasExams 
-                                            ? 'bg-violet-600 hover:bg-violet-500 text-white shadow-sm' 
-                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
-                                    }`}
-                                >
-                                    Try Scanner
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Demo Exam Link & Helpful Clarification */}
-                        <div className="pt-2 border-t border-slate-200/50 dark:border-white/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
-                            <span className="text-slate-500 flex items-center gap-1.5">
-                                💡 <em>Note: You can scan papers even without adding student names first!</em>
-                            </span>
-                            {!hasExams && (
-                                <button
-                                    onClick={handleLoadDemoExam}
-                                    className="inline-flex items-center gap-1.5 font-bold text-violet-600 dark:text-violet-400 hover:underline"
-                                >
-                                    <Sparkles className="w-3.5 h-3.5" />
-                                    <span>🎲 Load 10-Question Demo Exam</span>
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <span>Clear Demo Data</span>
                                 </button>
                             )}
                         </div>
+
+                        {/* 3 Steps - Clean Labels Only, No Action Clutter */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                            <div className="flex items-start gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                                <div className="w-7 h-7 rounded-xl bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400 flex items-center justify-center font-black text-xs shrink-0 mt-0.5">
+                                    1
+                                </div>
+                                <div>
+                                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">Create Exam & Key</h4>
+                                    <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">Set questions & tap answer key (A, B, C, D)</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-start gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                                <div className="w-7 h-7 rounded-xl bg-sky-100 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400 flex items-center justify-center font-black text-xs shrink-0 mt-0.5">
+                                    2
+                                </div>
+                                <div>
+                                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">Print Bubble Sheets</h4>
+                                    <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">Generate free sheets under the Sheets tab</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-start gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                                <div className="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black text-xs shrink-0 mt-0.5">
+                                    3
+                                </div>
+                                <div>
+                                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">Camera Grade in 1s</h4>
+                                    <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">Align 4 corner squares; scores automatically</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* First Time Clear Buttons: Start Fresh OR Try Demo */}
+                        {totalExamsCount === 0 && (
+                            <div className="pt-2 border-t border-slate-200/50 dark:border-white/5 flex flex-col sm:flex-row items-center gap-2.5">
+                                <button
+                                    onClick={() => navigate('/create')}
+                                    className="w-full sm:flex-1 py-2.5 px-4 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-xs font-bold shadow-md shadow-violet-500/20 transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    <span>Create Your First Exam</span>
+                                </button>
+                                <button
+                                    onClick={handleLoadDemoExam}
+                                    className="w-full sm:flex-1 py-2.5 px-4 bg-violet-50 hover:bg-violet-100 dark:bg-violet-500/10 dark:hover:bg-violet-500/20 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-500/20 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                                >
+                                    <Sparkles className="w-4 h-4" />
+                                    <span>Start with Demo Exam & Data</span>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -492,42 +447,30 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    {/* ========================================== */}
-                    {/* 2. EMPTY STATE WITH LOAD DEMO EXAM BUTTON */}
-                    {/* ========================================== */}
+                    {/* EMPTY STATE */}
                     {exams?.length === 0 && (
-                        <div className="text-center py-12 px-4 bg-white/60 dark:bg-slate-900/60 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 space-y-3">
-                            <div className="w-14 h-14 bg-violet-100 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 rounded-2xl flex items-center justify-center mx-auto">
+                        <div className="text-center py-12 px-4 bg-white/50 dark:bg-slate-900/50 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 space-y-3">
+                            <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto text-slate-400">
                                 <FileText className="w-7 h-7" />
                             </div>
                             <div>
-                                <h4 className="font-bold text-slate-900 dark:text-white text-base">No exams created yet</h4>
+                                <h4 className="font-bold text-slate-900 dark:text-white text-sm">No exams found matching your filters</h4>
                                 <p className="text-slate-500 dark:text-slate-400 text-xs max-w-sm mx-auto mt-1 leading-relaxed">
-                                    Create your own exam and answer key, or load a pre-configured sample quiz to test the camera scanner right away.
+                                    Create a new exam or select "All Terms / Folders" to view exams.
                                 </p>
                             </div>
-                            <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-2">
+                            <div className="pt-1">
                                 <button
                                     onClick={() => navigate('/create')}
-                                    className="w-full sm:w-auto px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-xs font-bold shadow-md shadow-violet-500/20 transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                                    className="text-xs font-bold text-violet-600 hover:underline uppercase tracking-wider"
                                 >
-                                    <Plus className="w-4 h-4" />
-                                    <span>Create New Exam</span>
-                                </button>
-                                <button
-                                    onClick={handleLoadDemoExam}
-                                    className="w-full sm:w-auto px-4 py-2.5 bg-violet-50 hover:bg-violet-100 dark:bg-violet-500/10 dark:hover:bg-violet-500/20 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-500/20 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1.5"
-                                >
-                                    <Sparkles className="w-4 h-4" />
-                                    <span>Load 10-Question Demo Exam</span>
+                                    + Create Exam
                                 </button>
                             </div>
                         </div>
                     )}
 
-                    {/* ========================================== */}
-                    {/* 5. EXAM LIST WITH FIRST-TIME TOOLTIP POINTER */}
-                    {/* ========================================== */}
+                    {/* EXAM LIST WITH POINTER */}
                     {exams?.map((exam, index) => {
                         const status = getStatusConfig(exam.status);
                         const isFirstExamUnscanned = index === 0 && (exam.scannedCount || 0) === 0 && totalScansCount === 0;
