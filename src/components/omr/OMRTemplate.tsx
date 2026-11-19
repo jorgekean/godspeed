@@ -47,7 +47,17 @@ export const SheetPage = ({ children, title, studentName }: { children: React.Re
     </Page>
 );
 
-export const Page20Item = ({ studentNo, studentName }: { studentNo?: string, studentName?: string }) => {
+export const Page20Item = ({
+    studentNo,
+    studentName,
+    examCode,
+    filledAnswers
+}: {
+    studentNo?: string,
+    studentName?: string,
+    examCode?: string,
+    filledAnswers?: string | (string | null)[]
+}) => {
     const choicesMap = ['A', 'B', 'C', 'D'];
     const startX = 520; const startY = 180;
     const rowHeight = 35; const bubbleSpacing = 45; const bubbleSize = 30;
@@ -60,7 +70,9 @@ export const Page20Item = ({ studentNo, studentName }: { studentNo?: string, stu
     const gridSpacingX = 24;
     const gridSpacingY = 22;
 
-    const paddedStudentNo = studentNo ? studentNo.padStart(8, '0') : '';
+    const paddedExamCode = examCode ? examCode.replace(/\D/g, '').slice(-4).padStart(4, '0') : '';
+    const paddedStudentNo = studentNo ? studentNo.replace(/\D/g, '').slice(-8).padStart(8, '0') : '';
+    const answersArray = typeof filledAnswers === 'string' ? filledAnswers.split('') : (filledAnswers || []);
 
     return (
         <SheetPage title="20-Item Answer Sheet" studentName={studentName}>
@@ -72,10 +84,23 @@ export const Page20Item = ({ studentNo, studentName }: { studentNo?: string, stu
             ))}
             {Array.from({ length: 4 }).map((_, col) => (
                 <React.Fragment key={`ec-col-${col}`}>
-                    <View style={{ position: 'absolute', top: examCodeY, left: gridStartX + (col * gridSpacingX), width: gridBubbleSize, height: gridBubbleSize, borderWidth: 1, borderColor: '#000' }} />
-                    {Array.from({ length: 10 }).map((_, row) => (
-                        <View key={`ec-q${col}-${row}`} style={[styles.bubble, { top: examCodeY + gridBubbleSize + 5 + (row * gridSpacingY), left: gridStartX + (col * gridSpacingX), width: gridBubbleSize, height: gridBubbleSize, borderRadius: 9 }]} />
-                    ))}
+                    <View style={{ position: 'absolute', top: examCodeY, left: gridStartX + (col * gridSpacingX), width: gridBubbleSize, height: gridBubbleSize, borderWidth: 1, borderColor: '#000' }}>
+                        {paddedExamCode && <Text style={{ fontSize: 9, textAlign: 'center', marginTop: 2 }}>{paddedExamCode[col]}</Text>}
+                    </View>
+                    {Array.from({ length: 10 }).map((_, row) => {
+                        const isFilled = paddedExamCode && paddedExamCode[col] === row.toString();
+                        return (
+                            <View key={`ec-q${col}-${row}`} style={[styles.bubble, {
+                                top: examCodeY + gridBubbleSize + 5 + (row * gridSpacingY),
+                                left: gridStartX + (col * gridSpacingX),
+                                width: gridBubbleSize,
+                                height: gridBubbleSize,
+                                borderRadius: 9,
+                                backgroundColor: isFilled ? '#000000' : 'transparent',
+                                borderColor: isFilled ? '#000000' : '#B4B4B4'
+                            }]} />
+                        );
+                    })}
                 </React.Fragment>
             ))}
 
@@ -119,9 +144,19 @@ export const Page20Item = ({ studentNo, studentName }: { studentNo?: string, stu
                     <Text style={[styles.questionNumber, { top: startY + (qIndex * rowHeight) + 8, left: startX - 30, fontSize: 12 }]}>
                         {qIndex + 1}.
                     </Text>
-                    {choicesMap.map((letter, cIndex) => (
-                        <View key={`q${qIndex}-${letter}`} style={[styles.bubble, { top: startY + (qIndex * rowHeight), left: startX + (cIndex * bubbleSpacing), width: bubbleSize, height: bubbleSize }]} />
-                    ))}
+                    {choicesMap.map((letter, cIndex) => {
+                        const isSelected = answersArray[qIndex] === letter;
+                        return (
+                            <View key={`q${qIndex}-${letter}`} style={[styles.bubble, {
+                                top: startY + (qIndex * rowHeight),
+                                left: startX + (cIndex * bubbleSpacing),
+                                width: bubbleSize,
+                                height: bubbleSize,
+                                backgroundColor: isSelected ? '#000000' : 'transparent',
+                                borderColor: isSelected ? '#000000' : '#B4B4B4'
+                            }]} />
+                        );
+                    })}
                 </React.Fragment>
             ))}
         </SheetPage>
@@ -316,6 +351,28 @@ export const Document50Item = (props: { studentNo?: string, studentName?: string
 export const Document100Item = (props: { studentNo?: string, studentName?: string }) => (
     <Document><Page100Item {...props} /></Document>
 );
+
+export const DemoSampleAnswerSheetDocument = () => (
+    <Document>
+        <Page20Item
+            studentName="Dela Cruz, Juan"
+            studentNo="20260001"
+            examCode="0001"
+            filledAnswers="ABCDABCDAB"
+        />
+    </Document>
+);
+
+export async function downloadDemoSampleSheet() {
+    const doc = <DemoSampleAnswerSheetDocument />;
+    const blob = await pdf(doc).toBlob();
+    await exportFile({
+        blob,
+        filename: 'Sample_Math_Quiz_Demo_Sheet_Ready_To_Scan.pdf',
+        mimeType: 'application/pdf',
+        dialogTitle: 'Save Sample Answer Sheet'
+    });
+}
 
 import { Printer, Loader2 } from 'lucide-react';
 import { exportFile } from '../../utils/fileExport';

@@ -1,9 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { OMRTemplateGenerator } from '../components/omr/OMRTemplate';
-import { Printer, Laptop, Users, ArrowRight } from 'lucide-react';
+import { OMRTemplateGenerator, downloadDemoSampleSheet } from '../components/omr/OMRTemplate';
+import { Printer, Laptop, Users, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function TemplatesPage() {
+    const [isDownloadingSample, setIsDownloadingSample] = useState(false);
+
+    const handleDownloadSample = async () => {
+        setIsDownloadingSample(true);
+        try {
+            await downloadDemoSampleSheet();
+            toast.success('Sample answer sheet downloaded! Print or display on screen to test scanning.');
+        } catch (err) {
+            console.error('Error downloading sample sheet:', err);
+            toast.error('Failed to generate sample sheet.');
+        } finally {
+            setIsDownloadingSample(false);
+        }
+    };
     return (
         <div className="min-h-full flex flex-col font-sans selection:bg-violet-500/30">
             <main className="flex-1 w-max-w-5xl max-w-5xl mx-auto px-4 md:px-8 py-6 pb-28 md:pb-6 flex flex-col gap-6 w-full">
@@ -58,6 +73,40 @@ export default function TemplatesPage() {
                         <span>Go to Classes</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
+                </div>
+
+                {/* Ready-to-Scan Sample Sheet Banner */}
+                <div className="bg-gradient-to-r from-emerald-50/90 via-teal-50/70 to-slate-50 dark:from-emerald-950/20 dark:via-teal-950/20 dark:to-slate-900/40 border border-emerald-100 dark:border-emerald-500/20 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+                    <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+                        <div className="p-2.5 bg-emerald-600 dark:bg-emerald-500 text-white rounded-xl shadow-md shadow-emerald-500/20 shrink-0">
+                            <Sparkles className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                                Want to test camera grading right away?
+                            </h4>
+                            <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
+                                Download our pre-bubbled sample sheet (Juan Dela Cruz, ID 20260001, Exam 0001). Print it or open it on your laptop screen and scan it with your phone!
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={handleDownloadSample}
+                        disabled={isDownloadingSample}
+                        className="self-start sm:self-center shrink-0 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 active:scale-95"
+                    >
+                        {isDownloadingSample ? (
+                            <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <span>Generating...</span>
+                            </>
+                        ) : (
+                            <>
+                                <Printer className="w-3.5 h-3.5" />
+                                <span>Get Sample Sheet</span>
+                            </>
+                        )}
+                    </button>
                 </div>
 
                 {/* Content */}
