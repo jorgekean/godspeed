@@ -5,23 +5,9 @@ import { Plus, FolderKanban, Edit3, Trash2, X, Users, Printer, FileText, Loader2
 import { useAuth } from '../contexts/AuthContext';
 import { pdf, Document } from '@react-pdf/renderer';
 import { sortStudents } from '../utils/studentUtils';
-import { Page20Item, Page50Item, Page100Item } from '../components/omr/OMRTemplate';
+import { Page20Item, Page50Item, Page100Item, MultiStudentDocument } from '../components/omr/OMRTemplate';
 import { toast } from 'sonner';
 import { exportFile } from '../utils/fileExport';
-
-const MultiStudentDocument = ({ students, examType }: { students: any[], examType: '20' | '50' | '100' }) => (
-    <Document>
-        {students.map(s => {
-            if (examType === '20') {
-                return <Page20Item key={s.id} studentNo={s.studentNo || '00000000'} studentName={s.fullName} />;
-            } else if (examType === '50') {
-                return <Page50Item key={s.id} studentNo={s.studentNo || '00000000'} studentName={s.fullName} />;
-            } else {
-                return <Page100Item key={s.id} studentNo={s.studentNo || '00000000'} studentName={s.fullName} />;
-            }
-        })}
-    </Document>
-);
 
 const DEFAULT_GRADE_LEVELS = ["Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12", "College 1"];
 
