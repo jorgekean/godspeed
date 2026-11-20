@@ -84,7 +84,16 @@ export default function AppLayout() {
 
     const getPageSub = (path: string) => {
         if (path === '/') return 'Local Workspace • 100% Offline';
-        return null;
+        if (path.startsWith('/sections')) return 'Manage your classes, sections, and student rosters.';
+        if (path.startsWith('/students')) return 'Manage your student rosters.';
+        if (path.startsWith('/periods')) return 'Manage your academic terms, quarters, semesters, and folders.';
+        if (path.startsWith('/subjects')) return 'Manage your subjects.';
+        if (path.startsWith('/grades')) return 'Manage your grade/year levels.';
+        if (path.startsWith('/templates')) return 'Download and print empty bubble sheet templates.';
+        if (path.startsWith('/account')) return 'Teacher profile, Google Drive backup, and local storage.';
+        if (path.startsWith('/help')) return 'Learn how to use Godspeed Grader.';
+        if (path.startsWith('/manual')) return 'Deep-dive into features and workflows.';
+        return 'Grade exams in a flash.';
     };
 
     const pageTitle = getPageTitle(location.pathname);
@@ -235,12 +244,12 @@ export default function AppLayout() {
                                 <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
                                     {pageTitle === 'Dashboard' ? 'GodSpeed' : pageTitle}
                                 </h1>
-                                {pageSub && <p className="text-[10px] font-medium text-slate-500">{pageSub}</p>}
+                                <p className="text-[10px] font-medium text-slate-500">{pageSub}</p>
                             </div>
                         ) : (
                             <div>
                                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">{pageTitle}</h2>
-                                {pageSub && <p className="text-xs font-medium text-slate-500">{pageSub}</p>}
+                                <p className="text-xs font-medium text-slate-500">{pageSub}</p>
                             </div>
                         )}
 
