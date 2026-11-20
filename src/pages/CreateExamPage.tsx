@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Plus, Trash2, Tag, ChevronDown, ChevronUp, X, CalendarDays, Check, Info, Folder, Camera, FileText } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Tag, ChevronDown, ChevronUp, X, CalendarDays, Check, Info, Folder } from 'lucide-react';
 import { db } from '../services/db';
 import { AnswerKeyManager } from '../components/omr/AnswerKeyManager';
 import { useAuth } from '../contexts/AuthContext';
@@ -34,7 +34,6 @@ export default function CreateExam() {
     const [answerKey, setAnswerKey] = useState(' '.repeat(20));
     const [defaultPointsPerItem, setDefaultPointsPerItem] = useState<number>(1);
     const [itemPoints, setItemPoints] = useState<number[]>(() => Array(20).fill(1));
-    const [createdExam, setCreatedExam] = useState<{ id: string; title: string } | null>(null);
 
     // Auto-generate exam code
     useEffect(() => {
@@ -173,7 +172,7 @@ export default function CreateExam() {
         });
 
         toast.success(`Exam "${title.trim()}" created successfully!`);
-        setCreatedExam({ id: newExamId, title: title.trim() });
+        navigate('/');
     };
 
     useEffect(() => {
@@ -372,44 +371,6 @@ export default function CreateExam() {
                         <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex gap-3">
                             <button onClick={() => { setIsPeriodModalOpen(false); setPeriodId(''); }} className="flex-1 py-4 font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl transition-colors">Cancel</button>
                             <button onClick={handleCreatePeriod} disabled={!newPeriodName.trim()} className="flex-1 py-4 font-bold bg-violet-600 hover:bg-violet-500 text-white rounded-2xl shadow-lg shadow-violet-500/20 disabled:opacity-50 transition-all">Create Term / Folder</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Post-Exam Creation "Next Steps" Modal */}
-            {createdExam && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-slate-900 rounded-[28px] p-6 sm:p-8 max-w-sm w-full shadow-2xl border border-slate-200/80 dark:border-white/10 text-center animate-in zoom-in-95 duration-200">
-                        <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-emerald-200 dark:border-emerald-500/20 shadow-sm">
-                            <Check className="w-8 h-8 stroke-[2.5]" />
-                        </div>
-                        <h3 className="text-xl font-black text-slate-900 dark:text-white mb-1.5">Exam Ready!</h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 font-medium leading-relaxed">
-                            <span className="font-bold text-slate-800 dark:text-slate-200">"{createdExam.title}"</span> has been created. What would you like to do next?
-                        </p>
-
-                        <div className="flex flex-col gap-2.5">
-                            <button
-                                onClick={() => navigate(`/scan/${createdExam.id}`)}
-                                className="w-full flex items-center justify-center gap-2.5 py-3.5 px-4 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-2xl shadow-lg shadow-violet-500/25 active:scale-95 transition-all text-sm"
-                            >
-                                <Camera className="w-4 h-4 shrink-0" />
-                                <span>Start Scanning Papers</span>
-                            </button>
-                            <button
-                                onClick={() => navigate('/templates')}
-                                className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-2xl active:scale-95 transition-all text-xs"
-                            >
-                                <FileText className="w-4 h-4 text-slate-500" />
-                                <span>Print Blank Answer Sheets</span>
-                            </button>
-                            <button
-                                onClick={() => navigate('/')}
-                                className="w-full py-2.5 text-xs font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                            >
-                                Back to Dashboard
-                            </button>
                         </div>
                     </div>
                 </div>
