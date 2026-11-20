@@ -13,6 +13,8 @@ import {
     Lightbulb
 } from 'lucide-react';
 
+const TUTORIAL_VIDEO_BASE_URL = 'https://godspeedgrader.com/tutorial_assets';
+
 export default function TutorialPage() {
     const navigate = useNavigate();
     const [copied, setCopied] = useState(false);
@@ -113,8 +115,7 @@ export default function TutorialPage() {
                         <div className="flex flex-col items-center justify-center">
                             <div className="w-full max-w-[250px] rounded-[10px] p-[2px] bg-black border-2 border-slate-700 shadow-2xl">
                                 <video controls playsInline preload="metadata" className="w-full h-auto object-contain rounded-[4px] bg-black" poster="/tutorial_assets/poster_step1.jpg">
-                                    <source src="/tutorial_assets/step1_video.mp4" type="video/mp4" />
-                                    <source src="/tutorial_assets/step1_video.mov" type="video/quicktime" />
+                                    <source src={`${TUTORIAL_VIDEO_BASE_URL}/step1_video.mp4`} type="video/mp4" />
                                 </video>
                             </div>
                             <span className="text-[11px] font-semibold text-slate-500 mt-2">📱 Setup & Manage Demo (0:43)</span>
@@ -160,8 +161,7 @@ export default function TutorialPage() {
                         <div className="flex flex-col items-center justify-center">
                             <div className="w-full max-w-[250px] rounded-[10px] p-[2px] bg-black border-2 border-slate-700 shadow-2xl">
                                 <video controls playsInline preload="metadata" className="w-full h-auto object-contain rounded-[4px] bg-black" poster="/tutorial_assets/poster_step2.jpg">
-                                    <source src="/tutorial_assets/step2_video.mp4" type="video/mp4" />
-                                    <source src="/tutorial_assets/step2_video.mov" type="video/quicktime" />
+                                    <source src={`${TUTORIAL_VIDEO_BASE_URL}/step2_video.mp4`} type="video/mp4" />
                                 </video>
                             </div>
                             <span className="text-[11px] font-semibold text-slate-500 mt-2">📱 Exam Creation Demo (0:50)</span>
@@ -207,8 +207,7 @@ export default function TutorialPage() {
                         <div className="flex flex-col items-center justify-center">
                             <div className="w-full max-w-[250px] rounded-[10px] p-[2px] bg-black border-2 border-slate-700 shadow-2xl">
                                 <video controls playsInline preload="metadata" className="w-full h-auto object-contain rounded-[4px] bg-black" poster="/tutorial_assets/poster_step3.jpg">
-                                    <source src="/tutorial_assets/step3_video.mp4" type="video/mp4" />
-                                    <source src="/tutorial_assets/step3_video.mov" type="video/quicktime" />
+                                    <source src={`${TUTORIAL_VIDEO_BASE_URL}/step3_video.mp4`} type="video/mp4" />
                                 </video>
                             </div>
                             <span className="text-[11px] font-semibold text-slate-500 mt-2">📱 Answer Sheet Demo (0:56)</span>
@@ -250,8 +249,7 @@ export default function TutorialPage() {
                         <div className="flex flex-col items-center justify-center">
                             <div className="w-full max-w-[250px] rounded-[10px] p-[2px] bg-black border-2 border-slate-700 shadow-2xl">
                                 <video controls playsInline preload="metadata" className="w-full h-auto object-contain rounded-[4px] bg-black" poster="/tutorial_assets/poster_step4.jpg">
-                                    <source src="/tutorial_assets/step4_video.mp4" type="video/mp4" />
-                                    <source src="/tutorial_assets/step4_video.mov" type="video/quicktime" />
+                                    <source src={`${TUTORIAL_VIDEO_BASE_URL}/step4_video.mp4`} type="video/mp4" />
                                 </video>
                             </div>
                             <span className="text-[11px] font-semibold text-slate-500 mt-2">📱 Live Scanning Demo (1:13)</span>
@@ -293,8 +291,7 @@ export default function TutorialPage() {
                         <div className="flex flex-col items-center justify-center">
                             <div className="w-full max-w-[250px] rounded-[10px] p-[2px] bg-black border-2 border-slate-700 shadow-2xl">
                                 <video controls playsInline preload="metadata" className="w-full h-auto object-contain rounded-[4px] bg-black" poster="/tutorial_assets/poster_step5.jpg">
-                                    <source src="/tutorial_assets/step5_video.mp4" type="video/mp4" />
-                                    <source src="/tutorial_assets/step5_video.mov" type="video/quicktime" />
+                                    <source src={`${TUTORIAL_VIDEO_BASE_URL}/step5_video.mp4`} type="video/mp4" />
                                 </video>
                             </div>
                             <span className="text-[11px] font-semibold text-slate-500 mt-2">📱 Reports & Item Analysis Demo (0:32)</span>
